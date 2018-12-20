@@ -50,6 +50,7 @@ int CCarve::disconnect(string& str_kernel_err_reason)
 	bool bSuccess = CBaoyuan_Lib::instance()->disconnect(m_nConn_idx, str_kernel_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to disconnect carve, ip:%s, conn idx:%d, reason:%s"
 		, __CLASS_FUNCTION__, m_str_ip.c_str(), m_nConn_idx, str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
+	m_bConnected =false;
 	return MSP_SUCCESS;
 }
 
