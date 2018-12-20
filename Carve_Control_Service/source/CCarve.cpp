@@ -43,6 +43,10 @@ int CCarve::connect(string& str_kernel_err_reason)
 
 int CCarve::disconnect(string& str_kernel_err_reason)
 {
+	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+	//ÅÐ¶¨µ±Ç°×´Ì¬
+	businlog_error_return_err_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
+		<<" is not connected", str_kernel_err_reason, MSP_ERROR_FAIL);
 	bool bSuccess = CBaoyuan_Lib::instance()->disconnect(m_nConn_idx, str_kernel_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to disconnect carve, ip:%s, conn idx:%d, reason:%s"
 		, __CLASS_FUNCTION__, m_str_ip.c_str(), m_nConn_idx, str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
