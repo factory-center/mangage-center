@@ -37,12 +37,13 @@ class CBaoyuan_Lib
 {
 public:
 	static CBaoyuan_Lib* instance();
-	void test() const;
+	int test();
 	//初始化
 	bool init(int nMakerID, const string& str_key, unsigned int nConnectNum, unsigned int  MemSizeR = 100000);
 	//逆初始化
 	void fini();
 	bool create_connection(unsigned short nConn_idx, const string& str_carve_ip, string& str_kernel_err_reason);
+	bool disconnect(unsigned short nConn_idx, string& str_kernel_err_reason);
 	bool get_status(unsigned short nConn_idx, int& nStatus, string& str_kernel_err_reason);
 
 	bool confirm_task(unsigned short nServer_idx, size_t nMax_wait_time, string& str_kernel_err_reason);
@@ -53,10 +54,10 @@ private:
 	~CBaoyuan_Lib(); 
 	CBaoyuan_Lib& operator=(const CBaoyuan_Lib&);
 	CBaoyuan_Lib(const CBaoyuan_Lib&);
-	bool set_RBit(unsigned short nConn_idx, unsigned int nAddr, unsigned char nBitIdx, unsigned char nBitValue, size_t nMax_wait_time, string& str_err_reason);
-	bool set_RValue(unsigned short nConn_idx, unsigned int  nAddr, unsigned int nVal, size_t nMax_wait_time, string& str_kernel_err_reason);
-	bool set_RString(unsigned short nConn_idx, size_t nAddr,  size_t nBuff_size, const char* pBuff, size_t nMax_wait_time, string& str_kernel_err_reason);
-	bool set_CValue(unsigned short nConn_idx, int nAddr, int nValue, size_t nMax_wait_time, string& str_kernel_err_reason);
+	bool set_RBit(unsigned short nConn_idx, unsigned int nAddr, unsigned char nBitIdx, unsigned char nBitValue, unsigned short nMax_wait_time, string& str_err_reason);
+	bool set_RValue(unsigned short nConn_idx, unsigned int  nAddr, unsigned int nVal, unsigned short nMax_wait_time, string& str_kernel_err_reason);
+	bool set_RString(unsigned short nConn_idx, size_t nAddr,  size_t nBuff_size, const char* pBuff, unsigned short nMax_wait_time, string& str_kernel_err_reason);
+	bool set_CValue(unsigned short nConn_idx, int nAddr, int nValue, unsigned short nMax_wait_time, string& str_kernel_err_reason);
 	bool is_valid_conn_idx(unsigned short nConn_idx, string& str_kernel_err_reason);
 	class CGarbo // 它的唯一工作就是在析构函数中删除CSingleton的实例 
 	{

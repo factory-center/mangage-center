@@ -25,14 +25,20 @@ extern "C" {
 }  
 #endif  
 //引用C++头文件：先是标准库头文件，后是项目头文件
-#include "device/CDevice.h"
+#include "CDevice.h"
 //宏定义
 
 //类型定义
 class  CCarve : public CDevice
 {
 public:
+	CCarve(unsigned short nConn_idx, const string& str_ip);
+	int connect(string& str_kernel_err_reason);
+	int disconnect(string& str_kernel_err_reason);
+	unsigned short Conn_idx() const { return m_nConn_idx; }
+	void Conn_idx(unsigned short val) { m_nConn_idx = val; }
 protected:
+	CCarve();
 	//判定连线序号是否合法
 	bool is_valid(short nServerIdx)
 	{
@@ -40,7 +46,7 @@ protected:
 		return true;
 	}
 private:
-	short m_nServerIdx;//一个雕刻机对应一个连接编号，唯一标识一个控制器，此值必须小于TalkInfoNum，取值范围[0, TalkInfoNum-1]
+	unsigned short m_nConn_idx;//一个雕刻机对应一个连接编号，唯一标识一个控制器，此值必须小于ConnectNum，取值范围[0, ConnectNum-1]
     
 };
 //函数原型定义

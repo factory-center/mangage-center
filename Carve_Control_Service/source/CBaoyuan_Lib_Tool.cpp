@@ -19,7 +19,12 @@
 #include "baoyuan/scif2.h"
 #include "utils/msp_errors.h"
 #include "busin_log.h"
+#ifdef _WINDOWS
+#define __CLASS_FUNCTION__ ((std::string(__FUNCTION__)).c_str()) 
+#else
 #define __CLASS_FUNCTION__ ((std::string("CBaoyuan_Lib::") + std::string(__FUNCTION__)).c_str()) 
+#endif
+
 const int MAX_CONNECTIONS_NUM = 255;
 const int MIN_CONNECTIONS_NUM = 0;
 CBaoyuan_Lib* CBaoyuan_Lib::instance()
@@ -27,10 +32,11 @@ CBaoyuan_Lib* CBaoyuan_Lib::instance()
 	return ms_pInstance;
 }
 
-void CBaoyuan_Lib::test() const
+int CBaoyuan_Lib::test()
 {
 	printf("%s | %u\n", __FUNCTION__, __LINE__);
 	businlog_crit("%s | %u", __FUNCTION__, __LINE__);
+	return MSP_SUCCESS;
 }
 
 bool CBaoyuan_Lib::init(int nMakerID, const string& str_key, unsigned int nConnectNum, unsigned int MemSizeR /*= 100000*/)
@@ -93,13 +99,14 @@ bool CBaoyuan_Lib::create_connection(unsigned short nConn_idx, const string& str
 		, __CLASS_FUNCTION__ << " | Invalid Connection index:" << nConn_idx << ", must be [0," << m_sDLL_setting.ConnectNum - 1
 		<< "]", str_kernel_err_reason, false);
 
-	int talktime=0;
+	
 	//直接輸入控制器IP進行連線
 	//執行此函式成功只代表連線設定成功，有無真正建立起連線，必須呼叫 GetConnectionMsg 函式來檢查連線狀態
 	int nRet_baoyuan = m_sc2_obj.ConnectLocalIP(nConn_idx, (char*)str_carve_ip.c_str());
 	businlog_error_return_err_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | fail to connect ip:" << str_carve_ip
 		<< " with connection index:" << nConn_idx, str_kernel_err_reason, false);
 	
+	int talktime = 0;
 	int nStatus = SC_CONN_STATE_DISCONNECT;
 	//在一定时间内循环检测连接状态，如果超时且还未连接成功，则报错退出
 	while (nStatus != SC_CONN_STATE_OK)
@@ -113,8 +120,8 @@ bool CBaoyuan_Lib::create_connection(unsigned short nConn_idx, const string& str
 		if (talktime >= 10)
 		{//重复次数达到指定次数
 			str_kernel_err_reason = "Connect time out";
-			businlog_error("%s | connection index:%d, err reason:%s, Status:%d"
-				, __CLASS_FUNCTION__, nConn_idx, str_kernel_err_reason.c_str(), nStatus);
+			businlog_error("%s | connection index:%d, ip:%s, err reason:%s, Status:%d"
+				, __CLASS_FUNCTION__, nConn_idx, str_carve_ip.c_str(), str_kernel_err_reason.c_str(), nStatus);
 			return false;
 		}
 		else
@@ -157,6 +164,17 @@ bool CBaoyuan_Lib::create_connection(unsigned short nConn_idx, const string& str
 }
 
 
+bool CBaoyuan_Lib::disconnect(unsigned short nConn_idx, string& str_kernel_err_reason)
+{
+	//判定参数合法性
+	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason)
+		, ("%s | Invalid conn index:%d, reason:%s", __CLASS_FUNCTION__, nConn_idx, str_kernel_err_reason.c_str()), false);
+	int nRet_baoyuan = m_sc2_obj.Disconnect(nConn_idx);
+	businlog_error_return_err_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | fail to disconnect, conn index:" 
+		<< nConn_idx, str_kernel_err_reason, false);
+	return true;
+}
+
 bool CBaoyuan_Lib::get_status(unsigned short nConn_idx, int& nStatus, string& str_kernel_err_reason)
 {
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason)
@@ -168,8 +186,8 @@ bool CBaoyuan_Lib::get_status(unsigned short nConn_idx, int& nStatus, string& st
 bool CBaoyuan_Lib::confirm_task(unsigned short nServer_idx, size_t nMax_wait_time, string& str_kernel_err_reason)
 {
 	size_t nAddr = 20000;
-	size_t nBit_idx = 10;
-	int nBit_value = 0;
+	unsigned char nBit_idx = 10;
+	unsigned char nBit_value = 0;
 	return set_RBit(nServer_idx, nAddr, nBit_idx, nBit_value, nMax_wait_time, str_kernel_err_reason);
 }
 
@@ -187,7 +205,7 @@ bool CBaoyuan_Lib::confirm_task(unsigned short nServer_idx, size_t nMax_wait_tim
 *Parameter: string & str_err_reason -[in/out]  
 ************************************/
 bool CBaoyuan_Lib::set_RBit(unsigned short nConn_idx, unsigned int nAddr, unsigned char nBitIdx, unsigned char nBitValue
-							, size_t nMax_wait_time, string& str_err_reason)
+							, unsigned short nMax_wait_time, string& str_err_reason)
 {
 	businlog_tracer_perf(CBaoyuan_Lib::set_RBit);
 	//判定参数合法性
@@ -237,7 +255,7 @@ bool CBaoyuan_Lib::set_RBit(unsigned short nConn_idx, unsigned int nAddr, unsign
 	return true;
 }
 
-bool CBaoyuan_Lib::set_RValue(unsigned short nConn_idx, unsigned int nAddr, unsigned int nVal, size_t nMax_wait_time, string& str_kernel_err_reason)
+bool CBaoyuan_Lib::set_RValue(unsigned short nConn_idx, unsigned int nAddr, unsigned int nVal, unsigned short nMax_wait_time, string& str_kernel_err_reason)
 {
 	businlog_tracer_perf(CBaoyuan_Lib::set_RValue);
 	//检查参数合法性
@@ -267,7 +285,7 @@ bool CBaoyuan_Lib::set_RValue(unsigned short nConn_idx, unsigned int nAddr, unsi
 	return true;
 }
 
-bool CBaoyuan_Lib::set_RString(unsigned short nConn_idx, size_t nAddr, size_t nBuff_size, const char* pBuff, size_t nMax_wait_time, string& str_kernel_err_reason)
+bool CBaoyuan_Lib::set_RString(unsigned short nConn_idx, size_t nAddr, size_t nBuff_size, const char* pBuff, unsigned short nMax_wait_time, string& str_kernel_err_reason)
 {
 	businlog_tracer_perf(CBaoyuan_Lib::set_RString);
 	//检查参数合法性
@@ -300,7 +318,7 @@ bool CBaoyuan_Lib::set_RString(unsigned short nConn_idx, size_t nAddr, size_t nB
 	return true;
 }
 
-bool CBaoyuan_Lib::set_CValue(unsigned short nConn_idx, int nAddr, int nValue, size_t nMax_wait_time, string& str_kernel_err_reason)
+bool CBaoyuan_Lib::set_CValue(unsigned short nConn_idx, int nAddr, int nValue, unsigned short nMax_wait_time, string& str_kernel_err_reason)
 {
 	//参数合法性判定
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason), ("%s | err reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);

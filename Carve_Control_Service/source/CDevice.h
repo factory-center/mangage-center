@@ -42,11 +42,15 @@ enum EDevice_Type
 class CDevice
 {
 public:
-protected:
+	CDevice(EDevice_Type eType, const string& str_ip)
+		: m_eType(eType)
+		, m_str_ip(str_ip)
+	{
 
-private:
-	vector<string> m_vec_IPs; //设备的ip地址列表，可能存在多网卡
-	size_t m_nId; //表明此设备在整个管控服务中对应的编号
+	}
+protected:
+	string m_str_ip; //设备的ip地址列表，可能存在多网卡
+//	size_t m_nId; //表明此设备在整个管控服务中对应的编号
 	EDevice_Type m_eType; //设备类型
 };
 //函数原型定义

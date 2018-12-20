@@ -32,3 +32,5 @@
 *.log
 *.idb
 *.tlog
+#Win32
+*Win32*

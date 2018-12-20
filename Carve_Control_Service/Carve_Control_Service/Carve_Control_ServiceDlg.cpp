@@ -6,8 +6,10 @@
 #include "Carve_Control_Service.h"
 #include "Carve_Control_ServiceDlg.h"
 #include "afxdialogex.h"
-#include "..\source\CBaoyuan_Lib_Tool.h"
-#include "..\source\busin_log.h"
+#include "../source/CBaoyuan_Lib_Tool.h"
+#include "../source/busin_log.h"
+#include "../source/CCarve.h"
+#include "utils/msp_errors.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -165,12 +167,42 @@ HCURSOR CCarve_Control_ServiceDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
+//返回值 0：success; 非0：错误码
+int test()
+{
 
+	//初始化
+	int nMakeId = 1111;
+	string str_key = "79A08F845B1BCADC25EF0B396062EE91C06EB78EFFE16A7A";
+	bool bSuccess = CBaoyuan_Lib::instance()->init(nMakeId, str_key, 100, 1000000);
+	businlog_error_return(bSuccess, ("%s | fail to init baoyuan lib, makeId:%d, key:%s", __FUNCTION__, nMakeId, str_key.c_str()), -1);
 
+	//连接设备
+	unsigned int nConn_idx = 0;
+	const string str_ip = "192.168.101.212";
+	string str_kernel_err_reason;
+	CCarve carve_obj(nConn_idx, str_ip);
+	int ret = carve_obj.connect(str_kernel_err_reason);
+	businlog_error_return(0 == ret, ("%s | fail to connect ip:%s, reason:%s"
+		, __FUNCTION__, str_ip.c_str(), str_kernel_err_reason.c_str()), ret);
+	Sleep(10 * 1000);
+	ret = carve_obj.disconnect(str_kernel_err_reason);
+	businlog_error_return(0 == ret, ("%s | fail to disconnect, nConn:%d, reason:%s"
+		, __FUNCTION__, nConn_idx, str_kernel_err_reason.c_str()), ret);
+
+	return 0;
+}
 
 void CCarve_Control_ServiceDlg::OnBnClickedButton1()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	MessageBox(_T("Only for test"));
-	CBaoyuan_Lib::instance()->test();
+	int ret = test();
+	if (ret)
+	{
+		MessageBox(_T("Test failed"));
+	}
+	else
+	{
+		MessageBox(_T("Test successfully"));
+	}
 }

@@ -22,48 +22,81 @@
     <Filter Include="源文件\log">
       <UniqueIdentifier>{ff129691-13ef-4a8f-a764-6e96ad0e15f8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="头文件\device">
+      <UniqueIdentifier>{589603b6-6fb1-4322-836b-8d8bb21c0c9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\dlg">
+      <UniqueIdentifier>{3225c414-5686-4368-b23b-80513395a6d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\dlg">
+      <UniqueIdentifier>{728e800d-4d1b-435c-82df-b71baf12407d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\baoyuan">
+      <UniqueIdentifier>{bf19f86c-76c2-4a53-ba35-a9496cb15f7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\device">
+      <UniqueIdentifier>{d7c9b6c6-9b46-4f66-a479-bbaaa0655111}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Carve_Control_Service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Carve_Control_ServiceDlg.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="stdafx.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Resource.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="..\source\busin_log.h">
       <Filter>头文件\log</Filter>
     </ClInclude>
     <ClInclude Include="..\source\log_base.h">
       <Filter>头文件\log</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\baoyuan\scif2.h">
+      <Filter>头文件\Baoyuan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\baoyuan\scif2_define.h">
+      <Filter>头文件\Baoyuan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\CBaoyuan_Lib_Tool.h">
+      <Filter>头文件\Baoyuan</Filter>
+    </ClInclude>
+    <ClInclude Include="Carve_Control_Service.h">
+      <Filter>头文件\dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="Carve_Control_ServiceDlg.h">
+      <Filter>头文件\dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>头文件\dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>头文件\dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>头文件\dlg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\CCarve.h">
+      <Filter>头文件\device</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\CDevice.h">
+      <Filter>头文件\device</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Carve_Control_Service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="Carve_Control_ServiceDlg.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\source\log_base.cpp">
       <Filter>源文件\log</Filter>
     </ClCompile>
+    <ClCompile Include="Carve_Control_ServiceDlg.cpp">
+      <Filter>源文件\dlg</Filter>
+    </ClCompile>
+    <ClCompile Include="Carve_Control_Service.cpp">
+      <Filter>源文件\dlg</Filter>
+    </ClCompile>
     <ClCompile Include="..\source\CBaoyuan_Lib_Tool.cpp">
-      <Filter>源文件</Filter>
+      <Filter>源文件\baoyuan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\CCarve.cpp">
+      <Filter>源文件\device</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>源文件\dlg</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
