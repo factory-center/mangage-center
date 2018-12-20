@@ -185,6 +185,15 @@ int test()
 	int ret = carve_obj.connect(str_kernel_err_reason);
 	businlog_error_return(0 == ret, ("%s | fail to connect ip:%s, reason:%s"
 		, __FUNCTION__, str_ip.c_str(), str_kernel_err_reason.c_str()), ret);
+	//更新设备为继续状态
+	ret = carve_obj.set_continue_status(0, 1000, str_kernel_err_reason);
+	businlog_error_return(0 == ret, ("%s | fail to  set_continue_status, ip:%s, reason:%s"
+		, __FUNCTION__, str_ip.c_str(), str_kernel_err_reason.c_str()), ret);
+	//重置设备
+	carve_obj.reset_carve(1000, str_kernel_err_reason);
+	businlog_error_return(0 == ret, ("%s | fail to  reset_carve, ip:%s, reason:%s"
+		, __FUNCTION__, str_ip.c_str(), str_kernel_err_reason.c_str()), ret);
+	//断开设备
 	Sleep(10 * 1000);
 	ret = carve_obj.disconnect(str_kernel_err_reason);
 	businlog_error_return(0 == ret, ("%s | fail to disconnect, nConn:%d, reason:%s"

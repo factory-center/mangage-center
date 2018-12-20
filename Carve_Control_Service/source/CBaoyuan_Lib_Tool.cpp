@@ -106,11 +106,17 @@ bool CBaoyuan_Lib::create_connection(unsigned short nConn_idx, const string& str
 	businlog_error_return_err_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | fail to connect ip:" << str_carve_ip
 		<< " with connection index:" << nConn_idx, str_kernel_err_reason, false);
 	
+	//------設定要輪詢的內容
+	m_sc2_obj.LReadBegin(nConn_idx);
+	m_sc2_obj.LReadNR(nConn_idx, 23004, 2);
+	m_sc2_obj.LReadEnd(nConn_idx);
+
 	int talktime = 0;
 	int nStatus = SC_CONN_STATE_DISCONNECT;
 	//在一定时间内循环检测连接状态，如果超时且还未连接成功，则报错退出
 	while (nStatus != SC_CONN_STATE_OK)
 	{
+		m_sc2_obj.MainProcess();
 		nStatus = m_sc2_obj.GetConnectionMsg(nConn_idx, SCIF_CONNECT_STATE);
 		if (SC_CONN_STATE_OK == nStatus)
 		{//连接成功
@@ -127,7 +133,7 @@ bool CBaoyuan_Lib::create_connection(unsigned short nConn_idx, const string& str
 		else
 		{//链接失败，未达到指定次数
 			//休眠一会儿
-			Sleep(100);
+			Sleep(50);
 			talktime++;
 		}
 	}
@@ -183,12 +189,32 @@ bool CBaoyuan_Lib::get_status(unsigned short nConn_idx, int& nStatus, string& st
 	return true;
 }
 
-bool CBaoyuan_Lib::confirm_task(unsigned short nServer_idx, size_t nMax_wait_time, string& str_kernel_err_reason)
+bool CBaoyuan_Lib::confirm_task(unsigned short nConn_idx, size_t nMax_wait_time, string& str_kernel_err_reason)
 {
 	size_t nAddr = 20000;
 	unsigned char nBit_idx = 10;
 	unsigned char nBit_value = 0;
-	return set_RBit(nServer_idx, nAddr, nBit_idx, nBit_value, nMax_wait_time, str_kernel_err_reason);
+	return set_RBit(nConn_idx, nAddr, nBit_idx, nBit_value, nMax_wait_time, str_kernel_err_reason);
+}
+
+bool CBaoyuan_Lib::set_continue_status(unsigned short nConn_idx, unsigned char nStatus, unsigned short nMax_wait_time, string& str_kernel_err_reason)
+{
+	//		ResetBaoyuanRBit(1040000, 0);
+	return set_RBit(nConn_idx, 1040000, 0, nStatus, nMax_wait_time, str_kernel_err_reason);
+}
+
+bool CBaoyuan_Lib::reset_carve(unsigned short nConn_idx, unsigned short nMax_wait_time, string& str_kernel_err_reason)
+{
+
+	// 		ret=SetBaoyuanRBit(20000, 0);
+	// 		Sleep(100);
+	// 		ResetBaoyuanRBit(20000, 0);
+	bool bSuccess = set_RBit(nConn_idx, 20000, 0, 1, nMax_wait_time, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+	boost::this_thread::sleep(boost::posix_time::millisec(100));
+	bSuccess = set_RBit(nConn_idx, 20000, 0, 0, nMax_wait_time, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+	return true;
 }
 
 /************************************

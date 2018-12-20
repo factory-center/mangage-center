@@ -46,8 +46,9 @@ public:
 	bool disconnect(unsigned short nConn_idx, string& str_kernel_err_reason);
 	bool get_status(unsigned short nConn_idx, int& nStatus, string& str_kernel_err_reason);
 
-	bool confirm_task(unsigned short nServer_idx, size_t nMax_wait_time, string& str_kernel_err_reason);
-
+	bool confirm_task(unsigned short nConn_idx, size_t nMax_wait_time, string& str_kernel_err_reason);
+	bool set_continue_status(unsigned short nConn_idx, unsigned char nStatus, unsigned short nMax_wait_time, string& str_kernel_err_reason);
+	bool reset_carve(unsigned short nConn_idx, unsigned short nMax_wait_time, string& str_kernel_err_reason);
 private:
 	CBaoyuan_Lib();
 	//析构函数为私有，使得其只能被其自己的垃圾工程释放

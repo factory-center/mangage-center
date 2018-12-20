@@ -26,6 +26,7 @@ extern "C" {
 #endif  
 //引用C++头文件：先是标准库头文件，后是项目头文件
 #include "CDevice.h"
+#include "boost_common.h"
 //宏定义
 
 //类型定义
@@ -35,6 +36,8 @@ public:
 	CCarve(unsigned short nConn_idx, const string& str_ip);
 	int connect(string& str_kernel_err_reason);
 	int disconnect(string& str_kernel_err_reason);
+	int set_continue_status(unsigned char nStatus, unsigned short nMax_wait_time, string& str_kernel_err_reason);
+	int reset_carve(unsigned short nMax_wait_time, string& str_kernel_err_reason);
 	unsigned short Conn_idx() const { return m_nConn_idx; }
 	void Conn_idx(unsigned short val) { m_nConn_idx = val; }
 protected:
@@ -47,6 +50,7 @@ protected:
 	}
 private:
 	unsigned short m_nConn_idx;//一个雕刻机对应一个连接编号，唯一标识一个控制器，此值必须小于ConnectNum，取值范围[0, ConnectNum-1]
-    
+    Uni_Mutex m_mutex_for_cmd; //同一时刻只能执行一个命令
+	bool m_bConnected; //雕刻机当前是否连接正常
 };
 //函数原型定义
