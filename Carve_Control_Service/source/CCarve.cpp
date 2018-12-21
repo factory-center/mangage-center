@@ -50,7 +50,8 @@ int CCarve::disconnect(string& str_kernel_err_reason)
 	bool bSuccess = CBaoyuan_Lib::instance()->disconnect(m_nConn_idx, str_kernel_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to disconnect carve, ip:%s, conn idx:%d, reason:%s"
 		, __CLASS_FUNCTION__, m_str_ip.c_str(), m_nConn_idx, str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
-	m_bConnected =false;
+	//成功断开，则更新状态
+	m_bConnected = false;
 	return MSP_SUCCESS;
 }
 
@@ -66,14 +67,55 @@ int CCarve::set_continue_status(unsigned char nStatus, unsigned short nMax_wait_
 	return MSP_SUCCESS;
 }
 
-int CCarve::reset_carve(unsigned short nMax_wait_time, string& str_kernel_err_reason)
+int CCarve::reset(unsigned short nMax_wait_time, string& str_kernel_err_reason)
 {
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
 	businlog_error_return_err_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
 		<<" is not connected", str_kernel_err_reason, MSP_ERROR_INVALID_OPERATION);
 
 	bool bSuccess = CBaoyuan_Lib::instance()->reset_carve(m_nConn_idx, nMax_wait_time, str_kernel_err_reason);
-	businlog_error_return(bSuccess, ("%s | fail to reset carve, ip:%s", __CLASS_FUNCTION__, m_str_ip.c_str()), MSP_ERROR_FAIL);
+	businlog_error_return(bSuccess, ("%s | fail to reset carve, ip:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
+	return MSP_SUCCESS;
+}
+
+
+int CCarve::start(const string& str_nc_file_path, unsigned short nMax_wait_time, string& str_kernel_err_reason)
+{
+	//TODO::额外操作
+	//使雕刻机开始雕刻
+	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+	businlog_error_return_err_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
+		<<" is not connected", str_kernel_err_reason, MSP_ERROR_INVALID_OPERATION);
+
+	bool bSuccess = CBaoyuan_Lib::instance()->start(m_nConn_idx, str_nc_file_path, nMax_wait_time, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to start carve to engrave, ip:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
+	return MSP_SUCCESS;
+}
+
+int CCarve::pause(unsigned short nMax_wait_time, string& str_kernel_err_reason)
+{
+	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+	businlog_error_return_err_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
+		<<" is not connected", str_kernel_err_reason, MSP_ERROR_INVALID_OPERATION);
+
+	bool bSuccess = CBaoyuan_Lib::instance()->pause(m_nConn_idx, nMax_wait_time, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to pause carve, ip:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
+	return MSP_SUCCESS;
+}
+
+int CCarve::upload_1_file(const string& str_file_path, string& str_kernel_err_reason)
+{
+	businlog_tracer_perf(CCarve::upload_1_file);
+	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+	businlog_error_return_err_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
+		<<" is not connected", str_kernel_err_reason, MSP_ERROR_INVALID_OPERATION);
+
+	bool bSuccess = CBaoyuan_Lib::instance()->upload_1file(m_nConn_idx, str_file_path, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to upload file, carve ip:%s, file path:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_file_path.c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
 	return MSP_SUCCESS;
 }
 

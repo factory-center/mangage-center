@@ -37,9 +37,13 @@ public:
 	int connect(string& str_kernel_err_reason);
 	int disconnect(string& str_kernel_err_reason);
 	int set_continue_status(unsigned char nStatus, unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	int reset_carve(unsigned short nMax_wait_time, string& str_kernel_err_reason);
+	int reset(unsigned short nMax_wait_time, string& str_kernel_err_reason);
+	int start(const string& str_nc_file_path, unsigned short nMax_wait_time, string& str_kernel_err_reason);
+	int pause(unsigned short nMax_wait_time, string& str_kernel_err_reason);
+	int upload_1_file(const string& str_file_path, string& str_kernel_err_reason);
 	unsigned short Conn_idx() const { return m_nConn_idx; }
 	void Conn_idx(unsigned short val) { m_nConn_idx = val; }
+	
 protected:
 	CCarve();
 	//判定连线序号是否合法

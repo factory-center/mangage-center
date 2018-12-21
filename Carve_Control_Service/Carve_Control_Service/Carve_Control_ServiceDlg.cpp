@@ -67,6 +67,11 @@ BEGIN_MESSAGE_MAP(CCarve_Control_ServiceDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_BUTTON1, &CCarve_Control_ServiceDlg::OnBnClickedButton1)
+	ON_BN_CLICKED(IDC_BUTTON2, &CCarve_Control_ServiceDlg::OnBnClickedButton2)
+	ON_BN_CLICKED(IDC_BUTTON3, &CCarve_Control_ServiceDlg::OnBnClickedButton3)
+	ON_BN_CLICKED(IDC_BUTTON4, &CCarve_Control_ServiceDlg::OnBnClickedButton4)
+	ON_BN_CLICKED(IDC_BUTTON5, &CCarve_Control_ServiceDlg::OnBnClickedButton5)
+	ON_BN_CLICKED(IDC_UPLOADFILE, &CCarve_Control_ServiceDlg::OnBnClickedUploadfile)
 END_MESSAGE_MAP()
 
 
@@ -167,8 +172,14 @@ HCURSOR CCarve_Control_ServiceDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
+// test begine
+//连接设备
+unsigned int nConn_idx = 0;
+const string str_ip = "192.168.101.212";
+CCarve carve_obj(nConn_idx, str_ip);
+const string str_nc_file_path = "F:\\GitHub\\mangage-center\\Carve_Control_Service\\Win32\\Debug\\wenzi_test.nc";
 //返回值 0：success; 非0：错误码
-int test()
+int test_connect()
 {
 
 	//初始化
@@ -177,11 +188,8 @@ int test()
 	bool bSuccess = CBaoyuan_Lib::instance()->init(nMakeId, str_key, 100, 1000000);
 	businlog_error_return(bSuccess, ("%s | fail to init baoyuan lib, makeId:%d, key:%s", __FUNCTION__, nMakeId, str_key.c_str()), -1);
 
-	//连接设备
-	unsigned int nConn_idx = 0;
-	const string str_ip = "192.168.101.212";
 	string str_kernel_err_reason;
-	CCarve carve_obj(nConn_idx, str_ip);
+	
 	int ret = carve_obj.connect(str_kernel_err_reason);
 	businlog_error_return(0 == ret, ("%s | fail to connect ip:%s, reason:%s"
 		, __FUNCTION__, str_ip.c_str(), str_kernel_err_reason.c_str()), ret);
@@ -190,28 +198,123 @@ int test()
 	businlog_error_return(0 == ret, ("%s | fail to  set_continue_status, ip:%s, reason:%s"
 		, __FUNCTION__, str_ip.c_str(), str_kernel_err_reason.c_str()), ret);
 	//重置设备
-	carve_obj.reset_carve(1000, str_kernel_err_reason);
+	carve_obj.reset(1000, str_kernel_err_reason);
 	businlog_error_return(0 == ret, ("%s | fail to  reset_carve, ip:%s, reason:%s"
 		, __FUNCTION__, str_ip.c_str(), str_kernel_err_reason.c_str()), ret);
+	
+	return 0;
+}
+int test_upload()
+{
+	string str_kernel_err_reason;
+	int ret = carve_obj.upload_1_file(str_nc_file_path, str_kernel_err_reason);
+	businlog_error_return(0 == ret, ("%s | fail to upload file:%s, nConn:%d, reason:%s"
+		, __FUNCTION__, str_nc_file_path.c_str(), nConn_idx, str_kernel_err_reason.c_str()), ret);
+	return 0;
+}
+int test_disconnect()
+{
+	string str_kernel_err_reason;
 	//断开设备
-	Sleep(10 * 1000);
-	ret = carve_obj.disconnect(str_kernel_err_reason);
+	int ret = carve_obj.disconnect(str_kernel_err_reason);
 	businlog_error_return(0 == ret, ("%s | fail to disconnect, nConn:%d, reason:%s"
 		, __FUNCTION__, nConn_idx, str_kernel_err_reason.c_str()), ret);
-
 	return 0;
 }
 
+int test_start()
+{
+	string str_kernel_err_reason;
+	int ret = carve_obj.start(str_nc_file_path, 1000, str_kernel_err_reason);
+	businlog_error_return(0 == ret, ("%s | fail to start, nc path:%s, ret:%d, reason:%s"
+		, __FUNCTION__, str_nc_file_path.c_str(), ret, str_kernel_err_reason.c_str()), ret);
+	return 0;
+}
+int test_pause()
+{
+	string str_kernel_err_reason;
+	//暂停雕刻
+	return carve_obj.pause(1000, str_kernel_err_reason);
+}
+//test end
 void CCarve_Control_ServiceDlg::OnBnClickedButton1()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	int ret = test();
+	int ret = test_connect();
 	if (ret)
 	{
-		MessageBox(_T("Test failed"));
+		MessageBox(_T("connect failed"));
 	}
 	else
 	{
-		MessageBox(_T("Test successfully"));
+		MessageBox(_T("connect successfully"));
 	}
+}
+
+
+void CCarve_Control_ServiceDlg::OnBnClickedButton2()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	int ret = test_disconnect();
+	if (ret)
+	{
+		MessageBox(_T("disconnect failed"));
+	}
+	else
+	{
+		MessageBox(_T("disconnect successfully"));
+	}
+}
+
+
+void CCarve_Control_ServiceDlg::OnBnClickedButton3()
+{
+	// TODO: 在此添加控件通知处理程序代码
+}
+
+
+void CCarve_Control_ServiceDlg::OnBnClickedButton4()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	int ret = test_start();
+	if (ret)
+	{
+		MessageBox(_T("start failed"));
+	}
+	else
+	{
+		MessageBox(_T("start successfully"));
+	}
+}
+
+
+void CCarve_Control_ServiceDlg::OnBnClickedButton5()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	int ret = test_upload();
+	if (ret)
+	{
+		MessageBox(_T("upload failed"));
+	}
+	else
+	{
+		MessageBox(_T("upload successfully"));
+	}
+}
+
+
+void CCarve_Control_ServiceDlg::OnBnClickedUploadfile()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	MessageBox(_T("CCarve_Control_ServiceDlg::OnBnClickedUploadfile"));
+	int ret = test_upload();
+	if (ret)
+	{
+		MessageBox(_T("upload file failed"));
+	}
+	else
+	{
+		MessageBox(_T("upload file successfully"));
+	}
+
 }

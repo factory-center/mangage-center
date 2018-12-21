@@ -19,6 +19,7 @@
 #include "baoyuan/scif2.h"
 #include "utils/msp_errors.h"
 #include "busin_log.h"
+#include "boost/filesystem.hpp"
 #ifdef _WINDOWS
 #define __CLASS_FUNCTION__ ((std::string(__FUNCTION__)).c_str()) 
 #else
@@ -133,7 +134,8 @@ bool CBaoyuan_Lib::create_connection(unsigned short nConn_idx, const string& str
 		else
 		{//链接失败，未达到指定次数
 			//休眠一会儿
-			Sleep(50);
+//			Sleep(50);
+			boost::this_thread::sleep(boost::posix_time::millisec(50));
 			talktime++;
 		}
 	}
@@ -199,6 +201,7 @@ bool CBaoyuan_Lib::confirm_task(unsigned short nConn_idx, size_t nMax_wait_time,
 
 bool CBaoyuan_Lib::set_continue_status(unsigned short nConn_idx, unsigned char nStatus, unsigned short nMax_wait_time, string& str_kernel_err_reason)
 {
+
 	//		ResetBaoyuanRBit(1040000, 0);
 	return set_RBit(nConn_idx, 1040000, 0, nStatus, nMax_wait_time, str_kernel_err_reason);
 }
@@ -214,6 +217,100 @@ bool CBaoyuan_Lib::reset_carve(unsigned short nConn_idx, unsigned short nMax_wai
 	boost::this_thread::sleep(boost::posix_time::millisec(100));
 	bSuccess = set_RBit(nConn_idx, 20000, 0, 0, nMax_wait_time, str_kernel_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+	return true;
+}
+
+bool CBaoyuan_Lib::pause(unsigned short nConn_idx, unsigned short nMax_wait_time, string& str_kernel_err_reason)
+{
+	// 		SetBaoyuanRBit(20000, 11);
+	// 		Sleep(200);
+	// 		ResetBaoyuanRBit(20000, 11);
+	bool bSuccess = set_RBit(nConn_idx, 20000, 11, 1, nMax_wait_time, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+	boost::this_thread::sleep(boost::posix_time::millisec(100));
+	bSuccess = set_RBit(nConn_idx, 20000, 11, 0, nMax_wait_time, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+	return true;
+}
+
+bool CBaoyuan_Lib::start(unsigned short nConn_idx, const string& str_nc_file_path, unsigned short nMax_wait_time, string& str_kernel_err_reason)
+{
+	// 		SetBaoyuanRString(17022,filename, 8*4);
+	// 		SetBaoyuanRValue(17002, 1);
+	// 		SetBaoyuanRBit(20000, 10);
+	//获取文件名（不含有扩展名）
+	boost::filesystem::path path_nc_file(str_nc_file_path);
+	//判定文件是否存在
+	businlog_error_return_err_reason(boost::filesystem::exists(path_nc_file), __CLASS_FUNCTION__ 
+		<< " | Can not find file:" << str_nc_file_path, str_kernel_err_reason, false);
+
+	string str_filename_without_ext = path_nc_file.stem().string();
+	bool bSuccess = set_RString(nConn_idx, 17022, str_filename_without_ext.size()
+		, str_filename_without_ext.c_str(), nMax_wait_time * 3, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to set RString, file name withou extend:%s, reason:%s"
+		, __CLASS_FUNCTION__, str_filename_without_ext.c_str(), str_kernel_err_reason.c_str()), false);
+	bSuccess = set_RValue(nConn_idx,17002, 1, nMax_wait_time * 3, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to set RValue, reason:%s"
+		, __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+	bSuccess = set_RBit(nConn_idx, 20000, 10, 1, nMax_wait_time, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s"
+		, __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+	return true;
+}
+
+bool CBaoyuan_Lib::upload_1file(unsigned short nConn_idx, const string& str_file_path, string& str_kernel_err_reason)
+{
+	businlog_tracer_perf(CBaoyuan_Lib::upload_1file);
+	//判定参数合法性
+	//nConn_idx值必須小於 scif_Init 函式初始化時，struct DLL_USE_SETTING 中 ConnectNum 所設定的連線數目。
+	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason)
+		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+
+	//所有連線共用同一個檔案傳輸功能，需於傳輸前用 FtpSetConnection 函式設定所對應的連。
+	//設定 FTP 索引
+	int nRet_baoyuan = m_sc2_obj.FtpSetConnection(nConn_idx);
+	businlog_error_return_err_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | fail to set ftp connection, conn idx:"
+		<< nConn_idx, str_kernel_err_reason, false);
+	//上傳一個檔案
+	boost::filesystem::path file_boost_path(str_file_path);
+	//判定文件是否存在
+	businlog_error_return_err_reason(boost::filesystem::exists(file_boost_path), __CLASS_FUNCTION__ << " | Can not find file:"
+		<< str_file_path, str_kernel_err_reason, false);
+	businlog_crit("%s | file name:%s, file path:%s"
+		, __CLASS_FUNCTION__, file_boost_path.filename().string().c_str(), str_file_path.c_str());
+	nRet_baoyuan = m_sc2_obj.FtpUpload1File(FTP_FOLDER_RUN_NCFILES, ""
+		, (char*)file_boost_path.filename().string().c_str(), (char*)str_file_path.c_str());
+
+	businlog_error_return_err_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | fail to upload file:" << str_file_path
+		, str_kernel_err_reason, false);
+	//取得執行結果  ---  一個執行結果只會回傳一次,然後就被清除
+	size_t nCost_time_ms = 0; //耗费的时间
+	size_t nThreshold_time_ms = 2 * 60 * 60 * 1000; //时间阈值
+	size_t nWait_time_ms = 50; //每次休眠时间
+
+	//判定发送文件时，有没有超时，避免死循环
+	while (true)
+	{
+//		Sleep(50);
+		businlog_crit("%s | start to wait", __CLASS_FUNCTION__);
+		boost::this_thread::sleep(boost::posix_time::millisec(nWait_time_ms));
+		businlog_crit("%s | finish to wait", __CLASS_FUNCTION__);
+		m_sc2_obj.MainProcess();
+		nRet_baoyuan = m_sc2_obj.FtpCheckDone();
+		if ( 1 ==  nRet_baoyuan)
+		{//已经上传完成
+			break;
+		} 
+		else
+		{//上传还未完成，则累加耗费时间
+			nCost_time_ms += nWait_time_ms;
+			//判定是否超时
+			businlog_error_return_err_reason(nCost_time_ms < nThreshold_time_ms, __CLASS_FUNCTION__
+				<< " | timeout to upload file:" << str_file_path << ", cost time:" << nCost_time_ms << " ms"
+				, str_kernel_err_reason, false);
+		}
+	}
+	//此时已经成功上传完成
 	return true;
 }
 
@@ -235,7 +332,7 @@ bool CBaoyuan_Lib::set_RBit(unsigned short nConn_idx, unsigned int nAddr, unsign
 {
 	businlog_tracer_perf(CBaoyuan_Lib::set_RBit);
 	//判定参数合法性
-	//nServerIdx值必須小於 scif_Init 函式初始化時，struct DLL_USE_SETTING 中 TalkInfoNum 所設定的連線數目。
+	//nConn_idx值必須小於 scif_Init 函式初始化時，struct DLL_USE_SETTING 中 ConnectNum所設定的連線數目。
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_err_reason)
 		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason.c_str()), false);
 	//設定值只能为 0 或 1
@@ -306,11 +403,24 @@ bool CBaoyuan_Lib::set_RValue(unsigned short nConn_idx, unsigned int nAddr, unsi
 		, str_kernel_err_reason, false);
 	//讓等待先前所設定的直接命令完成後，再繼續執行下去
 	nRet_baoyuan = m_sc2_obj.DWaitDone(nConn_idx, nMax_wait_time);
-	businlog_error_return_err_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | Time out to do cmd, serverIdx:" 
+	businlog_error_return_err_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | Time out to do cmd, nConn_idx:" 
 		<< nConn_idx, str_kernel_err_reason, false);
 	return true;
 }
 
+/************************************
+* Method:    set_RString
+* Brief:  寫入字串到控制器中的 R 值
+* Access:    private 
+* Returns:   bool true：成功；false：失败
+* Qualifier:
+*Parameter: unsigned short nConn_idx -[in]  连接索引
+*Parameter: size_t nAddr -[in]  要寫入的資料位址
+*Parameter: size_t nBuff_size -[in]  要写入的数量，单位字节
+*Parameter: const char * pBuff -[in]  要写入的字符串
+*Parameter: unsigned short nMax_wait_time -[in]  超时时间，单位ms
+*Parameter: string & str_kernel_err_reason -[out] 出错原因 
+************************************/
 bool CBaoyuan_Lib::set_RString(unsigned short nConn_idx, size_t nAddr, size_t nBuff_size, const char* pBuff, unsigned short nMax_wait_time, string& str_kernel_err_reason)
 {
 	businlog_tracer_perf(CBaoyuan_Lib::set_RString);
@@ -367,7 +477,7 @@ bool CBaoyuan_Lib::set_CValue(unsigned short nConn_idx, int nAddr, int nValue, u
 		<< ", addr:" << nAddr << ", value:" << nValue, str_kernel_err_reason, false);
     //讓等待先前所設定的直接命令完成後，再繼續執行下去
 	nRet_baoyuan = m_sc2_obj.DWaitDone(nConn_idx, nMax_wait_time);
-	businlog_error_return_err_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | Time out to do cmd, serverIdx:" 
+	businlog_error_return_err_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | Time out to do cmd, nConn_idx:" 
 		<< nConn_idx, str_kernel_err_reason, false);
 	return true;
 }
@@ -376,7 +486,7 @@ CBaoyuan_Lib::CBaoyuan_Lib() : m_bAvailable(false)
 {
 	memset(&m_sDLL_setting, 0, sizeof(DLL_USE_SETTING));
 	m_sDLL_setting.SoftwareType = 4;		//軟體種類   
-	/*	m_sDLL_setting.TalkInfoNum = 200;			//連線數目*/
+	/*	m_sDLL_setting.ConnectNum = 200;			//連線數目*/
 	m_sDLL_setting.MemSizeI = I_NUM;
 	m_sDLL_setting.MemSizeO = O_NUM;
 	m_sDLL_setting.MemSizeC = C_NUM;
@@ -395,7 +505,7 @@ CBaoyuan_Lib::~CBaoyuan_Lib()
 
 bool CBaoyuan_Lib::is_valid_conn_idx(unsigned short nConn_idx, string& str_kernel_err_reason)
 {
-	//nServerIdx值必須小於 scif_Init 函式初始化時，struct DLL_USE_SETTING 中 TalkInfoNum 所設定的連線數目。
+	//nConn_idx值必須小於 scif_Init 函式初始化時，struct DLL_USE_SETTING 中 ConnectNum 所設定的連線數目。
 	businlog_error_return_err_reason(nConn_idx >= 0 && nConn_idx < m_sDLL_setting.ConnectNum
 		, __CLASS_FUNCTION__ << " | Invalid connection index:" << nConn_idx << ", must be [0," 
 		<< m_sDLL_setting.ConnectNum - 1 << "]", str_kernel_err_reason, false);
