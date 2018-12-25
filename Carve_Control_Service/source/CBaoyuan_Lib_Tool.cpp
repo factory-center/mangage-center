@@ -63,10 +63,16 @@ bool CBaoyuan_Lib::init(int nMakerID, const string& str_key, unsigned int nConne
 	}
 	//设置库的日志等级:有错误才显示
 	m_sc2_obj.LibrarySetDebug(2); //todo::for test
+	string str_err_reason;
+	//启动定时器
+	bool bSuccess = start_timer(str_err_reason);
+	businlog_error_return(bSuccess, ("%s | faild to start timer, reason:%s", __CLASS_FUNCTION__, str_err_reason.c_str()), false);
+	
 	{
 		Thread_Write_Lock guard(m_rw_mutex_for_available);
 		m_bAvailable = true;
 	}
+	
 	return true;
 }
 
@@ -81,6 +87,12 @@ void CBaoyuan_Lib::fini()
 {
 	businlog_warn("%s | Notice", __CLASS_FUNCTION__);
 	{
+		//先停止线程后释放函数库
+		if (false == m_bStop)
+		{//线程仍然开始着
+			stop_timer();
+		}
+
 		Thread_Write_Lock guard(m_rw_mutex_for_available);
 		//判定函数库的状态
 		if (true == m_bAvailable)
@@ -187,7 +199,15 @@ bool CBaoyuan_Lib::get_status(unsigned short nConn_idx, int& nStatus, string& st
 {
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason)
 		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+	//------設定要輪詢的內容
+	m_sc2_obj.LReadBegin(nConn_idx);
+	m_sc2_obj.LReadNR(nConn_idx, 23004, 2);
+	m_sc2_obj.LReadEnd(nConn_idx);
+	
+	m_sc2_obj.MainProcess();
 	nStatus = m_sc2_obj.GetConnectionMsg(nConn_idx, SCIF_CONNECT_STATE);
+	businlog_error_return_err_reason(SC_CONN_STATE_OK == nStatus, __CLASS_FUNCTION__ << " | Connect is over, conn idx:" 
+		<< nConn_idx << ", status now:" << nStatus, str_kernel_err_reason, false);
 	return true;
 }
 
@@ -275,14 +295,15 @@ bool CBaoyuan_Lib::upload_1file(unsigned short nConn_idx, const string& str_file
 	boost::filesystem::path file_boost_path(str_file_path);
 	//判定文件是否存在
 	businlog_error_return_err_reason(boost::filesystem::exists(file_boost_path), __CLASS_FUNCTION__ << " | Can not find file:"
-		<< str_file_path, str_kernel_err_reason, false);
-	businlog_crit("%s | file name:%s, file path:%s"
-		, __CLASS_FUNCTION__, file_boost_path.filename().string().c_str(), str_file_path.c_str());
-	nRet_baoyuan = m_sc2_obj.FtpUpload1File(FTP_FOLDER_RUN_NCFILES, ""
+		<< str_file_path << ", conn idx:" << nConn_idx, str_kernel_err_reason, false);
+	businlog_crit("%s | conn idx:%d, file name:%s, file path:%s"
+		, __CLASS_FUNCTION__, nConn_idx, file_boost_path.filename().string().c_str(), str_file_path.c_str());
+//	m_sc2_obj.MainProcess();
+	nRet_baoyuan = m_sc2_obj.FtpUpload1File(FTP_FOLDER_NCFILES, ""
 		, (char*)file_boost_path.filename().string().c_str(), (char*)str_file_path.c_str());
 
 	businlog_error_return_err_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | fail to upload file:" << str_file_path
-		, str_kernel_err_reason, false);
+		<< ", conn idx:" << nConn_idx, str_kernel_err_reason, false);
 	//取得執行結果  ---  一個執行結果只會回傳一次,然後就被清除
 	size_t nCost_time_ms = 0; //耗费的时间
 	size_t nThreshold_time_ms = 2 * 60 * 60 * 1000; //时间阈值
@@ -291,27 +312,59 @@ bool CBaoyuan_Lib::upload_1file(unsigned short nConn_idx, const string& str_file
 	//判定发送文件时，有没有超时，避免死循环
 	while (true)
 	{
+		//休眠一会
 //		Sleep(50);
-		businlog_crit("%s | start to wait", __CLASS_FUNCTION__);
+//		businlog_crit("%s | start to wait", __CLASS_FUNCTION__);
 		boost::this_thread::sleep(boost::posix_time::millisec(nWait_time_ms));
-		businlog_crit("%s | finish to wait", __CLASS_FUNCTION__);
-		m_sc2_obj.MainProcess();
+//		businlog_crit("%s | finish to wait", __CLASS_FUNCTION__);
+//		m_sc2_obj.MainProcess();
+		//检测ftp操作是否完成
 		nRet_baoyuan = m_sc2_obj.FtpCheckDone();
 		if ( 1 ==  nRet_baoyuan)
-		{//已经上传完成
-			break;
+		{//动作已经完成
+			//获取ftp操作结果
+			nRet_baoyuan = m_sc2_obj.GetLibraryMsg(SCIF_FTP_RESULT);
+			//检测是否上传成功，如果上传失败，则直接报错返回
+			businlog_error_return_err_reason(FTP_RESULT_SUCCESS == nRet_baoyuan, __CLASS_FUNCTION__ << " | ftp failed, conn idx:" 
+				<< nConn_idx << ", file path:" << str_file_path << ", ret:"<< nRet_baoyuan 
+				<< ", ftp result note:" << strerror_ftp(nRet_baoyuan), str_kernel_err_reason, false);
+			//此时表明上传成功
+			return true;
 		} 
 		else
-		{//上传还未完成，则累加耗费时间
+		{//动作还未完成，则累加耗费时间
 			nCost_time_ms += nWait_time_ms;
 			//判定是否超时
 			businlog_error_return_err_reason(nCost_time_ms < nThreshold_time_ms, __CLASS_FUNCTION__
-				<< " | timeout to upload file:" << str_file_path << ", cost time:" << nCost_time_ms << " ms"
-				, str_kernel_err_reason, false);
+				<< " | timeout to upload file:" << str_file_path << ", cost time:" << nCost_time_ms 
+				<< " ms, conn idx:" << nConn_idx, str_kernel_err_reason, false);
 		}
 	}
 	//此时已经成功上传完成
 	return true;
+}
+
+bool CBaoyuan_Lib::start_timer(string& str_kernel_err_reason)
+{
+	m_bStop = false;
+	m_thread_timer = boost::thread(boost::bind(&CBaoyuan_Lib::svc, this));
+	//不关心退出状态，则可以线程分离
+//	m_thread_timer.detach();
+	return true;
+}
+
+bool CBaoyuan_Lib::stop_timer()
+{
+	if (true == m_bStop)
+	{//之前已经停止了
+		businlog_error("%s | timer has been already stop", __CLASS_FUNCTION__);
+		return false;
+	}
+	m_bStop = true;
+	m_thread_timer.join();
+	businlog_crit("%s | stop timer successfully", __CLASS_FUNCTION__);
+	return true;
+	
 }
 
 /************************************
@@ -482,7 +535,9 @@ bool CBaoyuan_Lib::set_CValue(unsigned short nConn_idx, int nAddr, int nValue, u
 	return true;
 }
 
-CBaoyuan_Lib::CBaoyuan_Lib() : m_bAvailable(false)
+CBaoyuan_Lib::CBaoyuan_Lib() 
+	: m_bAvailable(false)
+	, m_bStop(true)
 {
 	memset(&m_sDLL_setting, 0, sizeof(DLL_USE_SETTING));
 	m_sDLL_setting.SoftwareType = 4;		//軟體種類   
@@ -510,6 +565,75 @@ bool CBaoyuan_Lib::is_valid_conn_idx(unsigned short nConn_idx, string& str_kerne
 		, __CLASS_FUNCTION__ << " | Invalid connection index:" << nConn_idx << ", must be [0," 
 		<< m_sDLL_setting.ConnectNum - 1 << "]", str_kernel_err_reason, false);
 	return true;
+}
+
+/************************************
+* Method:    strerror_ftp
+* Brief:  将FTP的处理结果转换为对应的提示信息
+* Access:    private 
+* Returns:   string
+* Qualifier:
+*Parameter: int nResult_ftp -[in]  GetLibraryMsg(SCIF_FTP_RESULT) 
+************************************/
+string CBaoyuan_Lib::strerror_ftp(int nResult_ftp)
+{
+	string str_kernel_err_reason;
+	int nState = m_sc2_obj.GetLibraryMsg(SCIF_FTP_STATE);
+	businlog_crit("%s | state of ftp:%d", __FUNCTION__, nState);
+	switch (nResult_ftp)
+	{
+	case FTP_RESULT_PROCESSING:
+		str_kernel_err_reason = "PROCESSING";
+		break;
+	case FTP_RESULT_SUCCESS:
+		str_kernel_err_reason = "SUCCESS";
+		break;
+	case FTP_RESULT_FAIL_TO_READ_LOCAL_FILE:
+		str_kernel_err_reason = "FAIL_TO_READ_LOCAL_FILE";
+		break;
+	case FTP_RESULT_FAIL_TO_WRITE_LOCAL_FILE:
+		str_kernel_err_reason = "FAIL_TO_WRITE_LOCAL_FILE";
+		break;
+	case FTP_RESULT_FAIL_TO_READ_REMOTE_FILE:
+		str_kernel_err_reason = "FAIL_TO_READ_REMOTE_FILE";
+		break;
+	case FTP_RESULT_FAIL_TO_WRITE_REMOTE_FILE:
+		str_kernel_err_reason = "FAIL_TO_WRITE_REMOTE_FILE";
+		break;
+	case FTP_RESULT_FAIL_TO_SET_COMMAND:
+		str_kernel_err_reason = "FAIL_TO_SET_COMMAND";
+		break;
+	case FTP_RESULT_FAIL_TO_COMMUNICATION:
+		str_kernel_err_reason = "FAIL_TO_COMMUNICATION";
+		break;
+	case FTP_RESULT_FILE_MISMATCH:
+		str_kernel_err_reason = "FILE_MISMATCH";
+		break;
+	default:
+		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | Don't support ftp result:" << nResult_ftp
+			, str_kernel_err_reason, str_kernel_err_reason);
+		break;
+	}
+	return str_kernel_err_reason;
+}
+
+void CBaoyuan_Lib::svc()
+{
+	businlog_crit("%s | start thread successfully", __CLASS_FUNCTION__);
+	size_t nWait_time_ms = 20; //每次休眠时间
+	while (false == m_bStop)
+	{
+		boost::this_thread::sleep(boost::posix_time::millisec(nWait_time_ms));
+		businlog_crit("%s | start do MainProcess", __CLASS_FUNCTION__);
+		int ret = m_sc2_obj.MainProcess();
+		businlog_crit("%s | finish do MainProcess", __CLASS_FUNCTION__);
+		if (false/*ret == 0*/)
+		{
+			businlog_error("%s | fail to MainProcess", __CLASS_FUNCTION__);
+			break;
+		}
+	}
+	businlog_warn("%s | ++++++++++++++++timer is over+++++++++++++", __CLASS_FUNCTION__);
 }
 
 CBaoyuan_Lib::CGarbo CBaoyuan_Lib::Garbo;

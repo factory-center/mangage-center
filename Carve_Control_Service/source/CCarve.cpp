@@ -112,7 +112,18 @@ int CCarve::upload_1_file(const string& str_file_path, string& str_kernel_err_re
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
 	businlog_error_return_err_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
 		<<" is not connected", str_kernel_err_reason, MSP_ERROR_INVALID_OPERATION);
+	//查询一下连接状态
+	int nStatus = CBaoyuan_Lib::instance()->get_status(m_nConn_idx, nStatus, str_kernel_err_reason);
+	if (SC_CONN_STATE_OK != nStatus && SC_CONN_STATE_CONNECTING != nStatus)
+	{
+		businlog_error("%s | status of connection is %d, ip:%s, now to reconnect", __CLASS_FUNCTION__, nStatus, m_str_ip.c_str());
+		//重新连接
+		businlog_error_return(CBaoyuan_Lib::instance()->create_connection(m_nConn_idx, m_str_ip, str_kernel_err_reason)
+			, ("%s | fail to reconnect to ip:%s, reason:%s", __CLASS_FUNCTION__, m_str_ip.c_str()
+			, str_kernel_err_reason.c_str()), MSP_ERROR_FAIL)
+	}
 
+	//上传文件
 	bool bSuccess = CBaoyuan_Lib::instance()->upload_1file(m_nConn_idx, str_file_path, str_kernel_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to upload file, carve ip:%s, file path:%s, reason:%s"
 		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_file_path.c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);

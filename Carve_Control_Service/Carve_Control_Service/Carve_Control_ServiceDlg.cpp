@@ -177,7 +177,7 @@ HCURSOR CCarve_Control_ServiceDlg::OnQueryDragIcon()
 unsigned int nConn_idx = 0;
 const string str_ip = "192.168.101.212";
 CCarve carve_obj(nConn_idx, str_ip);
-const string str_nc_file_path = "F:\\GitHub\\mangage-center\\Carve_Control_Service\\Win32\\Debug\\wenzi_test.nc";
+const string str_nc_file_path = "F:\\GitHub\\mangage-center\\Carve_Control_Service\\Win32\\Debug\\1224.nc";
 //∑µªÿ÷µ 0£∫success; ∑«0£∫¥ÌŒÛ¬Î
 int test_connect()
 {
@@ -189,7 +189,7 @@ int test_connect()
 	businlog_error_return(bSuccess, ("%s | fail to init baoyuan lib, makeId:%d, key:%s", __FUNCTION__, nMakeId, str_key.c_str()), -1);
 
 	string str_kernel_err_reason;
-	
+
 	int ret = carve_obj.connect(str_kernel_err_reason);
 	businlog_error_return(0 == ret, ("%s | fail to connect ip:%s, reason:%s"
 		, __FUNCTION__, str_ip.c_str(), str_kernel_err_reason.c_str()), ret);

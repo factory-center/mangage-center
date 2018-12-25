@@ -55,7 +55,7 @@ public:
 	bool start(unsigned short nConn_idx, const string& str_nc_file_path, unsigned short nMax_wait_time, string& str_kernel_err_reason);
     //NC文件相关
 	bool upload_1file(unsigned short nConn_idx, const string& str_file_path, string& str_kernel_err_reason);
-
+	
 private:
 	CBaoyuan_Lib();
 	//析构函数为私有，使得其只能被其自己的垃圾工程释放
@@ -67,6 +67,12 @@ private:
 	bool set_RString(unsigned short nConn_idx, size_t nAddr,  size_t nBuff_size, const char* pBuff, unsigned short nMax_wait_time, string& str_kernel_err_reason);
 	bool set_CValue(unsigned short nConn_idx, int nAddr, int nValue, unsigned short nMax_wait_time, string& str_kernel_err_reason);
 	bool is_valid_conn_idx(unsigned short nConn_idx, string& str_kernel_err_reason);
+	string strerror_ftp(int nResult_ftp);
+	//定时器相关
+	//启动定时器
+	bool start_timer(string& str_kernel_err_reason);
+	bool stop_timer();
+	void svc();
 	class CGarbo // 它的唯一工作就是在析构函数中删除CSingleton的实例 
 	{
 	public:
@@ -80,5 +86,7 @@ private:
 	DLL_USE_SETTING m_sDLL_setting; //动态库对应的配置
     static CBaoyuan_Lib* ms_pInstance;
 	SC2 m_sc2_obj; //宝元库类对象，需要在编译器的预处理命令中定义：__CLASS
+	boost::thread m_thread_timer; //定时器线程对象
+	bool m_bStop; //定时器线程是否终止
 };
 //函数原型定义
