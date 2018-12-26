@@ -121,6 +121,13 @@ BOOL CCarve_Control_ServiceDlg::OnInitDialog()
 		businlog_error("%s | open log file:%s error, ret:%d", __FUNCTION__, str_log_path.c_str(), ret);
 		return false;
 	}
+	//初始化库
+	//初始化
+	int nMakeId = 1111;
+	string str_key = "79A08F845B1BCADC25EF0B396062EE91C06EB78EFFE16A7A";
+	bool bSuccess = CBaoyuan_Lib::instance()->init(nMakeId, str_key, 100, 1000000);
+	businlog_error_return(bSuccess, ("%s | fail to init baoyuan lib, makeId:%d, key:%s", __FUNCTION__, nMakeId, str_key.c_str()), FALSE);
+
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -181,13 +188,6 @@ const string str_nc_file_path = "F:\\GitHub\\mangage-center\\Carve_Control_Servi
 //返回值 0：success; 非0：错误码
 int test_connect()
 {
-
-	//初始化
-	int nMakeId = 1111;
-	string str_key = "79A08F845B1BCADC25EF0B396062EE91C06EB78EFFE16A7A";
-	bool bSuccess = CBaoyuan_Lib::instance()->init(nMakeId, str_key, 100, 1000000);
-	businlog_error_return(bSuccess, ("%s | fail to init baoyuan lib, makeId:%d, key:%s", __FUNCTION__, nMakeId, str_key.c_str()), -1);
-
 	string str_kernel_err_reason;
 
 	int ret = carve_obj.connect(str_kernel_err_reason);
