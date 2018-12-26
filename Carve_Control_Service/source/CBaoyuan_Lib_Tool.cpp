@@ -129,7 +129,7 @@ bool CBaoyuan_Lib::create_connection(unsigned short nConn_idx, const string& str
 	//在一定时间内循环检测连接状态，如果超时且还未连接成功，则报错退出
 	while (nStatus != SC_CONN_STATE_OK)
 	{
-		m_sc2_obj.MainProcess();
+//		m_sc2_obj.MainProcess(); //是否需要屏蔽？
 		nStatus = m_sc2_obj.GetConnectionMsg(nConn_idx, SCIF_CONNECT_STATE);
 		if (SC_CONN_STATE_OK == nStatus)
 		{//连接成功
@@ -204,7 +204,7 @@ bool CBaoyuan_Lib::get_status(unsigned short nConn_idx, int& nStatus, string& st
 	m_sc2_obj.LReadNR(nConn_idx, 23004, 2);
 	m_sc2_obj.LReadEnd(nConn_idx);
 	
-	m_sc2_obj.MainProcess();
+//	m_sc2_obj.MainProcess();
 	nStatus = m_sc2_obj.GetConnectionMsg(nConn_idx, SCIF_CONNECT_STATE);
 	businlog_error_return_err_reason(SC_CONN_STATE_OK == nStatus, __CLASS_FUNCTION__ << " | Connect is over, conn idx:" 
 		<< nConn_idx << ", status now:" << nStatus, str_kernel_err_reason, false);
