@@ -6,10 +6,10 @@
 #include "Carve_Control_Service.h"
 #include "Carve_Control_ServiceDlg.h"
 #include "afxdialogex.h"
-#include "../source/CBaoyuan_Lib_Tool.h"
 #include "../source/busin_log.h"
 #include "../source/CCarve.h"
 #include "utils/msp_errors.h"
+#include "../source/carve_common_lib.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -122,12 +122,9 @@ BOOL CCarve_Control_ServiceDlg::OnInitDialog()
 		return false;
 	}
 	//初始化库
-	//初始化
-	int nMakeId = 1111;
-	string str_key = "79A08F845B1BCADC25EF0B396062EE91C06EB78EFFE16A7A";
-	bool bSuccess = CBaoyuan_Lib::instance()->init(nMakeId, str_key, 100, 1000000);
-	businlog_error_return(bSuccess, ("%s | fail to init baoyuan lib, makeId:%d, key:%s", __FUNCTION__, nMakeId, str_key.c_str()), FALSE);
-
+	string str_err_reason;
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->init(str_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to init CCarve_Common_Lib_Tool, reason:%s", __FUNCTION__, str_err_reason.c_str()), FALSE);
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 

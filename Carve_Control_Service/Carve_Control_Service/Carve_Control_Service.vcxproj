@@ -75,7 +75,7 @@
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <IncludePath>../include;G:\software\boost_1_65_1_windows\boost_1_65_1-vs2012_x64\boost_1_65_1\;$(IncludePath)</IncludePath>
-    <LibraryPath>../lib32/baoyuan;../lib32/boost;$(LibraryPath)</LibraryPath>
+    <LibraryPath>../lib32/json;../lib32/baoyuan;../lib32/boost;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -102,7 +102,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>scif2_vc.lib;sc2_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>scif2_vc.lib;sc2_vc.lib;lib_json.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -117,7 +117,8 @@
     <CustomBuildStep>
       <Command>copy "$(ProjectDir)\..\conf\emcs.cfg" "$(SolutionDir)$(Platform)\$(Configuration)\"
 copy "$(ProjectDir)\..\lib32\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configuration)\"
-copy "$(ProjectDir)\..\lib32\boost\*" "$(SolutionDir)$(Platform)\$(Configuration)\"</Command>
+copy "$(ProjectDir)\..\lib32\boost\*" "$(SolutionDir)$(Platform)\$(Configuration)\"
+copy "$(ProjectDir)\..\lib32\json\*" "$(SolutionDir)$(Platform)\$(Configuration)\"</Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>%Output</Outputs>
@@ -215,6 +216,7 @@ copy "$(ProjectDir)\..\lib64\boost\*" "$(SolutionDir)$(Platform)\$(Configuration
     <ClInclude Include="..\include\baoyuan\scif2.h" />
     <ClInclude Include="..\include\baoyuan\scif2_define.h" />
     <ClInclude Include="..\source\busin_log.h" />
+    <ClInclude Include="..\source\carve_common_lib.h" />
     <ClInclude Include="..\source\CBaoyuan_Lib_Tool.h" />
     <ClInclude Include="..\source\CCarve.h" />
     <ClInclude Include="..\source\CDevice.h" />
@@ -226,6 +228,7 @@ copy "$(ProjectDir)\..\lib64\boost\*" "$(SolutionDir)$(Platform)\$(Configuration
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\source\carve_common_lib.cpp" />
     <ClCompile Include="..\source\CBaoyuan_Lib_Tool.cpp" />
     <ClCompile Include="..\source\CCarve.cpp" />
     <ClCompile Include="..\source\log_base.cpp" />

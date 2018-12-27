@@ -37,6 +37,9 @@
     <Filter Include="源文件\device">
       <UniqueIdentifier>{d7c9b6c6-9b46-4f66-a479-bbaaa0655111}</UniqueIdentifier>
     </Filter>
+    <Filter Include="头文件\carve_common_lib">
+      <UniqueIdentifier>{0454903f-e232-4223-8981-8d8164baa736}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -78,6 +81,9 @@
     <ClInclude Include="..\source\CDevice.h">
       <Filter>头文件\device</Filter>
     </ClInclude>
+    <ClInclude Include="..\source\carve_common_lib.h">
+      <Filter>头文件\carve_common_lib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\source\log_base.cpp">
@@ -97,6 +103,9 @@
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>源文件\dlg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\carve_common_lib.cpp">
+      <Filter>头文件\carve_common_lib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

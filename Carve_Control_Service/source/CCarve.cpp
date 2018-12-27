@@ -19,6 +19,7 @@
 #include "CBaoyuan_Lib_Tool.h"
 #include "busin_log.h"
 #include "utils/msp_errors.h"
+#include <json/json.h>
 #ifdef _WINDOWS
 #define __CLASS_FUNCTION__ ((std::string(__FUNCTION__)).c_str()) 
 #else
@@ -34,9 +35,30 @@ int CCarve::connect(string& str_kernel_err_reason)
 		businlog_warn("%s | carve ip:%s is connected.", __CLASS_FUNCTION__, m_str_ip.c_str());
 		return MSP_SUCCESS;
 	}
-	bool bSuccess = CBaoyuan_Lib::instance()->create_connection(m_nConn_idx, m_str_ip, str_kernel_err_reason);
-	businlog_error_return(bSuccess, ("%s | fail to connect carve, ip:%s, conn idx:%d, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), m_nConn_idx, str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
+	//构造连接参数
+	Json::Value json_conn_value;
+	json_conn_value[ms_str_factory_type_key] = m_efactory_type;
+	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_efactory_type)
+	{
+		//宝元库所需要的参数
+		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
+		json_conn_value[ms_str_ip_key] = m_str_ip;
+	}
+	else if(false)
+	{
+		//TODO::其他厂商
+	}
+	else
+	{
+		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
+			<< m_efactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+	}
+	
+//    bool bSuccess = CBaoyuan_Lib::instance()->create_connection(m_nConn_idx, m_str_ip, str_kernel_err_reason);
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->connect(json_conn_value, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to connect carve, param in json:%s, reason:%s"
+		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
 	m_bConnected = true;
 	return MSP_SUCCESS;
 }
@@ -47,9 +69,28 @@ int CCarve::disconnect(string& str_kernel_err_reason)
 	//判定当前状态
 	businlog_error_return_err_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
 		<<" is not connected", str_kernel_err_reason, MSP_ERROR_FAIL);
-	bool bSuccess = CBaoyuan_Lib::instance()->disconnect(m_nConn_idx, str_kernel_err_reason);
-	businlog_error_return(bSuccess, ("%s | fail to disconnect carve, ip:%s, conn idx:%d, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), m_nConn_idx, str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
+	//构造参数
+	Json::Value json_conn_value;
+	json_conn_value[ms_str_factory_type_key] = m_efactory_type;
+	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_efactory_type)
+	{
+		//宝元库所需要的参数
+		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
+	}
+	else if(false)
+	{
+		//TODO::其他厂商
+	}
+	else
+	{
+		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
+			<< m_efactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+	}
+
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->disconnect(json_conn_value, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to disconnect carve, params in json:%s, reason:%s"
+		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
 	//成功断开，则更新状态
 	m_bConnected = false;
 	return MSP_SUCCESS;
@@ -61,9 +102,31 @@ int CCarve::set_continue_status(unsigned char nStatus, unsigned short nMax_wait_
 	businlog_error_return_err_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
 		<<" is not connected", str_kernel_err_reason, MSP_ERROR_INVALID_OPERATION);
 
-	bool bSuccess = CBaoyuan_Lib::instance()->set_continue_status(m_nConn_idx, nStatus, nMax_wait_time, str_kernel_err_reason);
-	businlog_error_return(bSuccess, ("%s | fail to set continue status, ip:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
+	//构造参数
+	Json::Value json_conn_value;
+	json_conn_value[ms_str_factory_type_key] = m_efactory_type;
+	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_efactory_type)
+	{
+		//宝元库所需要的参数
+		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
+		json_conn_value[ms_str_status_key] = nStatus;
+		json_conn_value[ms_str_max_wait_time_key] =  nMax_wait_time;
+	}
+	else if(false)
+	{
+		//TODO::其他厂商
+	}
+	else
+	{
+		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
+			<< m_efactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+	}
+
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->set_continue_status(json_conn_value, str_kernel_err_reason);
+//	bool bSuccess = CBaoyuan_Lib::instance()->set_continue_status(m_nConn_idx, nStatus, nMax_wait_time, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to set continue status, ip:%s, json info:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
 	return MSP_SUCCESS;
 }
 
@@ -73,9 +136,30 @@ int CCarve::reset(unsigned short nMax_wait_time, string& str_kernel_err_reason)
 	businlog_error_return_err_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
 		<<" is not connected", str_kernel_err_reason, MSP_ERROR_INVALID_OPERATION);
 
-	bool bSuccess = CBaoyuan_Lib::instance()->reset_carve(m_nConn_idx, nMax_wait_time, str_kernel_err_reason);
-	businlog_error_return(bSuccess, ("%s | fail to reset carve, ip:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
+	//构造参数
+	Json::Value json_conn_value;
+	json_conn_value[ms_str_factory_type_key] = m_efactory_type;
+	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_efactory_type)
+	{
+		//宝元库所需要的参数
+		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
+		json_conn_value[ms_str_max_wait_time_key] =  nMax_wait_time;
+	}
+	else if(false)
+	{
+		//TODO::其他厂商
+	}
+	else
+	{
+		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
+			<< m_efactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+	}
+
+
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->reset_carve(json_conn_value, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to reset carve, ip:%s, json info:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
 	return MSP_SUCCESS;
 }
 
@@ -88,7 +172,28 @@ int CCarve::start(const string& str_nc_file_path, unsigned short nMax_wait_time,
 	businlog_error_return_err_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
 		<<" is not connected", str_kernel_err_reason, MSP_ERROR_INVALID_OPERATION);
 
-	bool bSuccess = CBaoyuan_Lib::instance()->start(m_nConn_idx, str_nc_file_path, nMax_wait_time, str_kernel_err_reason);
+	//构造参数
+	Json::Value json_conn_value;
+	json_conn_value[ms_str_factory_type_key] = m_efactory_type;
+	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_efactory_type)
+	{
+		//宝元库所需要的参数
+		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
+		json_conn_value[ms_str_file_path_key] =  str_nc_file_path;
+		json_conn_value[ms_str_max_wait_time_key] =  nMax_wait_time;
+	}
+	else if(false)
+	{
+		//TODO::其他厂商
+	}
+	else
+	{
+		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
+			<< m_efactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+	}
+
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->start(json_conn_value, str_kernel_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to start carve to engrave, ip:%s, reason:%s"
 		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
 	return MSP_SUCCESS;
@@ -100,9 +205,29 @@ int CCarve::pause(unsigned short nMax_wait_time, string& str_kernel_err_reason)
 	businlog_error_return_err_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
 		<<" is not connected", str_kernel_err_reason, MSP_ERROR_INVALID_OPERATION);
 
-	bool bSuccess = CBaoyuan_Lib::instance()->pause(m_nConn_idx, nMax_wait_time, str_kernel_err_reason);
-	businlog_error_return(bSuccess, ("%s | fail to pause carve, ip:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
+	//构造参数
+	Json::Value json_conn_value;
+	json_conn_value[ms_str_factory_type_key] = m_efactory_type;
+	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_efactory_type)
+	{
+		//宝元库所需要的参数
+		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
+		json_conn_value[ms_str_max_wait_time_key] =  nMax_wait_time;
+	}
+	else if(false)
+	{
+		//TODO::其他厂商
+	}
+	else
+	{
+		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
+			<< m_efactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+	}
+
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->pause(json_conn_value, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to pause carve, ip:%s, json info:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
 	return MSP_SUCCESS;
 }
 
@@ -112,28 +237,54 @@ int CCarve::upload_1_file(const string& str_file_path, string& str_kernel_err_re
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
 	businlog_error_return_err_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
 		<<" is not connected", str_kernel_err_reason, MSP_ERROR_INVALID_OPERATION);
-	//查询一下连接状态
-	int nStatus = CBaoyuan_Lib::instance()->get_status(m_nConn_idx, nStatus, str_kernel_err_reason);
-	if (SC_CONN_STATE_OK != nStatus && SC_CONN_STATE_CONNECTING != nStatus)
+	
+	//构造参数
+	Json::Value json_conn_value;
+	json_conn_value[ms_str_factory_type_key] = m_efactory_type;
+	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_efactory_type)
 	{
-		businlog_error("%s | status of connection is %d, ip:%s, now to reconnect", __CLASS_FUNCTION__, nStatus, m_str_ip.c_str());
-		//重新连接
-		businlog_error_return(CBaoyuan_Lib::instance()->create_connection(m_nConn_idx, m_str_ip, str_kernel_err_reason)
-			, ("%s | fail to reconnect to ip:%s, reason:%s", __CLASS_FUNCTION__, m_str_ip.c_str()
-			, str_kernel_err_reason.c_str()), MSP_ERROR_FAIL)
+		//宝元库所需要的参数
+		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
+		json_conn_value[ms_str_file_path_key] = str_file_path;
+	}
+	else if(false)
+	{
+		//TODO::其他厂商
+	}
+	else
+	{
+		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
+			<< m_efactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
 	}
 
 	//上传文件
-	bool bSuccess = CBaoyuan_Lib::instance()->upload_1file(m_nConn_idx, str_file_path, str_kernel_err_reason);
-	businlog_error_return(bSuccess, ("%s | fail to upload file, carve ip:%s, file path:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_file_path.c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->upload_1file(json_conn_value, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to upload file, carve ip:%s, file path:%s, json info:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_file_path.c_str(), json_conn_value.toStyledString().c_str()
+		, str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
 	return MSP_SUCCESS;
 }
+
+const string CCarve::ms_str_factory_type_key = "factory_type";
+
+const string CCarve::ms_str_carve_type_key = "carve_type";
+
+const string CCarve::ms_str_conn_idx_key = "conn_idx";
+
+const string CCarve::ms_str_ip_key = "ip";
+
+const string CCarve::ms_str_file_path_key = "file_path";
+
+const string CCarve::ms_str_status_key = "status";
+
+const string CCarve::ms_str_max_wait_time_key = "max_wait_time";
 
 CCarve::CCarve(unsigned short nConn_idx, const string& str_ip) 
 	: CDevice(ECARVE, str_ip)
 	, m_nConn_idx(nConn_idx)
 	, m_bConnected(false)
+	, m_efactory_type(CARVE_FACTORY_TYPE_BAOYUAN) //TODO:临时这么写，后面由参数传入
 {
 
 }

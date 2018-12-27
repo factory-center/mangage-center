@@ -27,6 +27,7 @@ extern "C" {
 //引用C++头文件：先是标准库头文件，后是项目头文件
 #include "CDevice.h"
 #include "boost_common.h"
+#include "carve_common_lib.h"
 //宏定义
 
 //类型定义
@@ -43,18 +44,20 @@ public:
 	int upload_1_file(const string& str_file_path, string& str_kernel_err_reason);
 	unsigned short Conn_idx() const { return m_nConn_idx; }
 	void Conn_idx(unsigned short val) { m_nConn_idx = val; }
-	
+	static const string ms_str_factory_type_key;
+	static const string ms_str_carve_type_key;
+	static const string ms_str_conn_idx_key;
+	static const string ms_str_ip_key;
+	static const string ms_str_file_path_key;
+	static const string ms_str_status_key;
+	static const string ms_str_max_wait_time_key;
 protected:
 	CCarve();
-	//判定连线序号是否合法
-	bool is_valid(short nServerIdx)
-	{
-		//todo
-		return true;
-	}
 private:
 	unsigned short m_nConn_idx;//一个雕刻机对应一个连接编号，唯一标识一个控制器，此值必须小于ConnectNum，取值范围[0, ConnectNum-1]
     Uni_Mutex m_mutex_for_cmd; //同一时刻只能执行一个命令
-	bool m_bConnected; //雕刻机当前是否连接正常
+	bool m_bConnected; //雕刻机当前是否连接正常。由于每次只能执行一个命令，故无需给其增加锁
+	ECARVE_FACTORY_TYPE m_efactory_type; //雕刻机厂商类型
+	string m_str_carve_type; //设备型号
 };
 //函数原型定义

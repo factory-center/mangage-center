@@ -20,6 +20,8 @@
 #include "utils/msp_errors.h"
 #include "busin_log.h"
 #include "boost/filesystem.hpp"
+#include <json/json.h>
+#include "CCarve.h"
 #ifdef _WINDOWS
 #define __CLASS_FUNCTION__ ((std::string(__FUNCTION__)).c_str()) 
 #else
@@ -31,13 +33,6 @@ const int MIN_CONNECTIONS_NUM = 0;
 CBaoyuan_Lib* CBaoyuan_Lib::instance()
 {
 	return ms_pInstance;
-}
-
-int CBaoyuan_Lib::test()
-{
-	printf("%s | %u\n", __FUNCTION__, __LINE__);
-	businlog_crit("%s | %u", __FUNCTION__, __LINE__);
-	return MSP_SUCCESS;
 }
 
 bool CBaoyuan_Lib::init(int nMakerID, const string& str_key, unsigned int nConnectNum, unsigned int MemSizeR /*= 100000*/)
@@ -104,10 +99,21 @@ void CBaoyuan_Lib::fini()
 	}
 }
 
-bool CBaoyuan_Lib::create_connection(unsigned short nConn_idx, const string& str_carve_ip, string& str_kernel_err_reason)
+bool CBaoyuan_Lib::create_connection(const Json::Value& json_conn_value, string& str_kernel_err_reason)
 {
+
 	businlog_tracer_perf(CBaoyuan_Lib::create_connection);
 	//判定参数合法性
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, str_kernel_err_reason, false);
+
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_ip_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_ip_key
+		, str_kernel_err_reason, false);
+
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+	const string str_carve_ip = json_conn_value[CCarve::ms_str_ip_key].asString(); 
 	businlog_error_return_err_reason(nConn_idx >= 0 && nConn_idx < m_sDLL_setting.ConnectNum
 		, __CLASS_FUNCTION__ << " | Invalid Connection index:" << nConn_idx << ", must be [0," << m_sDLL_setting.ConnectNum - 1
 		<< "]", str_kernel_err_reason, false);
@@ -184,9 +190,15 @@ bool CBaoyuan_Lib::create_connection(unsigned short nConn_idx, const string& str
 }
 
 
-bool CBaoyuan_Lib::disconnect(unsigned short nConn_idx, string& str_kernel_err_reason)
+bool CBaoyuan_Lib::disconnect(const Json::Value& json_conn_value, string& str_kernel_err_reason)
 {
 	//判定参数合法性
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, str_kernel_err_reason, false);
+
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason)
 		, ("%s | Invalid conn index:%d, reason:%s", __CLASS_FUNCTION__, nConn_idx, str_kernel_err_reason.c_str()), false);
 	int nRet_baoyuan = m_sc2_obj.Disconnect(nConn_idx);
@@ -195,10 +207,18 @@ bool CBaoyuan_Lib::disconnect(unsigned short nConn_idx, string& str_kernel_err_r
 	return true;
 }
 
-bool CBaoyuan_Lib::get_status(unsigned short nConn_idx, int& nStatus, string& str_kernel_err_reason)
+bool CBaoyuan_Lib::get_connect_status(const Json::Value& json_conn_value, int& nStatus, string& str_kernel_err_reason)
 {
+	//判定参数合法性
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, str_kernel_err_reason, false);
+
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason)
 		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+
 	//------設定要輪詢的內容
 	m_sc2_obj.LReadBegin(nConn_idx);
 	m_sc2_obj.LReadNR(nConn_idx, 23004, 2);
@@ -206,7 +226,7 @@ bool CBaoyuan_Lib::get_status(unsigned short nConn_idx, int& nStatus, string& st
 	
 //	m_sc2_obj.MainProcess();
 	nStatus = m_sc2_obj.GetConnectionMsg(nConn_idx, SCIF_CONNECT_STATE);
-	businlog_error_return_err_reason(SC_CONN_STATE_OK == nStatus, __CLASS_FUNCTION__ << " | Connect is over, conn idx:" 
+	businlog_error_return_err_reason(SC_CONN_STATE_OK == nStatus || SC_CONN_STATE_CONNECTING == nStatus, __CLASS_FUNCTION__ << " | Connect is over, conn idx:" 
 		<< nConn_idx << ", status now:" << nStatus, str_kernel_err_reason, false);
 	return true;
 }
@@ -219,19 +239,48 @@ bool CBaoyuan_Lib::confirm_task(unsigned short nConn_idx, size_t nMax_wait_time,
 	return set_RBit(nConn_idx, nAddr, nBit_idx, nBit_value, nMax_wait_time, str_kernel_err_reason);
 }
 
-bool CBaoyuan_Lib::set_continue_status(unsigned short nConn_idx, unsigned char nStatus, unsigned short nMax_wait_time, string& str_kernel_err_reason)
+bool CBaoyuan_Lib::set_continue_status(const Json::Value& json_conn_value, string& str_kernel_err_reason)
 {
+	//判定参数合法性
+	//判定是否含有conn idx
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, str_kernel_err_reason, false);
+	//判定是否含有状态
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_status_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_status_key
+		, str_kernel_err_reason, false);
+	//判定是否含有最大超时时间
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_max_wait_time_key
+		, str_kernel_err_reason, false);
 
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+	int nStatus = json_conn_value[CCarve::ms_str_status_key].asInt();
+	unsigned short nMax_wait_time = json_conn_value[CCarve::ms_str_max_wait_time_key].asInt();
 	//		ResetBaoyuanRBit(1040000, 0);
 	return set_RBit(nConn_idx, 1040000, 0, nStatus, nMax_wait_time, str_kernel_err_reason);
 }
 
-bool CBaoyuan_Lib::reset_carve(unsigned short nConn_idx, unsigned short nMax_wait_time, string& str_kernel_err_reason)
+bool CBaoyuan_Lib::reset_carve(const Json::Value& json_conn_value, string& str_kernel_err_reason)
 {
 
 	// 		ret=SetBaoyuanRBit(20000, 0);
 	// 		Sleep(100);
 	// 		ResetBaoyuanRBit(20000, 0);
+	//判定是否含有conn idx
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, str_kernel_err_reason, false);
+
+	//判定是否含有最大超时时间
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_max_wait_time_key
+		, str_kernel_err_reason, false);
+
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+	unsigned short nMax_wait_time = json_conn_value[CCarve::ms_str_max_wait_time_key].asInt();
+
 	bool bSuccess = set_RBit(nConn_idx, 20000, 0, 1, nMax_wait_time, str_kernel_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
 	boost::this_thread::sleep(boost::posix_time::millisec(100));
@@ -240,11 +289,25 @@ bool CBaoyuan_Lib::reset_carve(unsigned short nConn_idx, unsigned short nMax_wai
 	return true;
 }
 
-bool CBaoyuan_Lib::pause(unsigned short nConn_idx, unsigned short nMax_wait_time, string& str_kernel_err_reason)
+bool CBaoyuan_Lib::pause(const Json::Value& json_conn_value, string& str_kernel_err_reason)
 {
 	// 		SetBaoyuanRBit(20000, 11);
 	// 		Sleep(200);
 	// 		ResetBaoyuanRBit(20000, 11);
+
+	//判定是否含有conn idx
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, str_kernel_err_reason, false);
+
+	//判定是否含有最大超时时间
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_max_wait_time_key
+		, str_kernel_err_reason, false);
+
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+	unsigned short nMax_wait_time = json_conn_value[CCarve::ms_str_max_wait_time_key].asInt();
+
 	bool bSuccess = set_RBit(nConn_idx, 20000, 11, 1, nMax_wait_time, str_kernel_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
 	boost::this_thread::sleep(boost::posix_time::millisec(100));
@@ -253,11 +316,29 @@ bool CBaoyuan_Lib::pause(unsigned short nConn_idx, unsigned short nMax_wait_time
 	return true;
 }
 
-bool CBaoyuan_Lib::start(unsigned short nConn_idx, const string& str_nc_file_path, unsigned short nMax_wait_time, string& str_kernel_err_reason)
+bool CBaoyuan_Lib::start(const Json::Value& json_conn_value, string& str_kernel_err_reason)
 {
 	// 		SetBaoyuanRString(17022,filename, 8*4);
 	// 		SetBaoyuanRValue(17002, 1);
 	// 		SetBaoyuanRBit(20000, 10);
+	//判定是否含有conn idx
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, str_kernel_err_reason, false);
+	//判定是否含有文件路径
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_file_path_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_file_path_key
+		, str_kernel_err_reason, false);
+
+	//判定是否含有最大超时时间
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_max_wait_time_key
+		, str_kernel_err_reason, false);
+
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+	const string& str_nc_file_path = json_conn_value[CCarve::ms_str_file_path_key].asString();
+	unsigned short nMax_wait_time = json_conn_value[CCarve::ms_str_max_wait_time_key].asInt();
+
 	//获取文件名（不含有扩展名）
 	boost::filesystem::path path_nc_file(str_nc_file_path);
 	//判定文件是否存在
@@ -278,13 +359,30 @@ bool CBaoyuan_Lib::start(unsigned short nConn_idx, const string& str_nc_file_pat
 	return true;
 }
 
-bool CBaoyuan_Lib::upload_1file(unsigned short nConn_idx, const string& str_file_path, string& str_kernel_err_reason)
+bool CBaoyuan_Lib::upload_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason)
 {
 	businlog_tracer_perf(CBaoyuan_Lib::upload_1file);
 	//判定参数合法性
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, str_kernel_err_reason, false);
+
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_file_path_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_file_path_key
+		, str_kernel_err_reason, false);
+
+	 int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+	 const string& str_file_path = json_conn_value[CCarve::ms_str_file_path_key].asString();
+
 	//nConn_idx值必須小於 scif_Init 函式初始化時，struct DLL_USE_SETTING 中 ConnectNum 所設定的連線數目。
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason)
 		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+
+	//查询一下连接状态
+	int nStatus = SC_CONN_STATE_DISCONNECT; 
+	bool bSuccess = get_connect_status(json_conn_value, nStatus, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to get connect status, json info:%s, reason:%s"
+		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_kernel_err_reason.c_str()), false);
 
 	//所有連線共用同一個檔案傳輸功能，需於傳輸前用 FtpSetConnection 函式設定所對應的連。
 	//設定 FTP 索引
@@ -369,7 +467,7 @@ bool CBaoyuan_Lib::stop_timer()
 
 /************************************
 * Method:    set_RBit
-* Brief:  将0或者1作为R值写入位址nAddr的nBitIdx位元位址
+* Brief:  判定参数合法性，如果合法，则将0或者1作为R值写入位址nAddr的nBitIdx位元位址
 * Access:    public 
 * Returns:   bool
 * Qualifier:

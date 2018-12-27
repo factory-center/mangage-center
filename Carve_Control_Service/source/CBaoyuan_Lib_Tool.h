@@ -29,36 +29,36 @@ extern "C" {
 #include "baoyuan/scif2_define.h"
 #include <string>
 #include "baoyuan/scif2.h"
+#include <json/json.h>
 //宏定义
 using std::string;
 //类型定义
-
+//宝元函数库
 class CBaoyuan_Lib 
 {
 public:
 	static CBaoyuan_Lib* instance();
-	int test();
 	//库相关
 	//初始化
 	bool init(int nMakerID, const string& str_key, unsigned int nConnectNum, unsigned int  MemSizeR = 100000);
 	//逆初始化
 	void fini();
 	//雕刻机相关指令
-	bool create_connection(unsigned short nConn_idx, const string& str_carve_ip, string& str_kernel_err_reason);
-	bool disconnect(unsigned short nConn_idx, string& str_kernel_err_reason);
-	bool get_status(unsigned short nConn_idx, int& nStatus, string& str_kernel_err_reason);
+	bool create_connection(const Json::Value& json_conn_value, string& str_kernel_err_reason);
+	bool disconnect(const Json::Value& json_conn_value, string& str_kernel_err_reason);
+	bool get_connect_status(const Json::Value& json_conn_value, int& nStatus, string& str_kernel_err_reason);
 
 	bool confirm_task(unsigned short nConn_idx, size_t nMax_wait_time, string& str_kernel_err_reason);
-	bool set_continue_status(unsigned short nConn_idx, unsigned char nStatus, unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	bool reset_carve(unsigned short nConn_idx, unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	bool pause(unsigned short nConn_idx, unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	bool start(unsigned short nConn_idx, const string& str_nc_file_path, unsigned short nMax_wait_time, string& str_kernel_err_reason);
+	bool set_continue_status(const Json::Value& json_conn_value, string& str_kernel_err_reason);
+	bool reset_carve(const Json::Value& json_conn_value, string& str_kernel_err_reason);
+	bool pause(const Json::Value& json_conn_value, string& str_kernel_err_reason);
+	bool start(const Json::Value& json_conn_value, string& str_kernel_err_reason);
     //NC文件相关
-	bool upload_1file(unsigned short nConn_idx, const string& str_file_path, string& str_kernel_err_reason);
+	bool upload_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	
 private:
 	CBaoyuan_Lib();
-	//析构函数为私有，使得其只能被其自己的垃圾工程释放
+	//是否其占有的资源。析构函数为私有，使得其只能被其自己的垃圾工程释放
 	~CBaoyuan_Lib(); 
 	CBaoyuan_Lib& operator=(const CBaoyuan_Lib&);
 	CBaoyuan_Lib(const CBaoyuan_Lib&);

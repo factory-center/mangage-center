@@ -3,10 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Carve_Control_Service", "Carve_Control_Service\Carve_Control_Service.vcxproj", "{9298EAB9-BFF4-4E80-AC5F-7AD088B5098C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib_json", "source\lib_json\lib_json.vcxproj", "{B84F7231-16CE-41D8-8C08-7B523FF4225B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
 		Debug|x64 = Debug|x64
+		Release_Od|Win32 = Release_Od|Win32
+		Release_Od|x64 = Release_Od|x64
 		Release|Win32 = Release|Win32
 		Release|x64 = Release|x64
 	EndGlobalSection
@@ -15,10 +19,26 @@ Global
 		{9298EAB9-BFF4-4E80-AC5F-7AD088B5098C}.Debug|Win32.Build.0 = Debug|Win32
 		{9298EAB9-BFF4-4E80-AC5F-7AD088B5098C}.Debug|x64.ActiveCfg = Debug|x64
 		{9298EAB9-BFF4-4E80-AC5F-7AD088B5098C}.Debug|x64.Build.0 = Debug|x64
+		{9298EAB9-BFF4-4E80-AC5F-7AD088B5098C}.Release_Od|Win32.ActiveCfg = Release|Win32
+		{9298EAB9-BFF4-4E80-AC5F-7AD088B5098C}.Release_Od|Win32.Build.0 = Release|Win32
+		{9298EAB9-BFF4-4E80-AC5F-7AD088B5098C}.Release_Od|x64.ActiveCfg = Release|x64
+		{9298EAB9-BFF4-4E80-AC5F-7AD088B5098C}.Release_Od|x64.Build.0 = Release|x64
 		{9298EAB9-BFF4-4E80-AC5F-7AD088B5098C}.Release|Win32.ActiveCfg = Release|Win32
 		{9298EAB9-BFF4-4E80-AC5F-7AD088B5098C}.Release|Win32.Build.0 = Release|Win32
 		{9298EAB9-BFF4-4E80-AC5F-7AD088B5098C}.Release|x64.ActiveCfg = Release|x64
 		{9298EAB9-BFF4-4E80-AC5F-7AD088B5098C}.Release|x64.Build.0 = Release|x64
+		{B84F7231-16CE-41D8-8C08-7B523FF4225B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B84F7231-16CE-41D8-8C08-7B523FF4225B}.Debug|Win32.Build.0 = Debug|Win32
+		{B84F7231-16CE-41D8-8C08-7B523FF4225B}.Debug|x64.ActiveCfg = Debug|x64
+		{B84F7231-16CE-41D8-8C08-7B523FF4225B}.Debug|x64.Build.0 = Debug|x64
+		{B84F7231-16CE-41D8-8C08-7B523FF4225B}.Release_Od|Win32.ActiveCfg = Release_Od|Win32
+		{B84F7231-16CE-41D8-8C08-7B523FF4225B}.Release_Od|Win32.Build.0 = Release_Od|Win32
+		{B84F7231-16CE-41D8-8C08-7B523FF4225B}.Release_Od|x64.ActiveCfg = Release_Od|x64
+		{B84F7231-16CE-41D8-8C08-7B523FF4225B}.Release_Od|x64.Build.0 = Release_Od|x64
+		{B84F7231-16CE-41D8-8C08-7B523FF4225B}.Release|Win32.ActiveCfg = Release|Win32
+		{B84F7231-16CE-41D8-8C08-7B523FF4225B}.Release|Win32.Build.0 = Release|Win32
+		{B84F7231-16CE-41D8-8C08-7B523FF4225B}.Release|x64.ActiveCfg = Release|x64
+		{B84F7231-16CE-41D8-8C08-7B523FF4225B}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
