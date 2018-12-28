@@ -70,8 +70,8 @@ BEGIN_MESSAGE_MAP(CCarve_Control_ServiceDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON2, &CCarve_Control_ServiceDlg::OnBnClickedButton2)
 	ON_BN_CLICKED(IDC_BUTTON3, &CCarve_Control_ServiceDlg::OnBnClickedButton3)
 	ON_BN_CLICKED(IDC_BUTTON4, &CCarve_Control_ServiceDlg::OnBnClickedButton4)
-	ON_BN_CLICKED(IDC_BUTTON5, &CCarve_Control_ServiceDlg::OnBnClickedButton5)
 	ON_BN_CLICKED(IDC_UPLOADFILE, &CCarve_Control_ServiceDlg::OnBnClickedUploadfile)
+	ON_BN_CLICKED(IDC_BUTTON6, &CCarve_Control_ServiceDlg::OnBnClickedButton6)
 END_MESSAGE_MAP()
 
 
@@ -209,6 +209,18 @@ int test_upload()
 		, __FUNCTION__, str_nc_file_path.c_str(), nConn_idx, str_kernel_err_reason.c_str()), ret);
 	return 0;
 }
+int test_query_status(string& str_carve_status_description)
+{
+	string str_kernel_err_reason;
+	ECARVE_STATUS_TYPE eCarve_status = CARVE_STATUS_OFFLINE;
+	int ret = carve_obj.get_carve_status(eCarve_status, str_kernel_err_reason);
+	businlog_error_return(0 == ret, ("%s | fail to get carve status, nConn:%d, reason:%s"
+		, __FUNCTION__, nConn_idx, str_kernel_err_reason.c_str()), ret);
+	//获取状态码对应的描述信息
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->get_carve_status_description(eCarve_status, str_carve_status_description, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to get carve status description", __FUNCTION__), -1);
+	return 0;
+}
 int test_disconnect()
 {
 	string str_kernel_err_reason;
@@ -303,7 +315,6 @@ void CCarve_Control_ServiceDlg::OnBnClickedButton5()
 void CCarve_Control_ServiceDlg::OnBnClickedUploadfile()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	MessageBox(_T("CCarve_Control_ServiceDlg::OnBnClickedUploadfile"));
 	int ret = test_upload();
 	if (ret)
 	{
@@ -314,4 +325,20 @@ void CCarve_Control_ServiceDlg::OnBnClickedUploadfile()
 		MessageBox(_T("upload file successfully"));
 	}
 
+}
+
+
+void CCarve_Control_ServiceDlg::OnBnClickedButton6()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	string str_carve_status_description;
+	int ret = test_query_status(str_carve_status_description);
+	if (ret)
+	{
+		MessageBox(_T("query carve status  failed"));
+	}
+	else
+	{
+		MessageBox(_T("query carve status successfully, carve status description:") + CString(str_carve_status_description.c_str()));
+	}
 }

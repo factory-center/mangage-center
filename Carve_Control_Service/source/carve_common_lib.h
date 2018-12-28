@@ -36,6 +36,20 @@ enum ECARVE_FACTORY_TYPE
 	CARVE_FACTORY_TYPE_MAX,
 };
 
+enum ECARVE_STATUS_TYPE
+{
+	CARVE_STATUS_MIN = 0, //最小非法值
+	CARVE_STATUS_OFFLINE, //雕刻机离线
+	CARVE_STATUS_ONLINE, //雕刻机在线
+	CARVE_STATUS_NOT_READY, //雕刻机未就绪
+	CARVE_STATUS_READY, //雕刻机就绪
+	CARVE_STATUS_ENGRAVING, //正在雕刻中
+	CARVE_STATUS_PAUSE, //雕刻机暂停
+	CARVE_STATUS_COMPLETED, //雕刻完成
+	CARVE_STATUS_ERR, //雕刻机故障中
+	CARVE_STATUS_MAX //最大非法值
+};
+
 //类型定义
 //雕刻机底层通用库，其根据设备信息决定具体使用哪个函数库
 class CCarve_Common_Lib_Tool
@@ -54,13 +68,14 @@ public:
 	bool reset_carve(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool pause(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool start(const Json::Value& json_conn_value, string& str_kernel_err_reason);
+	bool get_carve_status(const Json::Value& json_conn_value, ECARVE_STATUS_TYPE& eCommon_carver_status, string& str_kernel_err_reason);
+    bool get_carve_status_description(const ECARVE_STATUS_TYPE& eCommon_carver_status, string& str_carve_status_description, string& str_kernel_err_reason);
 protected:
 	bool get_carve_factory_and_type(const Json::Value& json_conn_value, int& nfactory_type, string& str_str_carve_type_key, string& str_kernel_err_reason);
-	CCarve_Common_Lib_Tool()
-	{
-
-	}
+	CCarve_Common_Lib_Tool();
 	~CCarve_Common_Lib_Tool();
+	
+	bool parse_baoyuan_carve_status_to_common(int nBaoyuan_carve_status, ECARVE_STATUS_TYPE& eCarve_common_status, string& str_kernel_err_reason);
 private:
 	CCarve_Common_Lib_Tool& operator=(const CCarve_Common_Lib_Tool&);
 	CCarve_Common_Lib_Tool(const CCarve_Common_Lib_Tool&);

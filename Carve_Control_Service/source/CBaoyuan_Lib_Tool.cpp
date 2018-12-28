@@ -40,7 +40,7 @@ bool CBaoyuan_Lib::init(int nMakerID, const string& str_key, unsigned int nConne
 	businlog_tracer_perf(CBaoyuan_Lib::init);
 	//参数校验
 	businlog_error_return(nConnectNum >= MIN_CONNECTIONS_NUM && nConnectNum <= MAX_CONNECTIONS_NUM
-		, ("%s | Invalid ConnectNum:%d, should be [1, %d].", __CLASS_FUNCTION__, nConnectNum, MAX_CONNECTIONS_NUM), false);
+		, ("%s | Invalid ConnectNum:%d, should be [%d, %d].", __CLASS_FUNCTION__, nConnectNum, MIN_CONNECTIONS_NUM, MAX_CONNECTIONS_NUM), false);
 
 	m_sDLL_setting.ConnectNum = nConnectNum; //連線數目
 	m_sDLL_setting.MemSizeR = MemSizeR; //一个控制器所对应的注册区域的内存大小
@@ -99,6 +99,15 @@ void CBaoyuan_Lib::fini()
 	}
 }
 
+/************************************
+* Method:    create_connection
+* Brief:  连接某个雕刻机
+* Access:    public 
+* Returns:   bool
+* Qualifier:
+*Parameter: const Json::Value & json_conn_value -[in]  含有键：连接号和ip地址
+*Parameter: string & str_kernel_err_reason -[in/out]  
+************************************/
 bool CBaoyuan_Lib::create_connection(const Json::Value& json_conn_value, string& str_kernel_err_reason)
 {
 
@@ -190,6 +199,15 @@ bool CBaoyuan_Lib::create_connection(const Json::Value& json_conn_value, string&
 }
 
 
+/************************************
+* Method:    disconnect
+* Brief:  断开某个雕刻机
+* Access:    public 
+* Returns:   bool
+* Qualifier:
+*Parameter: const Json::Value & json_conn_value -[in]  含有键：连线号
+*Parameter: string & str_kernel_err_reason -[in/out]  
+************************************/
 bool CBaoyuan_Lib::disconnect(const Json::Value& json_conn_value, string& str_kernel_err_reason)
 {
 	//判定参数合法性
@@ -207,6 +225,16 @@ bool CBaoyuan_Lib::disconnect(const Json::Value& json_conn_value, string& str_ke
 	return true;
 }
 
+/************************************
+* Method:    get_connect_status
+* Brief:  获取某个雕刻机的状态
+* Access:    public 
+* Returns:   bool
+* Qualifier:
+*Parameter: const Json::Value & json_conn_value -[in]  某个雕刻机对应的连线号
+*Parameter: int & nStatus -[in/out]  
+*Parameter: string & str_kernel_err_reason -[in/out]  
+************************************/
 bool CBaoyuan_Lib::get_connect_status(const Json::Value& json_conn_value, int& nStatus, string& str_kernel_err_reason)
 {
 	//判定参数合法性
@@ -225,6 +253,24 @@ bool CBaoyuan_Lib::get_connect_status(const Json::Value& json_conn_value, int& n
 	m_sc2_obj.LReadEnd(nConn_idx);
 	
 //	m_sc2_obj.MainProcess();
+	nStatus = m_sc2_obj.GetConnectionMsg(nConn_idx, SCIF_CONNECT_STATE);
+	businlog_error_return_err_reason(SC_CONN_STATE_OK == nStatus || SC_CONN_STATE_CONNECTING == nStatus, __CLASS_FUNCTION__ << " | Connect is over, conn idx:" 
+		<< nConn_idx << ", status now:" << nStatus, str_kernel_err_reason, false);
+	return true;
+}
+
+bool CBaoyuan_Lib::get_connect_status(int nConn_idx, int& nStatus, string& str_kernel_err_reason)
+{
+	//判定参数合法性
+	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason)
+		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+
+	//------設定要輪詢的內容
+	m_sc2_obj.LReadBegin(nConn_idx);
+	m_sc2_obj.LReadNR(nConn_idx, 23004, 2);
+	m_sc2_obj.LReadEnd(nConn_idx);
+
+	//	m_sc2_obj.MainProcess();
 	nStatus = m_sc2_obj.GetConnectionMsg(nConn_idx, SCIF_CONNECT_STATE);
 	businlog_error_return_err_reason(SC_CONN_STATE_OK == nStatus || SC_CONN_STATE_CONNECTING == nStatus, __CLASS_FUNCTION__ << " | Connect is over, conn idx:" 
 		<< nConn_idx << ", status now:" << nStatus, str_kernel_err_reason, false);
@@ -345,11 +391,11 @@ bool CBaoyuan_Lib::start(const Json::Value& json_conn_value, string& str_kernel_
 	businlog_error_return_err_reason(boost::filesystem::exists(path_nc_file), __CLASS_FUNCTION__ 
 		<< " | Can not find file:" << str_nc_file_path, str_kernel_err_reason, false);
 
-	string str_filename_without_ext = path_nc_file.stem().string();
-	bool bSuccess = set_RString(nConn_idx, 17022, str_filename_without_ext.size()
-		, str_filename_without_ext.c_str(), nMax_wait_time * 3, str_kernel_err_reason);
-	businlog_error_return(bSuccess, ("%s | fail to set RString, file name withou extend:%s, reason:%s"
-		, __CLASS_FUNCTION__, str_filename_without_ext.c_str(), str_kernel_err_reason.c_str()), false);
+	string str_filename = path_nc_file.filename().string();
+	bool bSuccess = set_RString(nConn_idx, 17022, str_filename.size()
+		, str_filename.c_str(), nMax_wait_time * 3, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to set RString, file name:%s, reason:%s"
+		, __CLASS_FUNCTION__, str_filename.c_str(), str_kernel_err_reason.c_str()), false);
 	bSuccess = set_RValue(nConn_idx,17002, 1, nMax_wait_time * 3, str_kernel_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to set RValue, reason:%s"
 		, __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
@@ -357,6 +403,21 @@ bool CBaoyuan_Lib::start(const Json::Value& json_conn_value, string& str_kernel_
 	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s"
 		, __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
 	return true;
+}
+
+bool CBaoyuan_Lib::get_carve_status(const Json::Value& json_conn_value, int& nCarve_status, string& str_kernel_err_reason)
+{
+	//判定是否含有conn idx
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, str_kernel_err_reason, false);
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+
+	//nConn_idx值必須小於 scif_Init 函式初始化時，struct DLL_USE_SETTING 中 ConnectNum 所設定的連線數目。
+	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason)
+		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+
+	return get_RValue(nConn_idx, 17003, nCarve_status, str_kernel_err_reason);
 }
 
 bool CBaoyuan_Lib::upload_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason)
@@ -397,7 +458,7 @@ bool CBaoyuan_Lib::upload_1file(const Json::Value& json_conn_value, string& str_
 	businlog_crit("%s | conn idx:%d, file name:%s, file path:%s"
 		, __CLASS_FUNCTION__, nConn_idx, file_boost_path.filename().string().c_str(), str_file_path.c_str());
 //	m_sc2_obj.MainProcess();
-	nRet_baoyuan = m_sc2_obj.FtpUpload1File(FTP_FOLDER_NCFILES, ""
+	nRet_baoyuan = m_sc2_obj.FtpUpload1File(FTP_FOLDER_RUN_NCFILES, ""
 		, (char*)file_boost_path.filename().string().c_str(), (char*)str_file_path.c_str());
 
 	businlog_error_return_err_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | fail to upload file:" << str_file_path
@@ -442,6 +503,33 @@ bool CBaoyuan_Lib::upload_1file(const Json::Value& json_conn_value, string& str_
 	return true;
 }
 
+bool CBaoyuan_Lib::parse_carve_status_to_description(const int nCarve_status, string& str_carve_status_description, string& str_kernel_err_reason)
+{
+	str_carve_status_description += "Carve ";
+	switch (nCarve_status)
+	{
+	case 0://未就绪
+		str_carve_status_description += "Not Ready";
+		break;
+	case 1: //已经就绪
+		str_carve_status_description += "Ready";
+		break;
+	case 2: //Cycle Start:雕刻中
+		str_carve_status_description += "Engraving";
+		break;
+	case 3: //Feed Hold : 加工暂停
+		str_carve_status_description += "Pause";
+		break;
+	case 4: //Block Stop:区段停止，運行一半，發生錯誤時，會是這個狀態
+		str_carve_status_description += "Error";
+		break;
+	default:
+		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | Invalid status value:" << nCarve_status
+			<< ", must be [0, 4]", str_kernel_err_reason, false);
+	}
+	return true;
+}
+
 bool CBaoyuan_Lib::start_timer(string& str_kernel_err_reason)
 {
 	m_bStop = false;
@@ -471,14 +559,14 @@ bool CBaoyuan_Lib::stop_timer()
 * Access:    public 
 * Returns:   bool
 * Qualifier:
-*Parameter: unsigned short nConn_idx -[in]  连接编号，其值小于总的连接数目，为-1时表示对所有连接进行操作
+*Parameter: int nConn_idx -[in]  连接编号，其值小于总的连接数目，为-1时表示对所有连接进行操作
 *Parameter: unsigned int nAddr -[in]  要寫入 R 值的位址
 *Parameter: unsigned char nBitIdx -[in] 要寫入 R 值的位元位址  
 *Parameter: unsigned char nBitValue -[in] 設定值，0 或 1
 *Parameter: size_t nMax_wait_time -[in] 执行命令的最大等待时间（ms）
 *Parameter: string & str_err_reason -[in/out]  
 ************************************/
-bool CBaoyuan_Lib::set_RBit(unsigned short nConn_idx, unsigned int nAddr, unsigned char nBitIdx, unsigned char nBitValue
+bool CBaoyuan_Lib::set_RBit(int nConn_idx, unsigned int nAddr, unsigned char nBitIdx, unsigned char nBitValue
 							, unsigned short nMax_wait_time, string& str_err_reason)
 {
 	businlog_tracer_perf(CBaoyuan_Lib::set_RBit);
@@ -529,7 +617,19 @@ bool CBaoyuan_Lib::set_RBit(unsigned short nConn_idx, unsigned int nAddr, unsign
 	return true;
 }
 
-bool CBaoyuan_Lib::set_RValue(unsigned short nConn_idx, unsigned int nAddr, unsigned int nVal, unsigned short nMax_wait_time, string& str_kernel_err_reason)
+/************************************
+* Method:    set_RValue
+* Brief:  写入一无符号整数到指定的R值中
+* Access:    private 
+* Returns:   bool ture:成功；false:失败
+* Qualifier:
+*Parameter: int nConn_idx -[in] 连线索引 
+*Parameter: unsigned int nAddr -[in]  要写入的地址
+*Parameter: unsigned int nVal -[in]  要写入的值
+*Parameter: unsigned short nMax_wait_time -[in] 最大等待时间，单位mm 
+*Parameter: string & str_kernel_err_reason -[out]  
+************************************/
+bool CBaoyuan_Lib::set_RValue(int nConn_idx, unsigned int nAddr, unsigned int nVal, unsigned short nMax_wait_time, string& str_kernel_err_reason)
 {
 	businlog_tracer_perf(CBaoyuan_Lib::set_RValue);
 	//检查参数合法性
@@ -565,14 +665,14 @@ bool CBaoyuan_Lib::set_RValue(unsigned short nConn_idx, unsigned int nAddr, unsi
 * Access:    private 
 * Returns:   bool true：成功；false：失败
 * Qualifier:
-*Parameter: unsigned short nConn_idx -[in]  连接索引
+*Parameter: int nConn_idx -[in]  连接索引, -1表示所有连接
 *Parameter: size_t nAddr -[in]  要寫入的資料位址
 *Parameter: size_t nBuff_size -[in]  要写入的数量，单位字节
 *Parameter: const char * pBuff -[in]  要写入的字符串
 *Parameter: unsigned short nMax_wait_time -[in]  超时时间，单位ms
 *Parameter: string & str_kernel_err_reason -[out] 出错原因 
 ************************************/
-bool CBaoyuan_Lib::set_RString(unsigned short nConn_idx, size_t nAddr, size_t nBuff_size, const char* pBuff, unsigned short nMax_wait_time, string& str_kernel_err_reason)
+bool CBaoyuan_Lib::set_RString(int nConn_idx, size_t nAddr, size_t nBuff_size, const char* pBuff, unsigned short nMax_wait_time, string& str_kernel_err_reason)
 {
 	businlog_tracer_perf(CBaoyuan_Lib::set_RString);
 	//检查参数合法性
@@ -605,7 +705,19 @@ bool CBaoyuan_Lib::set_RString(unsigned short nConn_idx, size_t nAddr, size_t nB
 	return true;
 }
 
-bool CBaoyuan_Lib::set_CValue(unsigned short nConn_idx, int nAddr, int nValue, unsigned short nMax_wait_time, string& str_kernel_err_reason)
+/************************************
+* Method:    set_CValue
+* Brief:  写入一个整数到Command中
+* Access:    private 
+* Returns:   bool
+* Qualifier:
+*Parameter: int nConn_idx -[in] 连线索引 
+*Parameter: int nAddr -[in]  要写入的地址
+*Parameter: int nValue -[in] 要写入的值 
+*Parameter: unsigned short nMax_wait_time -[in] 单位ms 
+*Parameter: string & str_kernel_err_reason -[in/out]  
+************************************/
+bool CBaoyuan_Lib::set_CValue(int nConn_idx, int nAddr, int nValue, unsigned short nMax_wait_time, string& str_kernel_err_reason)
 {
 	//参数合法性判定
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason), ("%s | err reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
@@ -633,6 +745,28 @@ bool CBaoyuan_Lib::set_CValue(unsigned short nConn_idx, int nAddr, int nValue, u
 	return true;
 }
 
+/************************************
+* Method:    get_RValue
+* Brief:  先判定雕刻机是否连接成功，如果连接成功，则读取R值
+* Access:    private 
+* Returns:   bool
+* Qualifier:
+*Parameter: int Conn_idx -[in/out]  
+*Parameter: int nAddr -[in/out]  
+*Parameter: int & nValue -[in/out]  
+*Parameter: string & str_kernel_err_reason -[in/out]  
+************************************/
+bool CBaoyuan_Lib::get_RValue(int Conn_idx, int nAddr, int& nValue, string& str_kernel_err_reason)
+{
+	//获取连接状态
+	int nStatus_connect = SC_CONN_STATE_DISCONNECT;
+	bool bSuccess = get_connect_status(Conn_idx, nStatus_connect, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | failed, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+	//读取数据
+	nValue = m_sc2_obj.memR(Conn_idx, nAddr);
+	return true;
+}
+
 CBaoyuan_Lib::CBaoyuan_Lib() 
 	: m_bAvailable(false)
 	, m_bStop(true)
@@ -656,12 +790,12 @@ CBaoyuan_Lib::~CBaoyuan_Lib()
 	fini();
 }
 
-bool CBaoyuan_Lib::is_valid_conn_idx(unsigned short nConn_idx, string& str_kernel_err_reason)
+bool CBaoyuan_Lib::is_valid_conn_idx(int nConn_idx, string& str_kernel_err_reason)
 {
 	//nConn_idx值必須小於 scif_Init 函式初始化時，struct DLL_USE_SETTING 中 ConnectNum 所設定的連線數目。
-	businlog_error_return_err_reason(nConn_idx >= 0 && nConn_idx < m_sDLL_setting.ConnectNum
-		, __CLASS_FUNCTION__ << " | Invalid connection index:" << nConn_idx << ", must be [0," 
-		<< m_sDLL_setting.ConnectNum - 1 << "]", str_kernel_err_reason, false);
+	businlog_error_return_err_reason(nConn_idx >= -1 && nConn_idx < m_sDLL_setting.ConnectNum
+		, __CLASS_FUNCTION__ << " | Invalid connection index:" << nConn_idx << ", must be [-1," 
+		<< (m_sDLL_setting.ConnectNum - 1) << "]", str_kernel_err_reason, false);
 	return true;
 }
 

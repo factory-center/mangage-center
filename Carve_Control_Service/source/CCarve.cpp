@@ -37,9 +37,9 @@ int CCarve::connect(string& str_kernel_err_reason)
 	}
 	//构造连接参数
 	Json::Value json_conn_value;
-	json_conn_value[ms_str_factory_type_key] = m_efactory_type;
+	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_efactory_type)
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -52,7 +52,7 @@ int CCarve::connect(string& str_kernel_err_reason)
 	else
 	{
 		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_efactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+			<< m_eFactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
 	}
 	
 //    bool bSuccess = CBaoyuan_Lib::instance()->create_connection(m_nConn_idx, m_str_ip, str_kernel_err_reason);
@@ -60,6 +60,7 @@ int CCarve::connect(string& str_kernel_err_reason)
 	businlog_error_return(bSuccess, ("%s | fail to connect carve, param in json:%s, reason:%s"
 		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
 	m_bConnected = true;
+	m_eLast_carve_status = CARVE_STATUS_ONLINE;
 	return MSP_SUCCESS;
 }
 
@@ -71,9 +72,9 @@ int CCarve::disconnect(string& str_kernel_err_reason)
 		<<" is not connected", str_kernel_err_reason, MSP_ERROR_FAIL);
 	//构造参数
 	Json::Value json_conn_value;
-	json_conn_value[ms_str_factory_type_key] = m_efactory_type;
+	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_efactory_type)
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -85,7 +86,7 @@ int CCarve::disconnect(string& str_kernel_err_reason)
 	else
 	{
 		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_efactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+			<< m_eFactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
 	}
 
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->disconnect(json_conn_value, str_kernel_err_reason);
@@ -93,6 +94,7 @@ int CCarve::disconnect(string& str_kernel_err_reason)
 		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
 	//成功断开，则更新状态
 	m_bConnected = false;
+	m_eLast_carve_status = CARVE_STATUS_OFFLINE;
 	return MSP_SUCCESS;
 }
 
@@ -104,9 +106,9 @@ int CCarve::set_continue_status(unsigned char nStatus, unsigned short nMax_wait_
 
 	//构造参数
 	Json::Value json_conn_value;
-	json_conn_value[ms_str_factory_type_key] = m_efactory_type;
+	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_efactory_type)
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -120,7 +122,7 @@ int CCarve::set_continue_status(unsigned char nStatus, unsigned short nMax_wait_
 	else
 	{
 		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_efactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+			<< m_eFactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
 	}
 
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->set_continue_status(json_conn_value, str_kernel_err_reason);
@@ -138,9 +140,9 @@ int CCarve::reset(unsigned short nMax_wait_time, string& str_kernel_err_reason)
 
 	//构造参数
 	Json::Value json_conn_value;
-	json_conn_value[ms_str_factory_type_key] = m_efactory_type;
+	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_efactory_type)
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -153,7 +155,7 @@ int CCarve::reset(unsigned short nMax_wait_time, string& str_kernel_err_reason)
 	else
 	{
 		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_efactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+			<< m_eFactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
 	}
 
 
@@ -174,9 +176,9 @@ int CCarve::start(const string& str_nc_file_path, unsigned short nMax_wait_time,
 
 	//构造参数
 	Json::Value json_conn_value;
-	json_conn_value[ms_str_factory_type_key] = m_efactory_type;
+	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_efactory_type)
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -190,7 +192,7 @@ int CCarve::start(const string& str_nc_file_path, unsigned short nMax_wait_time,
 	else
 	{
 		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_efactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+			<< m_eFactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
 	}
 
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->start(json_conn_value, str_kernel_err_reason);
@@ -207,9 +209,9 @@ int CCarve::pause(unsigned short nMax_wait_time, string& str_kernel_err_reason)
 
 	//构造参数
 	Json::Value json_conn_value;
-	json_conn_value[ms_str_factory_type_key] = m_efactory_type;
+	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_efactory_type)
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -222,7 +224,7 @@ int CCarve::pause(unsigned short nMax_wait_time, string& str_kernel_err_reason)
 	else
 	{
 		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_efactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+			<< m_eFactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
 	}
 
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->pause(json_conn_value, str_kernel_err_reason);
@@ -240,9 +242,9 @@ int CCarve::upload_1_file(const string& str_file_path, string& str_kernel_err_re
 	
 	//构造参数
 	Json::Value json_conn_value;
-	json_conn_value[ms_str_factory_type_key] = m_efactory_type;
+	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_efactory_type)
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -255,7 +257,7 @@ int CCarve::upload_1_file(const string& str_file_path, string& str_kernel_err_re
 	else
 	{
 		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_efactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+			<< m_eFactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
 	}
 
 	//上传文件
@@ -263,6 +265,46 @@ int CCarve::upload_1_file(const string& str_file_path, string& str_kernel_err_re
 	businlog_error_return(bSuccess, ("%s | fail to upload file, carve ip:%s, file path:%s, json info:%s, reason:%s"
 		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_file_path.c_str(), json_conn_value.toStyledString().c_str()
 		, str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
+	return MSP_SUCCESS;
+}
+
+int CCarve::get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& str_kernel_err_reason)
+{
+	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+	//构造连接参数
+	Json::Value json_conn_value;
+	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
+	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	{
+		//宝元库所需要的参数
+		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
+	}
+	else if(false)
+	{
+		//TODO::其他厂商
+	}
+	else
+	{
+		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
+			<< m_eFactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+	}
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->get_carve_status(json_conn_value, eCarve_common_status, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to get baoyuan carve status, json:%s, reason:%s"
+		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
+	//此时成功获取雕刻机状态
+	//之前状态为雕刻中且现在为就绪态，则修改状态为加工完成态
+	if (CARVE_STATUS_ENGRAVING == m_eLast_carve_status && CARVE_STATUS_READY == eCarve_common_status)
+	{
+		//将其设置为加工完成态
+		m_eLast_carve_status = eCarve_common_status = CARVE_STATUS_COMPLETED;
+	}
+	else
+	{
+		//使用新状态
+		m_eLast_carve_status = eCarve_common_status;
+	}
+	
 	return MSP_SUCCESS;
 }
 
@@ -284,7 +326,8 @@ CCarve::CCarve(unsigned short nConn_idx, const string& str_ip)
 	: CDevice(ECARVE, str_ip)
 	, m_nConn_idx(nConn_idx)
 	, m_bConnected(false)
-	, m_efactory_type(CARVE_FACTORY_TYPE_BAOYUAN) //TODO:临时这么写，后面由参数传入
+	, m_eFactory_type(CARVE_FACTORY_TYPE_BAOYUAN) //TODO:临时这么写，后面由参数传入
+	, m_eLast_carve_status(CARVE_STATUS_OFFLINE)
 {
 
 }

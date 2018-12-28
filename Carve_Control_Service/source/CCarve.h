@@ -42,6 +42,7 @@ public:
 	int start(const string& str_nc_file_path, unsigned short nMax_wait_time, string& str_kernel_err_reason);
 	int pause(unsigned short nMax_wait_time, string& str_kernel_err_reason);
 	int upload_1_file(const string& str_file_path, string& str_kernel_err_reason);
+	int get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& str_kernel_err_reason);
 	unsigned short Conn_idx() const { return m_nConn_idx; }
 	void Conn_idx(unsigned short val) { m_nConn_idx = val; }
 	static const string ms_str_factory_type_key;
@@ -54,10 +55,11 @@ public:
 protected:
 	CCarve();
 private:
-	unsigned short m_nConn_idx;//一个雕刻机对应一个连接编号，唯一标识一个控制器，此值必须小于ConnectNum，取值范围[0, ConnectNum-1]
+	int m_nConn_idx;//一个雕刻机对应一个连接编号，唯一标识一个控制器，此值必须小于ConnectNum，取值范围[0, ConnectNum-1]
     Uni_Mutex m_mutex_for_cmd; //同一时刻只能执行一个命令
 	bool m_bConnected; //雕刻机当前是否连接正常。由于每次只能执行一个命令，故无需给其增加锁
-	ECARVE_FACTORY_TYPE m_efactory_type; //雕刻机厂商类型
+	ECARVE_FACTORY_TYPE m_eFactory_type; //雕刻机厂商类型
 	string m_str_carve_type; //设备型号
+	ECARVE_STATUS_TYPE m_eLast_carve_status; //上一时刻雕刻机的状态
 };
 //函数原型定义

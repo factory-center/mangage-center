@@ -30,8 +30,8 @@ extern "C" {
 #include <string>
 #include "baoyuan/scif2.h"
 #include <json/json.h>
-//宏定义
 using std::string;
+//宏定义
 //类型定义
 //宝元函数库
 class CBaoyuan_Lib 
@@ -47,26 +47,28 @@ public:
 	bool create_connection(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool disconnect(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool get_connect_status(const Json::Value& json_conn_value, int& nStatus, string& str_kernel_err_reason);
-
+	bool get_connect_status(int nConn_idx, int& nStatus, string& str_kernel_err_reason);
 	bool confirm_task(unsigned short nConn_idx, size_t nMax_wait_time, string& str_kernel_err_reason);
 	bool set_continue_status(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool reset_carve(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool pause(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool start(const Json::Value& json_conn_value, string& str_kernel_err_reason);
+	bool get_carve_status(const Json::Value& json_conn_value, int& nCarve_status, string& str_kernel_err_reason);
     //NC文件相关
 	bool upload_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	
+	bool parse_carve_status_to_description(const int nCarve_status, string& str_carve_status_description, string& str_kernel_err_reason);
 private:
 	CBaoyuan_Lib();
 	//是否其占有的资源。析构函数为私有，使得其只能被其自己的垃圾工程释放
 	~CBaoyuan_Lib(); 
 	CBaoyuan_Lib& operator=(const CBaoyuan_Lib&);
 	CBaoyuan_Lib(const CBaoyuan_Lib&);
-	bool set_RBit(unsigned short nConn_idx, unsigned int nAddr, unsigned char nBitIdx, unsigned char nBitValue, unsigned short nMax_wait_time, string& str_err_reason);
-	bool set_RValue(unsigned short nConn_idx, unsigned int  nAddr, unsigned int nVal, unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	bool set_RString(unsigned short nConn_idx, size_t nAddr,  size_t nBuff_size, const char* pBuff, unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	bool set_CValue(unsigned short nConn_idx, int nAddr, int nValue, unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	bool is_valid_conn_idx(unsigned short nConn_idx, string& str_kernel_err_reason);
+	bool set_RBit(int nConn_idx, unsigned int nAddr, unsigned char nBitIdx, unsigned char nBitValue, unsigned short nMax_wait_time, string& str_err_reason);
+	bool set_RValue(int nConn_idx, unsigned int  nAddr, unsigned int nVal, unsigned short nMax_wait_time, string& str_kernel_err_reason);
+	bool set_RString(int nConn_idx, size_t nAddr,  size_t nBuff_size, const char* pBuff, unsigned short nMax_wait_time, string& str_kernel_err_reason);
+	bool set_CValue(int nConn_idx, int nAddr, int nValue, unsigned short nMax_wait_time, string& str_kernel_err_reason);
+	bool get_RValue(int Conn_idx, int nAddr, int& nValue, string& str_kernel_err_reason);
+	bool is_valid_conn_idx(int nConn_idx, string& str_kernel_err_reason);
 	string strerror_ftp(int nResult_ftp);
 	//定时器相关
 	//启动定时器
