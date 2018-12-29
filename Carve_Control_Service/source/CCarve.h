@@ -43,6 +43,8 @@ public:
 	int pause(unsigned short nMax_wait_time, string& str_kernel_err_reason);
 	int upload_1_file(const string& str_file_path, string& str_kernel_err_reason);
 	int get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& str_kernel_err_reason);
+	int stop_fast(unsigned short nMax_wait_time, string& str_kernel_err_reason);
+	int delete_1_file(const string& str_file_path, string& str_kernel_err_reason);
 	unsigned short Conn_idx() const { return m_nConn_idx; }
 	void Conn_idx(unsigned short val) { m_nConn_idx = val; }
 	static const string ms_str_factory_type_key;

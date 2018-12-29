@@ -354,9 +354,9 @@ bool CBaoyuan_Lib::pause(const Json::Value& json_conn_value, string& str_kernel_
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 	unsigned short nMax_wait_time = json_conn_value[CCarve::ms_str_max_wait_time_key].asInt();
 
-	bool bSuccess = set_RBit(nConn_idx, 20000, 11, 1, nMax_wait_time, str_kernel_err_reason);
-	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
-	boost::this_thread::sleep(boost::posix_time::millisec(100));
+ 	bool bSuccess = set_RBit(nConn_idx, 20000, 11, 1, nMax_wait_time, str_kernel_err_reason);
+ 	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+ 	boost::this_thread::sleep(boost::posix_time::millisec(100));
 	bSuccess = set_RBit(nConn_idx, 20000, 11, 0, nMax_wait_time, str_kernel_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
 	return true;
@@ -431,6 +431,38 @@ bool CBaoyuan_Lib::get_carve_status(const Json::Value& json_conn_value, int& nCa
 			nCarve_status =  5;
 	    }
 	}
+	return true;
+}
+
+/************************************
+* Method:    stop_fast
+* Brief:  急停
+* Access:    public 
+* Returns:   bool
+* Qualifier:
+*Parameter: const Json::Value & json_conn_value -[in/out]  
+*Parameter: string & str_kernel_err_reason -[in/out]  
+************************************/
+bool CBaoyuan_Lib::stop_fast(const Json::Value& json_conn_value, string& str_kernel_err_reason)
+{
+	//判定是否含有conn idx
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
+		, str_kernel_err_reason, false);
+
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_max_wait_time_key
+		, str_kernel_err_reason, false);
+
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+	unsigned short nMax_wait_time = json_conn_value[CCarve::ms_str_max_wait_time_key].asInt();
+
+	bool bSuccess = set_RBit(nConn_idx, 20000, 31, 1, nMax_wait_time, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+	boost::this_thread::sleep(boost::posix_time::millisec(20));
+	bSuccess = set_RBit(nConn_idx, 20000, 31, 0, nMax_wait_time, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+
 	return true;
 }
 
@@ -510,6 +542,84 @@ bool CBaoyuan_Lib::upload_1file(const Json::Value& json_conn_value, string& str_
 		}
 	}
 	//此时已经成功上传完成
+	return true;
+}
+
+bool CBaoyuan_Lib::delete_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason)
+{
+	businlog_tracer_perf(CBaoyuan_Lib::delete_1file);
+	//判定参数合法性
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
+		, str_kernel_err_reason, false);
+
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_file_path_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_file_path_key
+		, str_kernel_err_reason, false);
+
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+	const string& str_file_path = json_conn_value[CCarve::ms_str_file_path_key].asString();
+
+	//nConn_idx值必須小於 scif_Init 函式初始化時，struct DLL_USE_SETTING 中 ConnectNum 所設定的連線數目。
+	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason)
+		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+
+	//查询连接状态
+	int nStatus = SC_CONN_STATE_DISCONNECT; 
+	bool bSuccess = get_connect_status(json_conn_value, nStatus, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to get connect status, json info:%s, reason:%s"
+		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_kernel_err_reason.c_str()), false);
+
+	//所有連線共用同一個檔案傳輸功能，需於傳輸前用 FtpSetConnection 函式設定所對應的连接
+	//設定 FTP 索引
+	int nRet_baoyuan = m_sc2_obj.FtpSetConnection(nConn_idx);
+	businlog_error_return_err_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | fail to set ftp connection, conn idx:"
+		<< nConn_idx, str_kernel_err_reason, false);
+	//上傳一個檔案
+	boost::filesystem::path file_boost_path(str_file_path);
+	//判定文件是否存在
+	businlog_error_return_err_reason(boost::filesystem::exists(file_boost_path), __CLASS_FUNCTION__ << " | Can not find file:"
+		<< str_file_path << ", conn idx:" << nConn_idx, str_kernel_err_reason, false);
+	businlog_info("%s | conn idx:%d, file name:%s, file path:%s"
+		, __CLASS_FUNCTION__, nConn_idx, file_boost_path.filename().string().c_str(), str_file_path.c_str());
+	
+	nRet_baoyuan = m_sc2_obj.FtpDelete1File(FTP_FOLDER_RUN_NCFILES, "", (char*)file_boost_path.filename().string().c_str());
+
+	businlog_error_return_err_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | fail to delete file:" << str_file_path
+		<< ", conn idx:" << nConn_idx, str_kernel_err_reason, false);
+	//取得執行結果  ---  一個執行結果只會回傳一次,然後就被清除
+	size_t nCost_time_ms = 0; //耗费的时间
+	size_t nThreshold_time_ms = 2 * 60 * 60 * 1000; //时间阈值
+	size_t nWait_time_ms = 50; //每次休眠时间
+
+	//判定发送文件时，有没有超时，避免死循环
+	while (true)
+	{
+		//休眠一会
+		boost::this_thread::sleep(boost::posix_time::millisec(nWait_time_ms));
+		//检测ftp操作是否完成
+		nRet_baoyuan = m_sc2_obj.FtpCheckDone();
+		if ( 1 ==  nRet_baoyuan)
+		{//动作已经完成
+			//获取ftp操作结果
+			nRet_baoyuan = m_sc2_obj.GetLibraryMsg(SCIF_FTP_RESULT);
+			//检测是否操作成功，如果操作失败，则直接报错返回
+			businlog_error_return_err_reason(FTP_RESULT_SUCCESS == nRet_baoyuan, __CLASS_FUNCTION__ << " | ftp failed, conn idx:" 
+				<< nConn_idx << ", file name:" << file_boost_path.filename().string() << ", ret:"<< nRet_baoyuan 
+				<< ", ftp result note:" << strerror_ftp(nRet_baoyuan), str_kernel_err_reason, false);
+			//此时表明操作成功
+			return true;
+		} 
+		else
+		{//动作还未完成，则累加耗费时间
+			nCost_time_ms += nWait_time_ms;
+			//判定是否超时
+			businlog_error_return_err_reason(nCost_time_ms < nThreshold_time_ms, __CLASS_FUNCTION__
+				<< " | timeout to delete file:" << file_boost_path.filename().string() << ", cost time:" << nCost_time_ms 
+				<< " ms, conn idx:" << nConn_idx, str_kernel_err_reason, false);
+		}
+	}
+	//此时已经操作成功
 	return true;
 }
 

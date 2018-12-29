@@ -301,6 +301,73 @@ int CCarve::get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& s
 	return MSP_SUCCESS;
 }
 
+int CCarve::stop_fast(unsigned short nMax_wait_time, string& str_kernel_err_reason)
+{
+	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+	businlog_error_return_err_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
+		<<" is not connected", str_kernel_err_reason, MSP_ERROR_INVALID_OPERATION);
+
+	//构造参数
+	Json::Value json_conn_value;
+	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
+	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	{
+		//宝元库所需要的参数
+		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
+		json_conn_value[ms_str_max_wait_time_key] =  nMax_wait_time;
+	}
+	else if(false)
+	{
+		//TODO::其他厂商
+	}
+	else
+	{
+		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
+			<< m_eFactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+	}
+
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->stop_fast(json_conn_value, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to fast stop carve, ip:%s, json info:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
+	return MSP_SUCCESS;
+}
+
+int CCarve::delete_1_file(const string& str_file_path, string& str_kernel_err_reason)
+{
+	businlog_tracer_perf(CCarve::delete_1_file);
+	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+	businlog_error_return_err_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
+		<<" is not connected", str_kernel_err_reason, MSP_ERROR_INVALID_OPERATION);
+
+	//构造参数
+	Json::Value json_conn_value;
+	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
+	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	{
+		//宝元库所需要的参数
+		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
+		json_conn_value[ms_str_file_path_key] = str_file_path;
+	}
+	else if(false)
+	{
+		//TODO::其他厂商
+	}
+	else
+	{
+		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
+			<< m_eFactory_type, str_kernel_err_reason, MSP_ERROR_NOT_SUPPORT);
+	}
+
+	//上传文件
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->delete_1file(json_conn_value, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to delete file, carve ip:%s, file path:%s, json info:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_file_path.c_str(), json_conn_value.toStyledString().c_str()
+		, str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
+	return MSP_SUCCESS;
+}
+
 const string CCarve::ms_str_factory_type_key = "factory_type";
 
 const string CCarve::ms_str_carve_type_key = "carve_type";

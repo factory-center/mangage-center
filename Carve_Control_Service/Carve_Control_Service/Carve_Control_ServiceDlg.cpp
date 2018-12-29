@@ -72,6 +72,8 @@ BEGIN_MESSAGE_MAP(CCarve_Control_ServiceDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON4, &CCarve_Control_ServiceDlg::OnBnClickedButton4)
 	ON_BN_CLICKED(IDC_UPLOADFILE, &CCarve_Control_ServiceDlg::OnBnClickedUploadfile)
 	ON_BN_CLICKED(IDC_BUTTON6, &CCarve_Control_ServiceDlg::OnBnClickedButton6)
+	ON_BN_CLICKED(IDC_BUTTON7, &CCarve_Control_ServiceDlg::OnBnClickedButton7)
+	ON_BN_CLICKED(IDC_BUTTON8, &CCarve_Control_ServiceDlg::OnBnClickedButton8)
 END_MESSAGE_MAP()
 
 
@@ -245,6 +247,21 @@ int test_pause()
 	//暂停雕刻
 	return carve_obj.pause(1000, str_kernel_err_reason);
 }
+int test_stop_fast()
+{
+	string str_kernel_err_reason;
+	//暂停雕刻
+	return carve_obj.stop_fast(1000, str_kernel_err_reason);
+}
+int test_delete_file()
+{
+	string str_kernel_err_reason;
+	int ret = carve_obj.delete_1_file(str_nc_file_path, str_kernel_err_reason);
+	businlog_error_return(0 == ret, ("%s | fail to delete file:%s, nConn:%d, reason:%s"
+		, __FUNCTION__, str_nc_file_path.c_str(), nConn_idx, str_kernel_err_reason.c_str()), ret);
+	return 0;
+}
+
 //test end
 void CCarve_Control_ServiceDlg::OnBnClickedButton1()
 {
@@ -349,5 +366,35 @@ void CCarve_Control_ServiceDlg::OnBnClickedButton6()
 	else
 	{
 		MessageBox(_T("query carve status successfully, carve status description:") + CString(str_carve_status_description.c_str()));
+	}
+}
+
+
+void CCarve_Control_ServiceDlg::OnBnClickedButton7()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	int ret = test_stop_fast();
+	if (ret)
+	{
+		MessageBox(_T("fast stop failed"));
+	}
+	else
+	{
+		MessageBox(_T("fast stop successfully"));
+	}
+}
+
+
+void CCarve_Control_ServiceDlg::OnBnClickedButton8()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	int ret = test_delete_file();
+	if (ret)
+	{
+		MessageBox(_T("delete file failed"));
+	}
+	else
+	{
+		MessageBox(_T("delete file successfully"));
 	}
 }
