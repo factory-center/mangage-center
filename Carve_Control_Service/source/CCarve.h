@@ -60,6 +60,5 @@ private:
 	bool m_bConnected; //雕刻机当前是否连接正常。由于每次只能执行一个命令，故无需给其增加锁
 	ECARVE_FACTORY_TYPE m_eFactory_type; //雕刻机厂商类型
 	string m_str_carve_type; //设备型号
-	ECARVE_STATUS_TYPE m_eLast_carve_status; //上一时刻雕刻机的状态
 };
 //函数原型定义

@@ -66,7 +66,7 @@ public:
     IMEXPORT void CALBY LibrarySetDebug (int level);   //level : 0不顯示   1有錯誤才顯示   2通訊內容全部顯示(除錯用，通訊速度變成每秒一次)
     //--==========================取得內部資訊 =================================
     IMEXPORT int   CALBY GetLibraryMsg (int id );                   //取得一般的資訊
-    IMEXPORT int   CALBY GetConnectionMsg (int TgrConn, int MsgID);         //取得連線通訊的資訊
+    IMEXPORT int   CALBY GetConnectionMsg (int TgrConn, int MsgID);         //取得連線通訊的資訊，TgrConn不能为-1
     IMEXPORT void  CALBY GetConnectionError (int TgrConn, ERROR_MSG *Msg);  //取得錯誤訊息
 
     //===================區域網路中偵測主機功能=====================================

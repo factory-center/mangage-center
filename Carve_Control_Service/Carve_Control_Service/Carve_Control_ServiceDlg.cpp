@@ -279,6 +279,15 @@ void CCarve_Control_ServiceDlg::OnBnClickedButton2()
 void CCarve_Control_ServiceDlg::OnBnClickedButton3()
 {
 	// TODO: 在此添加控件通知处理程序代码
+	int ret = test_pause();
+	if (ret)
+	{
+		MessageBox(_T("pause failed"));
+	}
+	else
+	{
+		MessageBox(_T("pause successfully"));
+	}
 }
 
 

@@ -54,7 +54,7 @@ public:
 	bool pause(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool start(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool get_carve_status(const Json::Value& json_conn_value, int& nCarve_status, string& str_kernel_err_reason);
-    //NC文件相关
+	//NC文件相关
 	bool upload_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool parse_carve_status_to_description(const int nCarve_status, string& str_carve_status_description, string& str_kernel_err_reason);
 private:
@@ -68,7 +68,10 @@ private:
 	bool set_RString(int nConn_idx, size_t nAddr,  size_t nBuff_size, const char* pBuff, unsigned short nMax_wait_time, string& str_kernel_err_reason);
 	bool set_CValue(int nConn_idx, int nAddr, int nValue, unsigned short nMax_wait_time, string& str_kernel_err_reason);
 	bool get_RValue(int Conn_idx, int nAddr, int& nValue, string& str_kernel_err_reason);
+	bool get_RBit(int nConn_idx, int nAddr, int nBitIdx, int& nValue, string& str_kernel_err_reason);
 	bool is_valid_conn_idx(int nConn_idx, string& str_kernel_err_reason);
+	bool is_valid_addr(int nAddr, string& str_kernel_err_reason);
+	bool is_valid_bit_idx(int nBitIdx, string& str_kernel_err_reason);
 	string strerror_ftp(int nResult_ftp);
 	//定时器相关
 	//启动定时器

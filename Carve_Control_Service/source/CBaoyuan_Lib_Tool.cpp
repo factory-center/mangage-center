@@ -30,6 +30,7 @@
 
 const int MAX_CONNECTIONS_NUM = 255;
 const int MIN_CONNECTIONS_NUM = 0;
+const int ADDR_CARVE_COMPLETED = 500; //雕刻结束状态地址，A500
 CBaoyuan_Lib* CBaoyuan_Lib::instance()
 {
 	return ms_pInstance;
@@ -114,11 +115,11 @@ bool CBaoyuan_Lib::create_connection(const Json::Value& json_conn_value, string&
 	businlog_tracer_perf(CBaoyuan_Lib::create_connection);
 	//判定参数合法性
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
 		, str_kernel_err_reason, false);
 
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_ip_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_ip_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_ip_key
 		, str_kernel_err_reason, false);
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
@@ -194,6 +195,7 @@ bool CBaoyuan_Lib::create_connection(const Json::Value& json_conn_value, string&
 	m_sc2_obj.LReadNR(nConn_idx, 3006072, 1);
 	businlog_error_return_err_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | fail to read, line:" << __LINE__
 		, str_kernel_err_reason, false);
+	m_sc2_obj.LReadNA(nConn_idx, ADDR_CARVE_COMPLETED, 1);
 	m_sc2_obj.LReadEnd(nConn_idx);
 	return true;
 }
@@ -212,7 +214,7 @@ bool CBaoyuan_Lib::disconnect(const Json::Value& json_conn_value, string& str_ke
 {
 	//判定参数合法性
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
 		, str_kernel_err_reason, false);
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
@@ -239,7 +241,7 @@ bool CBaoyuan_Lib::get_connect_status(const Json::Value& json_conn_value, int& n
 {
 	//判定参数合法性
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
 		, str_kernel_err_reason, false);
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
@@ -247,30 +249,28 @@ bool CBaoyuan_Lib::get_connect_status(const Json::Value& json_conn_value, int& n
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason)
 		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
 
-	//------設定要輪詢的內容
-	m_sc2_obj.LReadBegin(nConn_idx);
-	m_sc2_obj.LReadNR(nConn_idx, 23004, 2);
-	m_sc2_obj.LReadEnd(nConn_idx);
-	
-//	m_sc2_obj.MainProcess();
 	nStatus = m_sc2_obj.GetConnectionMsg(nConn_idx, SCIF_CONNECT_STATE);
 	businlog_error_return_err_reason(SC_CONN_STATE_OK == nStatus || SC_CONN_STATE_CONNECTING == nStatus, __CLASS_FUNCTION__ << " | Connect is over, conn idx:" 
 		<< nConn_idx << ", status now:" << nStatus, str_kernel_err_reason, false);
 	return true;
 }
 
+/************************************
+* Method:    get_connect_status
+* Brief:  获取某个雕刻机状态
+* Access:    public 
+* Returns:   bool
+* Qualifier:
+*Parameter: int nConn_idx -[in] 连接索引，不能为-1
+*Parameter: int & nStatus -[in/out]  
+*Parameter: string & str_kernel_err_reason -[in/out]  
+************************************/
 bool CBaoyuan_Lib::get_connect_status(int nConn_idx, int& nStatus, string& str_kernel_err_reason)
 {
 	//判定参数合法性
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason)
 		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
 
-	//------設定要輪詢的內容
-	m_sc2_obj.LReadBegin(nConn_idx);
-	m_sc2_obj.LReadNR(nConn_idx, 23004, 2);
-	m_sc2_obj.LReadEnd(nConn_idx);
-
-	//	m_sc2_obj.MainProcess();
 	nStatus = m_sc2_obj.GetConnectionMsg(nConn_idx, SCIF_CONNECT_STATE);
 	businlog_error_return_err_reason(SC_CONN_STATE_OK == nStatus || SC_CONN_STATE_CONNECTING == nStatus, __CLASS_FUNCTION__ << " | Connect is over, conn idx:" 
 		<< nConn_idx << ", status now:" << nStatus, str_kernel_err_reason, false);
@@ -290,15 +290,15 @@ bool CBaoyuan_Lib::set_continue_status(const Json::Value& json_conn_value, strin
 	//判定参数合法性
 	//判定是否含有conn idx
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
 		, str_kernel_err_reason, false);
 	//判定是否含有状态
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_status_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_status_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_status_key
 		, str_kernel_err_reason, false);
 	//判定是否含有最大超时时间
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_max_wait_time_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_max_wait_time_key
 		, str_kernel_err_reason, false);
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
@@ -316,12 +316,12 @@ bool CBaoyuan_Lib::reset_carve(const Json::Value& json_conn_value, string& str_k
 	// 		ResetBaoyuanRBit(20000, 0);
 	//判定是否含有conn idx
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
 		, str_kernel_err_reason, false);
 
 	//判定是否含有最大超时时间
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_max_wait_time_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_max_wait_time_key
 		, str_kernel_err_reason, false);
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
@@ -343,12 +343,12 @@ bool CBaoyuan_Lib::pause(const Json::Value& json_conn_value, string& str_kernel_
 
 	//判定是否含有conn idx
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
 		, str_kernel_err_reason, false);
 
 	//判定是否含有最大超时时间
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_max_wait_time_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_max_wait_time_key
 		, str_kernel_err_reason, false);
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
@@ -369,16 +369,16 @@ bool CBaoyuan_Lib::start(const Json::Value& json_conn_value, string& str_kernel_
 	// 		SetBaoyuanRBit(20000, 10);
 	//判定是否含有conn idx
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
 		, str_kernel_err_reason, false);
 	//判定是否含有文件路径
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_file_path_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_file_path_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_file_path_key
 		, str_kernel_err_reason, false);
 
 	//判定是否含有最大超时时间
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_max_wait_time_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_max_wait_time_key
 		, str_kernel_err_reason, false);
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
@@ -409,7 +409,7 @@ bool CBaoyuan_Lib::get_carve_status(const Json::Value& json_conn_value, int& nCa
 {
 	//判定是否含有conn idx
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
 		, str_kernel_err_reason, false);
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 
@@ -417,7 +417,21 @@ bool CBaoyuan_Lib::get_carve_status(const Json::Value& json_conn_value, int& nCa
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason)
 		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
 
-	return get_RValue(nConn_idx, 17003, nCarve_status, str_kernel_err_reason);
+	bool bSuccess = get_RValue(nConn_idx, 17003, nCarve_status, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to get R Value, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+	const int nCarve_ready = 1;
+	//当状态为Ready时，需要再次判定：细分为就绪太还是雕刻完成态
+	if (nCarve_ready == nCarve_status)
+	{
+		
+		//读取A500的值，判定其是否为1，为1，则为雕刻完成
+		int nValue = m_sc2_obj.memA(nConn_idx, ADDR_CARVE_COMPLETED);
+		if (1 == nValue)
+	    {//为雕刻完成态
+			nCarve_status =  5;
+	    }
+	}
+	return true;
 }
 
 bool CBaoyuan_Lib::upload_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason)
@@ -425,11 +439,11 @@ bool CBaoyuan_Lib::upload_1file(const Json::Value& json_conn_value, string& str_
 	businlog_tracer_perf(CBaoyuan_Lib::upload_1file);
 	//判定参数合法性
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_conn_idx_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
 		, str_kernel_err_reason, false);
 
 	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_file_path_key)
-		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", with key:" << CCarve::ms_str_file_path_key
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_file_path_key
 		, str_kernel_err_reason, false);
 
 	 int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
@@ -472,11 +486,7 @@ bool CBaoyuan_Lib::upload_1file(const Json::Value& json_conn_value, string& str_
 	while (true)
 	{
 		//休眠一会
-//		Sleep(50);
-//		businlog_crit("%s | start to wait", __CLASS_FUNCTION__);
 		boost::this_thread::sleep(boost::posix_time::millisec(nWait_time_ms));
-//		businlog_crit("%s | finish to wait", __CLASS_FUNCTION__);
-//		m_sc2_obj.MainProcess();
 		//检测ftp操作是否完成
 		nRet_baoyuan = m_sc2_obj.FtpCheckDone();
 		if ( 1 ==  nRet_baoyuan)
@@ -523,9 +533,12 @@ bool CBaoyuan_Lib::parse_carve_status_to_description(const int nCarve_status, st
 	case 4: //Block Stop:区段停止，運行一半，發生錯誤時，會是這個狀態
 		str_carve_status_description += "Error";
 		break;
+	case 5: //completed：雕刻完成（自定义的）
+		str_carve_status_description += "Completed";
+		break;
 	default:
 		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | Invalid status value:" << nCarve_status
-			<< ", must be [0, 4]", str_kernel_err_reason, false);
+			<< ", must be [0, 5]", str_kernel_err_reason, false);
 	}
 	return true;
 }
@@ -560,8 +573,8 @@ bool CBaoyuan_Lib::stop_timer()
 * Returns:   bool
 * Qualifier:
 *Parameter: int nConn_idx -[in]  连接编号，其值小于总的连接数目，为-1时表示对所有连接进行操作
-*Parameter: unsigned int nAddr -[in]  要寫入 R 值的位址
-*Parameter: unsigned char nBitIdx -[in] 要寫入 R 值的位元位址  
+*Parameter: unsigned int nAddr -[in]  要寫入 R 值的位址 
+*Parameter: unsigned char nBitIdx -[in] 要寫入 R 值的位元位址  [0, 31]
 *Parameter: unsigned char nBitValue -[in] 設定值，0 或 1
 *Parameter: size_t nMax_wait_time -[in] 执行命令的最大等待时间（ms）
 *Parameter: string & str_err_reason -[in/out]  
@@ -695,9 +708,14 @@ bool CBaoyuan_Lib::set_RString(int nConn_idx, size_t nAddr, size_t nBuff_size, c
 // 		, str_kernel_err_reason, false);
 	//寫入字串到 R
 	nRet_baoyuan = m_sc2_obj.DWriteRString(nConn_idx, nAddr, nBuff_size, (char*)pBuff);
-	businlog_error_return_err_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | fail to WriteRString, conn index:" << nConn_idx
-		 << ", addr:" << nAddr << ", buff size:" << nBuff_size, str_kernel_err_reason, false);
-	
+	if (0 == nRet_baoyuan)
+	{//失败
+		ERROR_MSG err_msg;
+		m_sc2_obj.GetConnectionError(nConn_idx, &err_msg);
+		businlog_error("%s | conn idx:%d, Error:%d", __CLASS_FUNCTION__, nConn_idx, err_msg.Error);
+		businlog_error_return_err_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | fail to WriteRString, conn index:" << nConn_idx
+			<< ", addr:" << nAddr << ", buff size:" << nBuff_size, str_kernel_err_reason, false);
+	}
 	//讓等待先前所設定的直接命令完成後，再繼續執行下去
 	nRet_baoyuan = m_sc2_obj.DWaitDone(nConn_idx, nMax_wait_time);
 	businlog_error_return_err_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | Time out to do cmd, conn idx:" 
@@ -747,7 +765,7 @@ bool CBaoyuan_Lib::set_CValue(int nConn_idx, int nAddr, int nValue, unsigned sho
 
 /************************************
 * Method:    get_RValue
-* Brief:  先判定雕刻机是否连接成功，如果连接成功，则读取R值
+* Brief:  先判定雕刻机是否连接成功，如果连接成功，则读取R值整数
 * Access:    private 
 * Returns:   bool
 * Qualifier:
@@ -758,12 +776,31 @@ bool CBaoyuan_Lib::set_CValue(int nConn_idx, int nAddr, int nValue, unsigned sho
 ************************************/
 bool CBaoyuan_Lib::get_RValue(int Conn_idx, int nAddr, int& nValue, string& str_kernel_err_reason)
 {
+	//参数合法性判定
+	businlog_error_return(is_valid_conn_idx(Conn_idx, str_kernel_err_reason), ("%s | err reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+
 	//获取连接状态
 	int nStatus_connect = SC_CONN_STATE_DISCONNECT;
 	bool bSuccess = get_connect_status(Conn_idx, nStatus_connect, str_kernel_err_reason);
 	businlog_error_return(bSuccess, ("%s | failed, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
 	//读取数据
 	nValue = m_sc2_obj.memR(Conn_idx, nAddr);
+	return true;
+}
+
+bool CBaoyuan_Lib::get_RBit(int nConn_idx, int nAddr, int nBitIdx, int& nValue, string& str_kernel_err_reason)
+{
+	//参数合法性判定
+	businlog_error_return(is_valid_conn_idx(nConn_idx, str_kernel_err_reason), ("%s | Invalid conn idx:%d, err reason:%s", __CLASS_FUNCTION__, nConn_idx, str_kernel_err_reason.c_str()), false);
+	businlog_error_return(is_valid_addr(nAddr, str_kernel_err_reason), ("%s | invalid addr:%d, reason:%s", __CLASS_FUNCTION__, nAddr, str_kernel_err_reason.c_str()), false);
+	businlog_error_return(is_valid_bit_idx(nBitIdx, str_kernel_err_reason), ("%s | invalid bitIdx:%d, reason:%s", __CLASS_FUNCTION__, nBitIdx, str_kernel_err_reason.c_str()), false);
+	//获取连接状态
+	int nStatus_connect = SC_CONN_STATE_DISCONNECT;
+	bool bSuccess = get_connect_status(nConn_idx, nStatus_connect, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | failed, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+
+	//读取数据
+	nValue = m_sc2_obj.memRBit(nConn_idx, nAddr, nBitIdx);
 	return true;
 }
 
@@ -796,6 +833,18 @@ bool CBaoyuan_Lib::is_valid_conn_idx(int nConn_idx, string& str_kernel_err_reaso
 	businlog_error_return_err_reason(nConn_idx >= -1 && nConn_idx < m_sDLL_setting.ConnectNum
 		, __CLASS_FUNCTION__ << " | Invalid connection index:" << nConn_idx << ", must be [-1," 
 		<< (m_sDLL_setting.ConnectNum - 1) << "]", str_kernel_err_reason, false);
+	return true;
+}
+
+bool CBaoyuan_Lib::is_valid_addr(int nAddr, string& str_kernel_err_reason)
+{
+	businlog_error_return_err_reason(nAddr >= 0, __CLASS_FUNCTION__ << " | invalid addr:" << nAddr << ", should be more than -1", str_kernel_err_reason, false);
+	return true;
+}
+
+bool CBaoyuan_Lib::is_valid_bit_idx(int nBitIdx, string& str_kernel_err_reason)
+{
+	businlog_error_return_err_reason(nBitIdx >=0 && nBitIdx < 32, __CLASS_FUNCTION__ << " | invalid bitIdx:" << nBitIdx << ", should be [0, 31]", str_kernel_err_reason, false);
 	return true;
 }
 
@@ -852,18 +901,11 @@ string CBaoyuan_Lib::strerror_ftp(int nResult_ftp)
 void CBaoyuan_Lib::svc()
 {
 	businlog_crit("%s | start thread successfully", __CLASS_FUNCTION__);
-	size_t nWait_time_ms = 20; //每次休眠时间
+	size_t nWait_time_ms = 100; //每次休眠时间，根据带宽、控制器数据、通讯即时性来设置，范围20-1000ms
 	while (false == m_bStop)
 	{
 		boost::this_thread::sleep(boost::posix_time::millisec(nWait_time_ms));
-		businlog_crit("%s | start do MainProcess", __CLASS_FUNCTION__);
 		int ret = m_sc2_obj.MainProcess();
-		businlog_crit("%s | finish do MainProcess", __CLASS_FUNCTION__);
-		if (false/*ret == 0*/)
-		{
-			businlog_error("%s | fail to MainProcess", __CLASS_FUNCTION__);
-			break;
-		}
 	}
 	businlog_warn("%s | ++++++++++++++++timer is over+++++++++++++", __CLASS_FUNCTION__);
 }

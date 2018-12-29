@@ -275,6 +275,9 @@ bool CCarve_Common_Lib_Tool::parse_baoyuan_carve_status_to_common(int nBaoyuan_c
 	case 4:
 		eCarve_common_status = CARVE_STATUS_ERR;
 		break;
+	case 5:
+		eCarve_common_status = CARVE_STATUS_COMPLETED;
+		break;
 	default:
 		businlog_error_return_err_reason(false, __CLASS_FUNCTION__ <<" | Not support baoyuan carve status:" 
 			<< nBaoyuan_carve_status, str_kernel_err_reason, false);
