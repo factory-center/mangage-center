@@ -44,6 +44,7 @@ public:
 	int upload_1_file(const string& str_file_path, string& str_kernel_err_reason);
 	int get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& str_kernel_err_reason);
 	int stop_fast(unsigned short nMax_wait_time, string& str_kernel_err_reason);
+	int cancel_fast_stop(unsigned short nMax_wait_time, string& str_kernel_err_reason);
 	int delete_1_file(const string& str_file_path, string& str_kernel_err_reason);
 	unsigned short Conn_idx() const { return m_nConn_idx; }
 	void Conn_idx(unsigned short val) { m_nConn_idx = val; }
@@ -56,6 +57,8 @@ public:
 	static const string ms_str_max_wait_time_key;
 protected:
 	CCarve();
+	CCarve(const CCarve&);
+	CCarve& operator=(const CCarve&);
 private:
 	int m_nConn_idx;//一个雕刻机对应一个连接编号，唯一标识一个控制器，此值必须小于ConnectNum，取值范围[0, ConnectNum-1]
     Uni_Mutex m_mutex_for_cmd; //同一时刻只能执行一个命令

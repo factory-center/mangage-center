@@ -242,6 +242,22 @@ bool CCarve_Common_Lib_Tool::stop_fast(const Json::Value& json_conn_value, strin
 	return false;
 }
 
+bool CCarve_Common_Lib_Tool::cancel_fast_stop(const Json::Value& json_conn_value, string& str_kernel_err_reason)
+{
+	//获取雕刻机厂商和设备型号信息
+	int nfactory_type = CARVE_FACTORY_TYPE_MAX;
+	string str_carve_type_key;
+	businlog_error_return(get_carve_factory_and_type(json_conn_value, nfactory_type, str_carve_type_key, str_kernel_err_reason)
+		, ("%s | fail to get carve factory and type, reason:%s"
+		, __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+	if (is_baoyuan(nfactory_type, str_carve_type_key))
+	{//是宝元
+		return CBaoyuan_Lib::instance()->cancel_fast_stop(json_conn_value, str_kernel_err_reason);
+	}
+	//TODO::判定是否为其他的库
+	return false;
+}
+
 bool CCarve_Common_Lib_Tool::delete_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason)
 {
 	//获取雕刻机厂商和设备型号信息

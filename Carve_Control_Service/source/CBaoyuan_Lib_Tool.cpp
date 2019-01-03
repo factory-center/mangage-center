@@ -459,10 +459,31 @@ bool CBaoyuan_Lib::stop_fast(const Json::Value& json_conn_value, string& str_ker
 
 	bool bSuccess = set_RBit(nConn_idx, 20000, 31, 1, nMax_wait_time, str_kernel_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
-	boost::this_thread::sleep(boost::posix_time::millisec(20));
-	bSuccess = set_RBit(nConn_idx, 20000, 31, 0, nMax_wait_time, str_kernel_err_reason);
+	boost::this_thread::sleep(boost::posix_time::millisec(100));
+//	bSuccess = set_RBit(nConn_idx, 20000, 31, 0, nMax_wait_time, str_kernel_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
 
+	return true;
+}
+
+bool CBaoyuan_Lib::cancel_fast_stop(const Json::Value& json_conn_value, string& str_kernel_err_reason)
+{
+	businlog_tracer_perf(CBaoyuan_Lib::cancel_fast_stop);
+	//ÅÐ¶¨ÊÇ·ñº¬ÓÐconn idx
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
+		, str_kernel_err_reason, false);
+
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_max_wait_time_key
+		, str_kernel_err_reason, false);
+
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+	unsigned short nMax_wait_time = json_conn_value[CCarve::ms_str_max_wait_time_key].asInt();
+
+	bool bSuccess = set_RBit(nConn_idx, 20000, 31, 0, nMax_wait_time, str_kernel_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+	boost::this_thread::sleep(boost::posix_time::millisec(100));
 	return true;
 }
 

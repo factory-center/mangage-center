@@ -74,6 +74,7 @@ BEGIN_MESSAGE_MAP(CCarve_Control_ServiceDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON6, &CCarve_Control_ServiceDlg::OnBnClickedButton6)
 	ON_BN_CLICKED(IDC_BUTTON7, &CCarve_Control_ServiceDlg::OnBnClickedButton7)
 	ON_BN_CLICKED(IDC_BUTTON8, &CCarve_Control_ServiceDlg::OnBnClickedButton8)
+	ON_BN_CLICKED(IDC_BUTTON_cancel_stop_fast, &CCarve_Control_ServiceDlg::OnBnClickedButtoncancelstopfast)
 END_MESSAGE_MAP()
 
 
@@ -250,8 +251,15 @@ int test_pause()
 int test_stop_fast()
 {
 	string str_kernel_err_reason;
-	//暂停雕刻
+	//急停
 	return carve_obj.stop_fast(1000, str_kernel_err_reason);
+}
+
+int test_cancel_stop_fast()
+{
+	string str_kernel_err_reason;
+	//取消急停
+	return carve_obj.cancel_fast_stop(1000, str_kernel_err_reason);
 }
 int test_delete_file()
 {
@@ -396,5 +404,20 @@ void CCarve_Control_ServiceDlg::OnBnClickedButton8()
 	else
 	{
 		MessageBox(_T("delete file successfully"));
+	}
+}
+
+
+void CCarve_Control_ServiceDlg::OnBnClickedButtoncancelstopfast()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	int ret = test_cancel_stop_fast();
+	if (ret)
+	{
+		MessageBox(_T("cancel fast stop failed"));
+	}
+	else
+	{
+		MessageBox(_T("cancel fast stop successfully"));
 	}
 }

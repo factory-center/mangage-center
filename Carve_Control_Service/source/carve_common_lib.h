@@ -71,6 +71,7 @@ public:
 	bool get_carve_status(const Json::Value& json_conn_value, ECARVE_STATUS_TYPE& eCommon_carver_status, string& str_kernel_err_reason);
     bool get_carve_status_description(const ECARVE_STATUS_TYPE& eCommon_carver_status, string& str_carve_status_description, string& str_kernel_err_reason);
     bool stop_fast(const Json::Value& json_conn_value, string& str_kernel_err_reason);
+	bool cancel_fast_stop(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool delete_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 protected:
 	bool get_carve_factory_and_type(const Json::Value& json_conn_value, int& nfactory_type, string& str_str_carve_type_key, string& str_kernel_err_reason);

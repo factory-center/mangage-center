@@ -55,6 +55,7 @@ public:
 	bool start(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool get_carve_status(const Json::Value& json_conn_value, int& nCarve_status, string& str_kernel_err_reason);
 	bool stop_fast(const Json::Value& json_conn_value, string& str_kernel_err_reason);
+	bool cancel_fast_stop(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	//NC文件相关
 	bool upload_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool delete_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason);
