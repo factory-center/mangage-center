@@ -128,6 +128,7 @@ BOOL CCarve_Control_ServiceDlg::OnInitDialog()
 	string str_err_reason;
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->init(str_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to init CCarve_Common_Lib_Tool, reason:%s", __FUNCTION__, str_err_reason.c_str()), FALSE);
+	
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 

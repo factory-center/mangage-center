@@ -40,6 +40,12 @@
     <Filter Include="头文件\carve_common_lib">
       <UniqueIdentifier>{0454903f-e232-4223-8981-8d8164baa736}</UniqueIdentifier>
     </Filter>
+    <Filter Include="头文件\http_server">
+      <UniqueIdentifier>{72e6f26d-044e-43df-8856-e7789fd41440}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\http_server">
+      <UniqueIdentifier>{f1cfc848-b092-4428-95fc-c203a153f642}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -84,6 +90,39 @@
     <ClInclude Include="..\source\carve_common_lib.h">
       <Filter>头文件\carve_common_lib</Filter>
     </ClInclude>
+    <ClInclude Include="..\source\http_server\connection.hpp">
+      <Filter>头文件\http_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\http_server\deal_http_msg.h">
+      <Filter>头文件\http_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\http_server\header.hpp">
+      <Filter>头文件\http_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\http_server\http_parser.h">
+      <Filter>头文件\http_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\http_server\http_settings.h">
+      <Filter>头文件\http_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\http_server\mime_types.hpp">
+      <Filter>头文件\http_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\http_server\reply.hpp">
+      <Filter>头文件\http_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\http_server\request.hpp">
+      <Filter>头文件\http_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\http_server\request_handler.hpp">
+      <Filter>头文件\http_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\http_server\request_parser.hpp">
+      <Filter>头文件\http_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\http_server\server.hpp">
+      <Filter>头文件\http_server</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\source\log_base.cpp">
@@ -106,6 +145,33 @@
     </ClCompile>
     <ClCompile Include="..\source\carve_common_lib.cpp">
       <Filter>头文件\carve_common_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\http_server\server.cpp">
+      <Filter>源文件\http_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\http_server\request_parser.cpp">
+      <Filter>源文件\http_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\http_server\request_handler.cpp">
+      <Filter>源文件\http_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\http_server\reply.cpp">
+      <Filter>源文件\http_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\http_server\mime_types.cpp">
+      <Filter>源文件\http_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\http_server\http_settings.cpp">
+      <Filter>源文件\http_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\http_server\deal_http_msg.cpp">
+      <Filter>源文件\http_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\http_server\connection.cpp">
+      <Filter>源文件\http_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\http_server\http_parser.c">
+      <Filter>源文件\http_server</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
