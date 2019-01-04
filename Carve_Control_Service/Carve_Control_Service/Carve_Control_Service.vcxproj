@@ -216,6 +216,7 @@ copy "$(ProjectDir)\..\lib64\json\*" "$(SolutionDir)$(Platform)\$(Configuration)
   <ItemGroup>
     <ClInclude Include="..\include\baoyuan\scif2.h" />
     <ClInclude Include="..\include\baoyuan\scif2_define.h" />
+    <ClInclude Include="..\include\boost_common.h" />
     <ClInclude Include="..\source\busin_log.h" />
     <ClInclude Include="..\source\carve_common_lib.h" />
     <ClInclude Include="..\source\CBaoyuan_Lib_Tool.h" />
@@ -232,6 +233,7 @@ copy "$(ProjectDir)\..\lib64\json\*" "$(SolutionDir)$(Platform)\$(Configuration)
     <ClInclude Include="..\source\http_server\request_handler.hpp" />
     <ClInclude Include="..\source\http_server\request_parser.hpp" />
     <ClInclude Include="..\source\http_server\server.hpp" />
+    <ClInclude Include="..\source\http_server\singleton_server.h" />
     <ClInclude Include="..\source\log_base.h" />
     <ClInclude Include="Carve_Control_Service.h" />
     <ClInclude Include="Carve_Control_ServiceDlg.h" />
@@ -252,6 +254,7 @@ copy "$(ProjectDir)\..\lib64\json\*" "$(SolutionDir)$(Platform)\$(Configuration)
     <ClCompile Include="..\source\http_server\request_handler.cpp" />
     <ClCompile Include="..\source\http_server\request_parser.cpp" />
     <ClCompile Include="..\source\http_server\server.cpp" />
+    <ClCompile Include="..\source\http_server\singleton_server.cpp" />
     <ClCompile Include="..\source\log_base.cpp" />
     <ClCompile Include="Carve_Control_Service.cpp" />
     <ClCompile Include="Carve_Control_ServiceDlg.cpp" />

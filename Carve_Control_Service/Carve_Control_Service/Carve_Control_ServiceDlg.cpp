@@ -10,7 +10,9 @@
 #include "../source/CCarve.h"
 #include "utils/msp_errors.h"
 #include "../source/carve_common_lib.h"
-
+#include "../source/http_server/server.hpp"
+#include "../source/http_server/singleton_server.h"
+#include <boost_common.h>
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -75,6 +77,7 @@ BEGIN_MESSAGE_MAP(CCarve_Control_ServiceDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON7, &CCarve_Control_ServiceDlg::OnBnClickedButton7)
 	ON_BN_CLICKED(IDC_BUTTON8, &CCarve_Control_ServiceDlg::OnBnClickedButton8)
 	ON_BN_CLICKED(IDC_BUTTON_cancel_stop_fast, &CCarve_Control_ServiceDlg::OnBnClickedButtoncancelstopfast)
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 
@@ -112,7 +115,7 @@ BOOL CCarve_Control_ServiceDlg::OnInitDialog()
 	ShowWindow(SW_MAXIMIZE);
 
 	// TODO: 在此添加额外的初始化代码
-
+	//TODO::临时这么写的，初始化失败，进程应该报错退出的
 	//默认日志配置，具体参见类型Log_Cfg_T
 	string str_log_path = "../log/emcs.log";
 	businlog_cfg default_cfg(str_log_path.c_str(), "Network Engraving Machine Logging");
@@ -128,7 +131,16 @@ BOOL CCarve_Control_ServiceDlg::OnInitDialog()
 	string str_err_reason;
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->init(str_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to init CCarve_Common_Lib_Tool, reason:%s", __FUNCTION__, str_err_reason.c_str()), FALSE);
-	
+
+	//启动网络模块：创建线程以监听端口
+	//TODO::后面放在其他地方并且设置好ip:port，目前放在这里并写死
+	string str_local_ip  = "192.168.101.21";
+	string str_port = "2350";
+	size_t nThread_num = 5;
+
+    ret = singleton_default<CSingleton_Server>::instance().start(
+		str_local_ip, str_port, nThread_num, str_err_reason);
+	businlog_error_return(!ret, ("%s | fail to start Server, reason:%s", __FUNCTION__, str_err_reason.c_str()), FALSE);
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -421,4 +433,15 @@ void CCarve_Control_ServiceDlg::OnBnClickedButtoncancelstopfast()
 	{
 		MessageBox(_T("cancel fast stop successfully"));
 	}
+}
+
+
+void CCarve_Control_ServiceDlg::OnClose()
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	if (MessageBox(L"确定要退出程序吗？", L"退出提示", MB_ICONINFORMATION | MB_YESNO) == IDNO)
+		return; //注意无返回值
+	//完成一些退出操作
+	singleton_default<CSingleton_Server>::instance().stop();
+	CDialogEx::OnClose();
 }

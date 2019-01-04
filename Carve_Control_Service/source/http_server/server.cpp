@@ -13,6 +13,14 @@
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <vector>
+#include "../busin_log.h"
+#include "utils/msp_errors.h"
+#include <boost/asio/socket_base.hpp>
+#ifdef _WINDOWS
+#define __CLASS_FUNCTION__ ((std::string(__FUNCTION__)).c_str()) 
+#else
+#define __CLASS_FUNCTION__ ((std::string("server::") + std::string(__FUNCTION__)).c_str()) 
+#endif
 
 namespace http {
 	namespace server3 {
@@ -23,68 +31,144 @@ namespace http {
 			signals_(io_service_),
 			acceptor_(io_service_),
 			new_connection_(),
-			request_handler_(doc_root)
+			request_handler_(doc_root),
+			m_str_local_ip(address),
+			m_str_port(port)
 		{
-			// Register to handle the signals that indicate when the server should exit.
-			// It is safe to register for the same signal multiple times in a program,
-			// provided all registration for the specified signal is made through Asio.
-			signals_.add(SIGINT);
-			signals_.add(SIGTERM);
-#if defined(SIGQUIT)
-			signals_.add(SIGQUIT);
-#endif // defined(SIGQUIT)
-			signals_.async_wait(boost::bind(&server::handle_stop, this));
-
-			// Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
-			boost::asio::ip::tcp::resolver resolver(io_service_);
-			boost::asio::ip::tcp::resolver::query query(address, port);
-			boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(query);
-			acceptor_.open(endpoint.protocol());
-			acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-			acceptor_.bind(endpoint);
-			acceptor_.listen();
-
-			start_accept();
 		}
 
+		/************************************
+		* Method:    run
+		* Brief:  以io_service::run为线程函数，创建若干个线程来读取端口中数据，并等待所有线程结束
+		* Access:    public 
+		* Returns:   void
+		* Qualifier:
+		************************************/
 		void server::run()
 		{
-			// Create a pool of threads to run all of the io_services.
-			std::vector<boost::shared_ptr<boost::thread> > threads;
-			for (std::size_t i = 0; i < thread_pool_size_; ++i)
+			try
 			{
-				boost::shared_ptr<boost::thread> thread(new boost::thread(
-					boost::bind(&boost::asio::io_service::run, &io_service_)));
-				threads.push_back(thread);
+				// Create a pool of threads to run all of the io_services.
+				std::vector<boost::shared_ptr<boost::thread> > threads;
+				for (std::size_t i = 0; i < thread_pool_size_; ++i)
+				{
+					boost::shared_ptr<boost::thread> thread(new boost::thread(
+						boost::bind(&boost::asio::io_service::run, &io_service_)));
+					threads.push_back(thread);
+				}
+
+				// Wait for all threads in the pool to exit.
+				for (std::size_t i = 0; i < threads.size(); ++i)
+				{
+					threads[i]->join(); //线程中断点，即线程可以在此处被停止
+				}
+			}
+			catch (boost::thread_interrupted& )//捕获线程中断异常，此异常为空异常的
+			{
+				businlog_warn("%s | thread interrupted", __CLASS_FUNCTION__);
 			}
 
-			// Wait for all threads in the pool to exit.
-			for (std::size_t i = 0; i < threads.size(); ++i)
-				threads[i]->join();
 		}
 
 		void server::start_accept()
 		{
+			businlog_tracer_perf(server::start_accept);
 			new_connection_.reset(new connection(io_service_, request_handler_));
 			acceptor_.async_accept(new_connection_->socket(),
-				boost::bind(&server::handle_accept, this,
+				boost::bind(&server::handle_accept, shared_from_this(),
 				boost::asio::placeholders::error));
 		}
 
 		void server::handle_accept(const boost::system::error_code& e)
 		{
+			businlog_tracer_perf(server::handle_accept);
 			if (!e)
-			{
+			{//未出错
 				new_connection_->start_asyn_operate();
 			}
-
+			else
+			{//出错了
+				businlog_error("%s | has error, reason:%s, err code:%d", __CLASS_FUNCTION__, e.message().c_str(), e.value());
+			}
 			start_accept();
 		}
 
 		void server::handle_stop()
 		{
+			businlog_tracer_perf(server::handle_stop);
 			io_service_.stop();
 		}
+
+		/************************************
+		* Method:    init
+		* Brief:  //监听退出信号，并注册handle_stop，监听指定端口，最后启动accept
+		* Access:    public 
+		* Returns:   int 0:成功；非0：错误码
+		* Qualifier:
+		*Parameter: std::string & str_err_reason -[in/out]  
+		************************************/
+		int server::init(std::string& str_err_reason)
+		{
+			businlog_tracer_perf(server::init);
+			try
+			{
+				// Register to handle the signals that indicate when the server should exit.
+				// It is safe to register for the same signal multiple times in a program,
+				// provided all registration for the specified signal is made through Asio.
+				signals_.add(SIGINT);
+				signals_.add(SIGTERM);
+#if defined(SIGQUIT)
+				signals_.add(SIGQUIT);
+#endif // defined(SIGQUIT)
+				signals_.async_wait(boost::bind(&server::handle_stop, shared_from_this()));
+				// Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
+				boost::asio::ip::tcp::resolver resolver(io_service_);
+				boost::asio::ip::tcp::resolver::query query(m_str_local_ip, m_str_port);
+				boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(query);
+				boost::system::error_code err;
+				acceptor_.open(endpoint.protocol(), err);
+				businlog_error_return_err_reason(!err, __CLASS_FUNCTION__ <<" | fail to open, local ip:" << m_str_local_ip
+					<< ", port:" << m_str_port << ", reason:" << err.message(), str_err_reason, err.value());
+				acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+				acceptor_.bind(endpoint, err);
+				businlog_error_return_err_reason(!err, __CLASS_FUNCTION__ << " | fail to bind, local ip:" << m_str_local_ip
+					<< ", port:" << m_str_port << ", reason:" << err.message(), str_err_reason, err.value());
+				acceptor_.listen(boost::asio::socket_base::max_connections, err);
+				businlog_error_return_err_reason(!err, __CLASS_FUNCTION__ << " | fail to listen, local ip:" << m_str_local_ip
+					<< ", port:" << m_str_port << ", reason:" << err.message(), str_err_reason, err.value());
+				start_accept();
+				return MSP_SUCCESS;
+			}
+			catch (std::exception& e)
+			{
+				str_err_reason = std::string(e.what());
+				businlog_error("%s | Has exception:%s", __CLASS_FUNCTION__, str_err_reason.c_str());
+				return MSP_ERROR_EXCEPTION;
+			}
+		}
+
+		server::~server()
+		{//by minglu
+			businlog_tracer(server::~server);
+//			stop();
+			if (acceptor_.is_open())
+			{
+				acceptor_.close();
+			}
+		}
+
+// 		void server::stop()
+// 		{//by minglu
+// 			// Wait for all threads in the pool to exit.
+// 			for (std::size_t i = 0; i < threads_vec_.size(); ++i)
+// 			{
+// 				if (threads_vec_[i]->joinable())
+// 				{
+// 					threads_vec_[i]->interrupt();
+// 				}
+// 
+// 			}
+// 		}
 
 	} // namespace server3
 } // namespace http

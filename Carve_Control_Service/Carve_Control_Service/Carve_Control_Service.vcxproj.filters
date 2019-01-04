@@ -123,6 +123,12 @@
     <ClInclude Include="..\source\http_server\server.hpp">
       <Filter>头文件\http_server</Filter>
     </ClInclude>
+    <ClInclude Include="..\source\http_server\singleton_server.h">
+      <Filter>头文件\http_server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\boost_common.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\source\log_base.cpp">
@@ -172,6 +178,9 @@
     </ClCompile>
     <ClCompile Include="..\source\http_server\http_parser.c">
       <Filter>源文件\http_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\http_server\singleton_server.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

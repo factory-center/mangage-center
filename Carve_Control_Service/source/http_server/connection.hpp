@@ -33,7 +33,7 @@ namespace http {
 			/// Construct a connection with the given io_service.
 			explicit connection(boost::asio::io_service& io_service,
 				request_handler& handler);
-
+			~connection();
 			/// Get the socket associated with the connection.
 			boost::asio::ip::tcp::socket& socket();
 
@@ -44,13 +44,13 @@ namespace http {
 			{
 				socket_.read_some(boost::asio::buffer(buffer_));
 			}
-
+			//TODO::是否需要新增一个析构函数用于关闭socket
 		private:
 			/// Handle completion of a read operation.
 			void handle_read(const boost::system::error_code& e,
 				std::size_t bytes_transferred);
 			//解析接收到的请求
-			int deal_request(const char* buf, size_t len, std::string& str_json_body);
+			int deal_request(const char* buf, size_t len, std::string& str_json_body, std::string& str_err_reason);
 			/// Handle completion of a write operation.
 			void handle_write(const boost::system::error_code& e);
 
