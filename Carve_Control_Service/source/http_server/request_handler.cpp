@@ -180,57 +180,13 @@ namespace http
 			//遍历信息数组
 			for (int i = 0; i != json_arr_carveInfo.size(); ++i)
 			{
+				//获取单个雕刻机信息
 				const Json::Value& json_single_params = json_arr_carveInfo[i];
 				std::string str_single_err_reason;
-				Json::Value json_single_resp;
-				//新建雕刻机对象
-				boost::shared_ptr<CCarve> ptr_carve;
-				try
-				{
-					ptr_carve = boost::make_shared<CCarve>(json_single_params);
-				}
-				catch (std::exception& e)
-				{
-					str_single_err_reason = string("Has exception:") + string(e.what());
-					businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_single_err_reason.c_str());
-					ret = MSP_ERROR_EXCEPTION;
-					goto Exit_Single;
-				}
+			
 				//连接雕刻机
-				ret = ptr_carve->connect(str_single_err_reason);
-				if (ret)
-				{
-					businlog_error("%s | fail to connect carve, reason:%s.", __CLASS_FUNCTION__, str_single_err_reason);
-					goto Exit_Single;
-				}
-				//设置continue状态
-				unsigned short nMax_wait_time = 1000;
-				str_key = "max_wait_time";
-				if (json_single_params.isMember(str_key))
-				{//参数中含有最大等待时间
-					nMax_wait_time = json_single_params[str_key].asInt();
-				}
-				ret = ptr_carve->set_continue_status(0, nMax_wait_time, str_single_err_reason);
-				if (ret)
-				{
-					businlog_error("%s | fail to set carve continue status, reason:%s.", __CLASS_FUNCTION__, str_single_err_reason.c_str());
-					goto Exit_Single;
-				}
-				//重置设备
-				ret = ptr_carve->reset(nMax_wait_time, str_single_err_reason);
-				if (ret)
-				{
-					businlog_error("%s | fail to reset carve, reason:%s.", __CLASS_FUNCTION__, str_single_err_reason.c_str());
-					goto Exit_Single;
-				}
-				//添加雕刻机对象
-				ret = CCarve_Manager::instance()->add_carve(json_single_params, ptr_carve, str_single_err_reason);
-				if (ret)
-				{
-					businlog_error("%s | fail to add carve, reason:%s", __CLASS_FUNCTION__, str_single_err_reason.c_str());
-					goto Exit_Single;
-				}
-Exit_Single:
+				ret = CCarve_Manager::instance()->connect_carve(json_single_params, str_single_err_reason);
+				Json::Value json_single_resp;
 				//构造结果
 				json_single_resp["ret"] = ret;
 				json_single_resp["errmsg"] = str_single_err_reason;
@@ -245,7 +201,6 @@ Exit_Single:
 				//将单个结果添加到结果数组中
 				json_result["results"].append(json_single_resp);
 				str_total_err_reason += string(". ") + str_single_err_reason;
-				continue;
 			}//end for
 			return MSP_SUCCESS;
 		}

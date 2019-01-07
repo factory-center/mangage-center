@@ -36,7 +36,7 @@ class CCarve_Manager
 {
 public:
 	static CCarve_Manager* instance();
-	int add_carve(const Json::Value& json_params, const boost::shared_ptr<CCarve>& ptr_carve, string& str_err_reason);
+	int connect_carve(const Json::Value& json_params, string& str_err_reason);
 protected:
 	CCarve_Manager();
 	~CCarve_Manager();
