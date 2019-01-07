@@ -11,7 +11,9 @@
 #include "reply.hpp"
 #include <string>
 #include <boost/lexical_cast.hpp>
-
+#include <json/json.h>
+#include <boost_common.h>
+#include "singleton_server.h"
 namespace http {
 	namespace server3 {
 
@@ -249,6 +251,36 @@ namespace http {
 			rep.headers[0].value = boost::lexical_cast<std::string>(rep.content.size());
 			rep.headers[1].name = "Content-Type";
 			rep.headers[1].value = "text/html";
+			return rep;
+		}
+
+		reply reply::construct_message(int nServer_ret, const std::string& str_json_result, const std::string& str_err_reason)
+		{
+			reply rep;
+			rep.status = ok;
+
+			rep.headers.resize(2);
+			rep.headers[0].name = "Content-Length";
+			rep.headers[1].name = "Content-Type";
+			rep.headers[1].value = "appliction/json";
+			//保证content为json串
+			Json::Value json_response;
+			Json::Value json_result;
+			Json::Reader reader;
+
+			if (str_json_result.empty() || !reader.parse(str_json_result, json_result))
+			{//结果串为空或者为非法json
+				json_result = Json::nullValue;
+			}
+
+			json_response["result"] = json_result;
+			json_response["server_errno"] = nServer_ret; //为0表示success，否则为错误码
+			json_response["server_errmsg"] = str_err_reason; //错误信息
+			json_response["host"] = singleton_default<CSingleton_Server>::instance().get_ip() 
+				+ ":" + singleton_default<CSingleton_Server>::instance().get_port();
+			rep.content = json_response.toStyledString();
+			rep.headers[0].value = boost::lexical_cast<std::string>(rep.content.size());
+
 			return rep;
 		}
 

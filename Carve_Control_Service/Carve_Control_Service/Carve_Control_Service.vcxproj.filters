@@ -129,6 +129,9 @@
     <ClInclude Include="..\include\boost_common.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\source\carve_manager.h">
+      <Filter>头文件\device</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\source\log_base.cpp">
@@ -179,8 +182,14 @@
     <ClCompile Include="..\source\http_server\http_parser.c">
       <Filter>源文件\http_server</Filter>
     </ClCompile>
+    <ClCompile Include="..\source\CDevice.cpp">
+      <Filter>源文件\device</Filter>
+    </ClCompile>
     <ClCompile Include="..\source\http_server\singleton_server.cpp">
-      <Filter>源文件</Filter>
+      <Filter>源文件\http_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\carve_manager.cpp">
+      <Filter>源文件\device</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

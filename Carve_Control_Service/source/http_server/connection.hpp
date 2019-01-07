@@ -49,8 +49,8 @@ namespace http {
 			/// Handle completion of a read operation.
 			void handle_read(const boost::system::error_code& e,
 				std::size_t bytes_transferred);
-			//解析接收到的请求
-			int deal_request(const char* buf, size_t len, std::string& str_json_body, std::string& str_err_reason);
+			//从请求中获取http body
+			int get_http_body(const char* buf, size_t len, std::string& str_json_body, std::string& str_err_reason);
 			/// Handle completion of a write operation.
 			void handle_write(const boost::system::error_code& e);
 

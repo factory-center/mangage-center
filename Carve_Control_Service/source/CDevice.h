@@ -27,6 +27,7 @@ extern "C" {
 //引用C++头文件：先是标准库头文件，后是项目头文件
 #include <vector>
 #include <string>
+#include <json/json.h>
 using std::string;
 using std::vector;
 //宏定义
@@ -42,15 +43,12 @@ enum EDevice_Type
 class CDevice
 {
 public:
-	CDevice(EDevice_Type eType, const string& str_ip)
-		: m_eType(eType)
-		, m_str_ip(str_ip)
-	{
-
-	}
+	CDevice(EDevice_Type eType, const Json::Value& json_params);
+	const string& get_ip() const;
+	const string& get_id();
 protected:
 	string m_str_ip; //设备的ip地址列表，可能存在多网卡
-//	size_t m_nId; //表明此设备在整个管控服务中对应的编号
+	std::string  m_str_id; //设备编号，全局唯一
 	EDevice_Type m_eType; //设备类型
 };
 //函数原型定义

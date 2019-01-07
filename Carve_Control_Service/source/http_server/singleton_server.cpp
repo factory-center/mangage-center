@@ -61,3 +61,36 @@ int CSingleton_Server::start(const std::string& str_ip, const std::string& str_p
 		return MSP_ERROR_EXCEPTION;
 	}
 }
+
+void CSingleton_Server::stop()
+{
+	if (m_thread_server.joinable())
+	{
+
+		m_thread_server.interrupt();
+	}
+}
+
+const std::string CSingleton_Server::get_ip() const
+{
+	if (m_server_ptr)
+	{
+		return m_server_ptr->get_ip();
+	}
+	else
+	{
+		return std::string();
+	}
+}
+
+const std::string CSingleton_Server::get_port() const
+{
+	if (m_server_ptr)
+	{
+		return m_server_ptr->get_port();
+	}
+	else
+	{
+		return std::string();
+	}
+}

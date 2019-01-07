@@ -59,7 +59,7 @@ namespace http {
 
 				std::string str_json_body;
 				std::string str_err_reason;
-				ret = deal_request(buffer_.data(), bytes_transferred, str_json_body, str_err_reason);
+				ret = get_http_body(buffer_.data(), bytes_transferred, str_json_body, str_err_reason);
 				if (0 == ret)
 				{
 					request_handler_.handle_request(request_, str_json_body, reply_);
@@ -116,9 +116,9 @@ namespace http {
 			}
 		}
 
-		int connection::deal_request(const char* buf, size_t len, std::string& str_json_body, std::string& str_err_reason)
+		int connection::get_http_body(const char* buf, size_t len, std::string& str_json_body, std::string& str_err_reason)
 		{
-			businlog_tracer_perf(connection::deal_request);
+			businlog_tracer_perf(connection::get_http_body);
 			deal_http_msg http_msg_tool_obj;
 			http_msg_tool_obj.reset();
 			bool bIs_full_msg = false;

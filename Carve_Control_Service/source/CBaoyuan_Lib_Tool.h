@@ -32,6 +32,7 @@ extern "C" {
 #include <json/json.h>
 using std::string;
 //宏定义
+extern const int MAX_CONNECTIONS_NUM;
 //类型定义
 //宝元函数库
 class CBaoyuan_Lib 
@@ -60,6 +61,9 @@ public:
 	bool upload_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool delete_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool parse_carve_status_to_description(const int nCarve_status, string& str_carve_status_description, string& str_kernel_err_reason);
+    //索引相关
+	bool acquire_conn_idx(int& nConn_idx, string& str_kernel_err_reason);
+	bool release_conn_idx(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 private:
 	CBaoyuan_Lib();
 	//是否其占有的资源。析构函数为私有，使得其只能被其自己的垃圾工程释放
@@ -96,5 +100,7 @@ private:
 	SC2 m_sc2_obj; //宝元库类对象，需要在编译器的预处理命令中定义：__CLASS
 	boost::thread m_thread_timer; //定时器线程对象
 	bool m_bStop; //定时器线程是否终止
+	std::vector<bool> m_vec_conn_idx_used; //用于设备连接/断开。m_arr_conn_idx_used[i]为false，表示索引编号i没有被占用；否则表示索引i被占用
+    Uni_Mutex m_mutex_conn_idx;
 };
 //函数原型定义

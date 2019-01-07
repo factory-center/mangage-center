@@ -20,6 +20,7 @@
 #include "busin_log.h"
 #include "CBaoyuan_Lib_Tool.h"
 #include "CCarve.h"
+#include "utils/msp_errors.h"
 #ifdef _WINDOWS
 #define __CLASS_FUNCTION__ ((std::string(__FUNCTION__)).c_str()) 
 #else
@@ -54,7 +55,7 @@ bool CCarve_Common_Lib_Tool::is_baoyuan(int nfactory_type, const string& str_str
 	}
 }
 
-bool CCarve_Common_Lib_Tool::connect(const Json::Value& json_conn_value, string& str_kernel_err_reason)
+bool CCarve_Common_Lib_Tool::connect(Json::Value& json_conn_value, string& str_kernel_err_reason)
 {
 	//获取雕刻机厂商和设备型号信息
 	int nfactory_type = CARVE_FACTORY_TYPE_MAX;
@@ -64,6 +65,11 @@ bool CCarve_Common_Lib_Tool::connect(const Json::Value& json_conn_value, string&
 		, __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
 	if (is_baoyuan(nfactory_type, str_carve_type_key))
 	{//是宝元
+		//从宝元库申请索引
+		int nConn_idx = -2;
+		bool bSuccess = CBaoyuan_Lib::instance()->acquire_conn_idx(nConn_idx, str_kernel_err_reason);
+		businlog_error_return(bSuccess, ("%s | fail to acquire conn index, reason:%s.", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
+		json_conn_value[CCarve::ms_str_conn_idx_key] = nConn_idx;
 		return CBaoyuan_Lib::instance()->create_connection(json_conn_value, str_kernel_err_reason);
 	}
 	//TODO::判定是否为其他的库
@@ -80,7 +86,10 @@ bool CCarve_Common_Lib_Tool::disconnect(const Json::Value& json_conn_value, stri
 		, __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
 	if (is_baoyuan(nfactory_type, str_carve_type_key))
 	{//是宝元
-		return CBaoyuan_Lib::instance()->disconnect(json_conn_value, str_kernel_err_reason);
+		bool bSuccess = CBaoyuan_Lib::instance()->disconnect(json_conn_value, str_kernel_err_reason);
+		businlog_error_return(bSuccess, ("%s | fail to disconnect, reason:%s.", __CLASS_FUNCTION__, str_kernel_err_reason.c_str()), false);
+		//释放索引
+		return CBaoyuan_Lib::instance()->release_conn_idx(json_conn_value, str_kernel_err_reason);
 	}
 	//TODO::判定是否为其他的库
 	return false;

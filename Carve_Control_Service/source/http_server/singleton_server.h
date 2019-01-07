@@ -47,14 +47,9 @@ public:
 
 	}
 	int start(const std::string& str_ip, const std::string& str_port, std::size_t nThreads_num, std::string& str_err_reason);
-	void stop()
-	{
-		if (m_thread_server.joinable())
-		{
-
-			m_thread_server.interrupt();
-		}
-	}
+	void stop();
+	const std::string get_ip() const;
+	const std::string get_port() const;
 protected:
 private:
 	boost::thread m_thread_server;

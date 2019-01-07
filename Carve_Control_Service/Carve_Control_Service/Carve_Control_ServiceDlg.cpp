@@ -13,11 +13,17 @@
 #include "../source/http_server/server.hpp"
 #include "../source/http_server/singleton_server.h"
 #include <boost_common.h>
+#include <json/json.h>
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
-
-
+//test begin
+//连接设备
+unsigned int nConn_idx = 0;
+const string str_ip = "192.168.101.212";
+boost::shared_ptr<CCarve> carve_ptr;
+const string str_nc_file_path = "F:\\GitHub\\mangage-center\\Carve_Control_Service\\Win32\\Debug\\1224.nc";
+//test end
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 
 class CAboutDlg : public CDialogEx
@@ -141,6 +147,14 @@ BOOL CCarve_Control_ServiceDlg::OnInitDialog()
     ret = singleton_default<CSingleton_Server>::instance().start(
 		str_local_ip, str_port, nThread_num, str_err_reason);
 	businlog_error_return(!ret, ("%s | fail to start Server, reason:%s", __FUNCTION__, str_err_reason.c_str()), FALSE);
+	//test begin
+	Json::Value json_params;
+	json_params[CCarve::ms_str_ip_key] = str_ip;
+	json_params[CCarve::ms_str_carve_type_key] = "type test";
+	json_params[CCarve::ms_str_carve_id_key] = "Id test";
+	json_params[CCarve::ms_str_factory_type_key] = "BaoYuan";
+	carve_ptr = boost::make_shared<CCarve>(json_params);
+	//test end
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -192,26 +206,21 @@ HCURSOR CCarve_Control_ServiceDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
-// test begine
-//连接设备
-unsigned int nConn_idx = 0;
-const string str_ip = "192.168.101.212";
-CCarve carve_obj(nConn_idx, str_ip);
-const string str_nc_file_path = "F:\\GitHub\\mangage-center\\Carve_Control_Service\\Win32\\Debug\\1224.nc";
+// test begin
 //返回值 0：success; 非0：错误码
 int test_connect()
 {
 	string str_kernel_err_reason;
 
-	int ret = carve_obj.connect(str_kernel_err_reason);
+	int ret = carve_ptr->connect(str_kernel_err_reason);
 	businlog_error_return(0 == ret, ("%s | fail to connect ip:%s, reason:%s"
 		, __FUNCTION__, str_ip.c_str(), str_kernel_err_reason.c_str()), ret);
 	//更新设备为继续状态
-	ret = carve_obj.set_continue_status(0, 1000, str_kernel_err_reason);
+	ret = carve_ptr->set_continue_status(0, 1000, str_kernel_err_reason);
 	businlog_error_return(0 == ret, ("%s | fail to  set_continue_status, ip:%s, reason:%s"
 		, __FUNCTION__, str_ip.c_str(), str_kernel_err_reason.c_str()), ret);
 	//重置设备
-	carve_obj.reset(1000, str_kernel_err_reason);
+	carve_ptr->reset(1000, str_kernel_err_reason);
 	businlog_error_return(0 == ret, ("%s | fail to  reset_carve, ip:%s, reason:%s"
 		, __FUNCTION__, str_ip.c_str(), str_kernel_err_reason.c_str()), ret);
 	
@@ -220,7 +229,7 @@ int test_connect()
 int test_upload()
 {
 	string str_kernel_err_reason;
-	int ret = carve_obj.upload_1_file(str_nc_file_path, str_kernel_err_reason);
+	int ret = carve_ptr->upload_1_file(str_nc_file_path, str_kernel_err_reason);
 	businlog_error_return(0 == ret, ("%s | fail to upload file:%s, nConn:%d, reason:%s"
 		, __FUNCTION__, str_nc_file_path.c_str(), nConn_idx, str_kernel_err_reason.c_str()), ret);
 	return 0;
@@ -229,7 +238,7 @@ int test_query_status(string& str_carve_status_description)
 {
 	string str_kernel_err_reason;
 	ECARVE_STATUS_TYPE eCarve_status = CARVE_STATUS_OFFLINE;
-	int ret = carve_obj.get_carve_status(eCarve_status, str_kernel_err_reason);
+	int ret = carve_ptr->get_carve_status(eCarve_status, str_kernel_err_reason);
 	businlog_error_return(0 == ret, ("%s | fail to get carve status, nConn:%d, reason:%s"
 		, __FUNCTION__, nConn_idx, str_kernel_err_reason.c_str()), ret);
 	//获取状态码对应的描述信息
@@ -241,7 +250,7 @@ int test_disconnect()
 {
 	string str_kernel_err_reason;
 	//断开设备
-	int ret = carve_obj.disconnect(str_kernel_err_reason);
+	int ret = carve_ptr->disconnect(str_kernel_err_reason);
 	businlog_error_return(0 == ret, ("%s | fail to disconnect, nConn:%d, reason:%s"
 		, __FUNCTION__, nConn_idx, str_kernel_err_reason.c_str()), ret);
 	return 0;
@@ -250,7 +259,7 @@ int test_disconnect()
 int test_start()
 {
 	string str_kernel_err_reason;
-	int ret = carve_obj.start(str_nc_file_path, 1000, str_kernel_err_reason);
+	int ret = carve_ptr->start(str_nc_file_path, 1000, str_kernel_err_reason);
 	businlog_error_return(0 == ret, ("%s | fail to start, nc path:%s, ret:%d, reason:%s"
 		, __FUNCTION__, str_nc_file_path.c_str(), ret, str_kernel_err_reason.c_str()), ret);
 	return 0;
@@ -259,25 +268,25 @@ int test_pause()
 {
 	string str_kernel_err_reason;
 	//暂停雕刻
-	return carve_obj.pause(1000, str_kernel_err_reason);
+	return carve_ptr->pause(1000, str_kernel_err_reason);
 }
 int test_stop_fast()
 {
 	string str_kernel_err_reason;
 	//急停
-	return carve_obj.stop_fast(1000, str_kernel_err_reason);
+	return carve_ptr->stop_fast(1000, str_kernel_err_reason);
 }
 
 int test_cancel_stop_fast()
 {
 	string str_kernel_err_reason;
 	//取消急停
-	return carve_obj.cancel_fast_stop(1000, str_kernel_err_reason);
+	return carve_ptr->cancel_fast_stop(1000, str_kernel_err_reason);
 }
 int test_delete_file()
 {
 	string str_kernel_err_reason;
-	int ret = carve_obj.delete_1_file(str_nc_file_path, str_kernel_err_reason);
+	int ret = carve_ptr->delete_1_file(str_nc_file_path, str_kernel_err_reason);
 	businlog_error_return(0 == ret, ("%s | fail to delete file:%s, nConn:%d, reason:%s"
 		, __FUNCTION__, str_nc_file_path.c_str(), nConn_idx, str_kernel_err_reason.c_str()), ret);
 	return 0;

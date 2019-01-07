@@ -53,7 +53,17 @@ namespace http {
 			/// underlying memory blocks, therefore the reply object must remain valid and
 			/// not be changed until the write operation has completed.
 			std::vector<boost::asio::const_buffer> to_buffers();
-
+			/************************************
+			* Method:    construct_message
+			* Brief:  构造响应消息
+			* Access:    public static 
+			* Returns:   http::server3::reply
+			* Qualifier:
+			*Parameter: int nServer_ret -[in] 0:调用成功；非0：错误码 
+			*Parameter: const std::string & str_json_result -[in] json串，出错时，其值为空 
+			*Parameter: const std::string & str_err_reason -[in] 错误信息，成功时，其值为空
+			************************************/
+			static reply construct_message(int nServer_ret, const std::string& str_json_result, const std::string& str_err_reason);
 			/// Get a stock reply.
 			static reply stock_reply(status_type status);
 		};

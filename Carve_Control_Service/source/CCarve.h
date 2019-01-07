@@ -34,7 +34,7 @@ extern "C" {
 class  CCarve : public CDevice
 {
 public:
-	CCarve(unsigned short nConn_idx, const string& str_ip);
+	CCarve(const Json::Value& json_params);
 	int connect(string& str_kernel_err_reason);
 	int disconnect(string& str_kernel_err_reason);
 	int set_continue_status(unsigned char nStatus, unsigned short nMax_wait_time, string& str_kernel_err_reason);
@@ -48,13 +48,14 @@ public:
 	int delete_1_file(const string& str_file_path, string& str_kernel_err_reason);
 	unsigned short Conn_idx() const { return m_nConn_idx; }
 	void Conn_idx(unsigned short val) { m_nConn_idx = val; }
-	static const string ms_str_factory_type_key;
+	static const string ms_str_factory_type_key; 
 	static const string ms_str_carve_type_key;
 	static const string ms_str_conn_idx_key;
 	static const string ms_str_ip_key;
 	static const string ms_str_file_path_key;
 	static const string ms_str_status_key;
 	static const string ms_str_max_wait_time_key;
+	static const string ms_str_carve_id_key;
 protected:
 	CCarve();
 	CCarve(const CCarve&);

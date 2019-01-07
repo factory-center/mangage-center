@@ -37,6 +37,14 @@ namespace http {
 			//监听退出信号，并注册handle_stop，监听指定端口，最后启动accept
 			int init(std::string& str_err_reason);
 			~server();
+			const std::string& get_ip() const
+			{
+				return m_str_local_ip;
+			}
+			const std::string get_port() const
+			{
+				return m_str_port;
+			}
 		private:
 			/// Initiate an asynchronous accept operation.
 			void start_accept();

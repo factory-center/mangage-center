@@ -16,6 +16,16 @@
 #include "mime_types.hpp"
 #include "reply.hpp"
 #include "request.hpp"
+#include <json/json.h>
+#include "../busin_log.h"
+#include "utils/msp_errors.h"
+#include "../CCarve.h"
+#include "../carve_manager.h"
+#ifdef _WINDOWS
+#define __CLASS_FUNCTION__ ((std::string(__FUNCTION__)).c_str()) 
+#else
+#define __CLASS_FUNCTION__ ((std::string("request_handler::") + std::string(__FUNCTION__)).c_str()) 
+#endif
 
 namespace http 
 {
@@ -84,24 +94,40 @@ namespace http
 
 		void request_handler::handle_request(const request& req, const std::string& str_json_body, reply& rep)
 		{
-			printf("%s | line:%d, body of req:%s\n", __FUNCTION__, __LINE__, str_json_body.c_str());
 			//如果为非法json，则返回出错返回
-			if (false)
+			//TODO::统一返回
+			Json::Reader reader;
+			Json::Value root;
+			int ret = 0;
+			std::string str_err_reason;
+			Json::Value json_result;
+			if (!reader.parse(str_json_body, root))
 			{//非法json体
-				rep = reply::stock_reply(reply::bad_request);
+				ret = MSP_ERROR_INVALID_DATA;
+				str_err_reason = std::string("The body in http is invalid json. body:") + str_json_body;
+				rep = reply::construct_message(ret, "", str_err_reason);
+				businlog_error("%s | body:%s, body is invalid json.", __CLASS_FUNCTION__, str_json_body.c_str());
 				return;
 			}
-
+			std::string str_key = "command";
+			if (!root.isMember(str_key))
+			{
+				ret = MSP_ERROR_INVALID_PARA;
+				str_err_reason = std::string("body:") + str_json_body + std::string(", json without key:") + str_key;
+				businlog_error("%s | body:%s without key:%s", __CLASS_FUNCTION__, str_json_body.c_str(), str_key.c_str());
+				return;
+			}
 			// Fill out the reply to be sent to the client.
-			rep.status = reply::ok;
-
-			//构造content
-			rep.content = "{\"name\":\"luming\"}";
-			rep.headers.resize(2);
-			rep.headers[0].name = "Content-Length";
-			rep.headers[0].value = boost::lexical_cast<std::string>(rep.content.size());
-			rep.headers[1].name = "Content-Type";
-			rep.headers[1].value = "appliction/json";
+			const std::string str_cmd = root[str_key].asString();
+			//根据不同的命令来响应
+			if ("connect" == str_cmd)
+			{//连接雕刻机
+				ret = on_connect(root, json_result, str_err_reason);
+			}
+			else if ("query_one_machine_status" == str_cmd)
+			{
+			}
+			rep = reply::construct_message(ret, json_result.toStyledString(), str_err_reason);
 		}
 		bool request_handler::url_decode(const std::string& in, std::string& out)
 		{
@@ -140,6 +166,88 @@ namespace http
 				}
 			}
 			return true;
+		}
+
+		int request_handler::on_connect(const Json::Value& json_root, Json::Value& json_result, std::string& str_total_err_reason)
+		{
+			string str_key = "carveInfo";
+			businlog_error_return_err_reason(json_root.isMember(str_key), __CLASS_FUNCTION__ << " | json:" << json_root.toStyledString() << ", without key:" << str_key
+				, str_total_err_reason, MSP_ERROR_INVALID_PARA);
+
+			const Json::Value& json_arr_carveInfo = json_root[str_key];
+			int ret = 0;
+
+			//遍历信息数组
+			for (int i = 0; i != json_arr_carveInfo.size(); ++i)
+			{
+				const Json::Value& json_single_params = json_arr_carveInfo[i];
+				std::string str_single_err_reason;
+				Json::Value json_single_resp;
+				//新建雕刻机对象
+				boost::shared_ptr<CCarve> ptr_carve;
+				try
+				{
+					ptr_carve = boost::make_shared<CCarve>(json_single_params);
+				}
+				catch (std::exception& e)
+				{
+					str_single_err_reason = string("Has exception:") + string(e.what());
+					businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_single_err_reason.c_str());
+					ret = MSP_ERROR_EXCEPTION;
+					goto Exit_Single;
+				}
+				//连接雕刻机
+				ret = ptr_carve->connect(str_single_err_reason);
+				if (ret)
+				{
+					businlog_error("%s | fail to connect carve, reason:%s.", __CLASS_FUNCTION__, str_single_err_reason);
+					goto Exit_Single;
+				}
+				//设置continue状态
+				unsigned short nMax_wait_time = 1000;
+				str_key = "max_wait_time";
+				if (json_single_params.isMember(str_key))
+				{//参数中含有最大等待时间
+					nMax_wait_time = json_single_params[str_key].asInt();
+				}
+				ret = ptr_carve->set_continue_status(0, nMax_wait_time, str_single_err_reason);
+				if (ret)
+				{
+					businlog_error("%s | fail to set carve continue status, reason:%s.", __CLASS_FUNCTION__, str_single_err_reason.c_str());
+					goto Exit_Single;
+				}
+				//重置设备
+				ret = ptr_carve->reset(nMax_wait_time, str_single_err_reason);
+				if (ret)
+				{
+					businlog_error("%s | fail to reset carve, reason:%s.", __CLASS_FUNCTION__, str_single_err_reason.c_str());
+					goto Exit_Single;
+				}
+				//添加雕刻机对象
+				ret = CCarve_Manager::instance()->add_carve(json_single_params, ptr_carve, str_single_err_reason);
+				if (ret)
+				{
+					businlog_error("%s | fail to add carve, reason:%s", __CLASS_FUNCTION__, str_single_err_reason.c_str());
+					goto Exit_Single;
+				}
+Exit_Single:
+				//构造结果
+				json_single_resp["ret"] = ret;
+				json_single_resp["errmsg"] = str_single_err_reason;
+				if (json_single_params.isMember(CCarve::ms_str_carve_id_key))
+				{
+					json_single_resp[CCarve::ms_str_carve_id_key] = json_single_params[CCarve::ms_str_carve_id_key];
+				}
+				else
+				{
+					json_single_resp[CCarve::ms_str_carve_id_key] = Json::Value();
+				}
+				//将单个结果添加到结果数组中
+				json_result["results"].append(json_single_resp);
+				str_total_err_reason += string(". ") + str_single_err_reason;
+				continue;
+			}//end for
+			return MSP_SUCCESS;
 		}
 
 	} // namespace server3

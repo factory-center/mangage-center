@@ -219,6 +219,7 @@ copy "$(ProjectDir)\..\lib64\json\*" "$(SolutionDir)$(Platform)\$(Configuration)
     <ClInclude Include="..\include\boost_common.h" />
     <ClInclude Include="..\source\busin_log.h" />
     <ClInclude Include="..\source\carve_common_lib.h" />
+    <ClInclude Include="..\source\carve_manager.h" />
     <ClInclude Include="..\source\CBaoyuan_Lib_Tool.h" />
     <ClInclude Include="..\source\CCarve.h" />
     <ClInclude Include="..\source\CDevice.h" />
@@ -243,8 +244,10 @@ copy "$(ProjectDir)\..\lib64\json\*" "$(SolutionDir)$(Platform)\$(Configuration)
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\source\carve_common_lib.cpp" />
+    <ClCompile Include="..\source\carve_manager.cpp" />
     <ClCompile Include="..\source\CBaoyuan_Lib_Tool.cpp" />
     <ClCompile Include="..\source\CCarve.cpp" />
+    <ClCompile Include="..\source\CDevice.cpp" />
     <ClCompile Include="..\source\http_server\connection.cpp" />
     <ClCompile Include="..\source\http_server\deal_http_msg.cpp" />
     <ClCompile Include="..\source\http_server\http_parser.c" />

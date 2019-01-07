@@ -61,7 +61,7 @@ public:
 	}
 	bool init(string& str_kernel_err_reason);
 	bool is_baoyuan(int nfactory_type, const string& str_carve_type_key);
-	bool connect(const Json::Value& json_conn_value, string& str_kernel_err_reason);
+	bool connect(Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool disconnect(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool upload_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason);
 	bool set_continue_status(const Json::Value& json_conn_value, string& str_kernel_err_reason);

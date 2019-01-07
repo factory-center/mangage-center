@@ -13,7 +13,7 @@
 
 #include <string>
 #include <boost/noncopyable.hpp>
-
+#include <json/json.h>
 namespace http {
 	namespace server3 {
 
@@ -32,6 +32,7 @@ namespace http {
 			void handle_request(const request& req, reply& rep);
 			void handle_request(const request& req, const std::string& str_json_body, reply& rep);
 		private:
+			int on_connect(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason);
 			/// The directory containing the files to be served.
 			std::string doc_root_;
 

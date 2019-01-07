@@ -42,7 +42,6 @@ int CCarve::connect(string& str_kernel_err_reason)
 	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
 	{
 		//宝元库所需要的参数
-		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
 		json_conn_value[ms_str_ip_key] = m_str_ip;
 	}
 	else if(false)
@@ -60,6 +59,10 @@ int CCarve::connect(string& str_kernel_err_reason)
 	businlog_error_return(bSuccess, ("%s | fail to connect carve, param in json:%s, reason:%s"
 		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_kernel_err_reason.c_str()), MSP_ERROR_FAIL);
 	m_bConnected = true;
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	{
+		m_nConn_idx = json_conn_value[ms_str_conn_idx_key].asInt();
+	}
 	return MSP_SUCCESS;
 }
 
@@ -401,9 +404,9 @@ int CCarve::delete_1_file(const string& str_file_path, string& str_kernel_err_re
 	return MSP_SUCCESS;
 }
 
-const string CCarve::ms_str_factory_type_key = "factory_type";
+const string CCarve::ms_str_factory_type_key = "carveExFactory";
 
-const string CCarve::ms_str_carve_type_key = "carve_type";
+const string CCarve::ms_str_carve_type_key = "carveType";
 
 const string CCarve::ms_str_conn_idx_key = "conn_idx";
 
@@ -415,11 +418,31 @@ const string CCarve::ms_str_status_key = "status";
 
 const string CCarve::ms_str_max_wait_time_key = "max_wait_time";
 
-CCarve::CCarve(unsigned short nConn_idx, const string& str_ip) 
-	: CDevice(ECARVE, str_ip)
-	, m_nConn_idx(nConn_idx)
-	, m_bConnected(false)
-	, m_eFactory_type(CARVE_FACTORY_TYPE_BAOYUAN) //TODO:临时这么写，后面由参数传入
-{
+const string CCarve::ms_str_carve_id_key = "carveId";
 
+CCarve::CCarve(const Json::Value& json_params)  throw (std::exception)
+	: CDevice(ECARVE, json_params)
+	, m_bConnected(false)
+	, m_nConn_idx(-2)
+{
+	std::string str_err_reason;
+	if (!json_params.isMember(CCarve::ms_str_factory_type_key))
+	{
+		str_err_reason = string("json:") + json_params.toStyledString() + string(" without key:") + CCarve::ms_str_factory_type_key;
+		businlog_error("%s | err reason:%s", __FUNCTION__, str_err_reason.c_str());
+		throw std::exception(str_err_reason.c_str());
+	}
+
+	if (!json_params.isMember(CCarve::ms_str_carve_type_key))
+	{
+		str_err_reason = string("json:") + json_params.toStyledString() + string(" without key:") + CCarve::ms_str_carve_type_key;
+		businlog_error("%s | err reason:%s", __FUNCTION__, str_err_reason.c_str());
+		throw std::exception(str_err_reason.c_str());
+	}
+
+	m_str_carve_type = json_params[ms_str_carve_type_key].asString();
+	if ("BaoYuan" == json_params[ms_str_factory_type_key].asString())
+	{
+		m_eFactory_type = CARVE_FACTORY_TYPE_BAOYUAN;
+	}
 }

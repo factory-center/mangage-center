@@ -154,10 +154,8 @@ bool CBaoyuan_Lib::create_connection(const Json::Value& json_conn_value, string&
 		//此时链接失败
 		if (talktime >= 10)
 		{//重复次数达到指定次数
-			str_kernel_err_reason = "Connect time out";
-			businlog_error("%s | connection index:%d, ip:%s, err reason:%s, Status:%d"
-				, __CLASS_FUNCTION__, nConn_idx, str_carve_ip.c_str(), str_kernel_err_reason.c_str(), nStatus);
-			return false;
+			businlog_error_return_err_reason(false, __CLASS_FUNCTION__ << " | Connect time out, ip:" << str_carve_ip
+				<< ", conn idx:" << nConn_idx <<  ", carve status:" << nStatus, str_kernel_err_reason, false);
 		}
 		else
 		{//链接失败，未达到指定次数
@@ -674,6 +672,60 @@ bool CBaoyuan_Lib::parse_carve_status_to_description(const int nCarve_status, st
 	return true;
 }
 
+/************************************
+* Method:    acquire_conn_idx
+* Brief:  申请一个空闲可用的连接索引
+* Access:    public 
+* Returns:   bool
+* Qualifier:
+*Parameter: int & nConn_idx -[out]  
+*Parameter: string & str_kernel_err_reason -[out]  
+************************************/
+bool CBaoyuan_Lib::acquire_conn_idx(int& nConn_idx, string& str_kernel_err_reason)
+{
+	boost::mutex::scoped_lock guard(m_mutex_conn_idx);
+	for (int i = 0; i != MAX_CONNECTIONS_NUM; ++i)
+	{
+		if (false == m_vec_conn_idx_used[i])
+		{//找到一个空闲的索引
+			nConn_idx = i;
+			m_vec_conn_idx_used[i] = true;
+			return true;
+		}
+	}
+	//此时查找一圈都没有找到空闲的，即管理的设备过多，则出错
+	businlog_error_return_err_reason(false, __CLASS_FUNCTION__ <<" | The num of carves is lager than " << MAX_CONNECTIONS_NUM
+		, str_kernel_err_reason, false);
+}
+
+/************************************
+* Method:    release_conn_idx
+* Brief:  归还之前申请的连接索引
+* Access:    public 
+* Returns:   bool
+* Qualifier:
+*Parameter: int nConn_idx -[in/out]  
+*Parameter: string & str_kernel_err_reason -[in/out]  
+************************************/
+bool CBaoyuan_Lib::release_conn_idx(const Json::Value& json_conn_value, string& str_kernel_err_reason)
+{
+	//判定是否含有conn idx
+	businlog_error_return_err_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
+		, str_kernel_err_reason, false);
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+	//判定参数合法性
+	businlog_error_return_err_reason(nConn_idx > -1 && nConn_idx < MAX_CONNECTIONS_NUM
+		, __CLASS_FUNCTION__ << " | Invalid conn idx:" << nConn_idx << ", should be [0,"
+		<< MAX_CONNECTIONS_NUM << ")", str_kernel_err_reason, false);
+	boost::mutex::scoped_lock guard(m_mutex_conn_idx);
+	//判定索引当前是否处于忙碌状态
+	businlog_error_return_err_reason(m_vec_conn_idx_used[nConn_idx], __CLASS_FUNCTION__ << " | conn idx:" << nConn_idx << " is already idle"
+		, str_kernel_err_reason, false);
+	m_vec_conn_idx_used[nConn_idx] = false;
+	return true;
+}
+
 bool CBaoyuan_Lib::start_timer(string& str_kernel_err_reason)
 {
 	m_bStop = false;
@@ -757,7 +809,7 @@ bool CBaoyuan_Lib::set_RBit(int nConn_idx, unsigned int nAddr, unsigned char nBi
 	//讓等待先前所設定的直接命令完成後，再繼續執行下去
 	nRet_baoyuan = m_sc2_obj.DWaitDone(nConn_idx, nMax_wait_time/*1000*/);
 	businlog_error_return_err_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | Time out to do cmd, conn idx:" 
-		<< nConn_idx, str_err_reason, false);
+		<< nConn_idx << ", Max wait time(ms):" << nMax_wait_time, str_err_reason, false);
 	return true;
 }
 
@@ -799,7 +851,7 @@ bool CBaoyuan_Lib::set_RValue(int nConn_idx, unsigned int nAddr, unsigned int nV
 	//讓等待先前所設定的直接命令完成後，再繼續執行下去
 	nRet_baoyuan = m_sc2_obj.DWaitDone(nConn_idx, nMax_wait_time);
 	businlog_error_return_err_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | Time out to do cmd, nConn_idx:" 
-		<< nConn_idx, str_kernel_err_reason, false);
+		<< nConn_idx << ", max wait time(ms):" << nMax_wait_time, str_kernel_err_reason, false);
 	return true;
 }
 
@@ -850,7 +902,7 @@ bool CBaoyuan_Lib::set_RString(int nConn_idx, size_t nAddr, size_t nBuff_size, c
 	//讓等待先前所設定的直接命令完成後，再繼續執行下去
 	nRet_baoyuan = m_sc2_obj.DWaitDone(nConn_idx, nMax_wait_time);
 	businlog_error_return_err_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | Time out to do cmd, conn idx:" 
-		<< nConn_idx, str_kernel_err_reason, false);
+		<< nConn_idx << ", max wait time(ms):" << nMax_wait_time, str_kernel_err_reason, false);
 	return true;
 }
 
@@ -950,6 +1002,11 @@ CBaoyuan_Lib::CBaoyuan_Lib()
 	/*	m_sDLL_setting.MemSizeR = 4000000;*/
 	m_sDLL_setting.MemSizeTimer = 0;
 	m_sDLL_setting.MemSizeF = F_NUM;
+	//将索引都设置未使用
+	for (int i = 0; i != MAX_CONNECTIONS_NUM; ++i)
+	{
+		m_vec_conn_idx_used.push_back(false);
+	}
 }
 
 CBaoyuan_Lib::~CBaoyuan_Lib()
