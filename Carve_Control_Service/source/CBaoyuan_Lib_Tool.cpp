@@ -242,15 +242,13 @@ bool CBaoyuan_Lib::get_connect_status(const Json::Value& json_conn_value, int& n
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" 
 		<< CCarve::ms_str_conn_idx_key, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
-
+	//获取连线索引
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_err_reason_for_debug, str_err_reason_for_user)
 		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
-
+	//获取连接状态
 	nStatus = m_sc2_obj.GetConnectionMsg(nConn_idx, SCIF_CONNECT_STATE);
-	businlog_error_return_debug_and_user_reason(SC_CONN_STATE_OK == nStatus || SC_CONN_STATE_CONNECTING == nStatus, __CLASS_FUNCTION__ << " | Connect is over, conn idx:" 
-		<< nConn_idx << ", status now:" << nStatus, str_err_reason_for_debug, "设备连接异常", str_err_reason_for_user, false);
 	return true;
 }
 
@@ -261,18 +259,17 @@ bool CBaoyuan_Lib::get_connect_status(const Json::Value& json_conn_value, int& n
 * Returns:   bool
 * Qualifier:
 *Parameter: int nConn_idx -[in] 连接索引，不能为-1
-*Parameter: int & nStatus -[in/out]  
-*Parameter: string & str_kernel_err_reason -[in/out]  
+*Parameter: int & nStatus -[out]  连接状态
+*Parameter: string & str_err_reason_for_debug -[out]  
+*Parameter: string & str_err_reason_for_user -[out]  
 ************************************/
 bool CBaoyuan_Lib::get_connect_status(int nConn_idx, int& nStatus, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	//判定参数合法性
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_err_reason_for_debug, str_err_reason_for_user)
 		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
-
+	//获取连接状态
 	nStatus = m_sc2_obj.GetConnectionMsg(nConn_idx, SCIF_CONNECT_STATE);
-	businlog_error_return_debug_and_user_reason(SC_CONN_STATE_OK == nStatus || SC_CONN_STATE_CONNECTING == nStatus, __CLASS_FUNCTION__ << " | Connect is over, conn idx:" 
-		<< nConn_idx << ", status now:" << nStatus, str_err_reason_for_debug, "设备连接异常", str_err_reason_for_user, false);
 	return true;
 }
 
@@ -487,6 +484,36 @@ bool CBaoyuan_Lib::cancel_fast_stop(const Json::Value& json_conn_value, string& 
 	return true;
 }
 
+bool CBaoyuan_Lib::is_connected(int nConn_idx, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	//判定参数合法性
+	businlog_error_return(is_valid_conn_idx(nConn_idx, str_err_reason_for_debug, str_err_reason_for_user)
+		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+
+	int nStatus = m_sc2_obj.GetConnectionMsg(nConn_idx, SCIF_CONNECT_STATE);
+	businlog_error_return_debug_and_user_reason(SC_CONN_STATE_OK == nStatus || SC_CONN_STATE_CONNECTING == nStatus, __CLASS_FUNCTION__ << " | Connect is over, conn idx:" 
+		<< nConn_idx << ", status now:" << nStatus, str_err_reason_for_debug, "设备连接异常", str_err_reason_for_user, false);
+	return true;
+}
+
+bool CBaoyuan_Lib::is_connected(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	//判定参数合法性
+	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" 
+		<< CCarve::ms_str_conn_idx_key, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+
+	businlog_error_return(is_valid_conn_idx(nConn_idx, str_err_reason_for_debug, str_err_reason_for_user)
+		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+
+	int nStatus = m_sc2_obj.GetConnectionMsg(nConn_idx, SCIF_CONNECT_STATE);
+	businlog_error_return_debug_and_user_reason(SC_CONN_STATE_OK == nStatus || SC_CONN_STATE_CONNECTING == nStatus, __CLASS_FUNCTION__ << " | Connect is over, conn idx:" 
+		<< nConn_idx << ", status now:" << nStatus, str_err_reason_for_debug, "设备连接异常", str_err_reason_for_user, false);
+	return true;
+}
+
 bool CBaoyuan_Lib::upload_1file(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	businlog_tracer_perf(CBaoyuan_Lib::upload_1file);
@@ -506,10 +533,9 @@ bool CBaoyuan_Lib::upload_1file(const Json::Value& json_conn_value, string& str_
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_err_reason_for_debug, str_err_reason_for_user)
 		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
 
-	//查询一下连接状态
-	int nStatus = SC_CONN_STATE_DISCONNECT; 
-	bool bSuccess = get_connect_status(json_conn_value, nStatus, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to get connect status, json info:%s, reason:%s"
+	//判定连接状态
+	bool bSuccess = is_connected(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(bSuccess, ("%s | Connection is over, json info:%s, reason:%s"
 		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_err_reason_for_debug.c_str()), false);
 
 	//所有連線共用同一個檔案傳輸功能，需於傳輸前用 FtpSetConnection 函式設定所對應的連。
@@ -586,9 +612,8 @@ bool CBaoyuan_Lib::delete_1file(const Json::Value& json_conn_value, string& str_
 		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
 
 	//查询连接状态
-	int nStatus = SC_CONN_STATE_DISCONNECT; 
-	bool bSuccess = get_connect_status(json_conn_value, nStatus, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to get connect status, json info:%s, reason:%s"
+	bool bSuccess = is_connected(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(bSuccess, ("%s | Connection is over, json info:%s, reason:%s"
 		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_err_reason_for_debug.c_str()), false);
 
 	//所有連線共用同一個檔案傳輸功能，需於傳輸前用 FtpSetConnection 函式設定所對應的连接
@@ -969,10 +994,9 @@ bool CBaoyuan_Lib::get_RValue(int Conn_idx, int nAddr, int& nValue, string& str_
 	//参数合法性判定
 	businlog_error_return(is_valid_conn_idx(Conn_idx, str_err_reason_for_debug, str_err_reason_for_user), ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
 
-	//获取连接状态
-	int nStatus_connect = SC_CONN_STATE_DISCONNECT;
-	bool bSuccess = get_connect_status(Conn_idx, nStatus_connect, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | failed, reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+	//判定连接状态
+	bool bSuccess = is_connected(Conn_idx, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(bSuccess, ("%s | Connection is over, reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
 	//读取数据
 	nValue = m_sc2_obj.memR(Conn_idx, nAddr);
 	return true;
@@ -987,10 +1011,9 @@ bool CBaoyuan_Lib::get_RBit(int nConn_idx, int nAddr, int nBitIdx, int& nValue, 
 		, ("%s | invalid addr:%d, reason:%s", __CLASS_FUNCTION__, nAddr, str_err_reason_for_debug.c_str()), false);
 	businlog_error_return(is_valid_bit_idx(nBitIdx, str_err_reason_for_debug, str_err_reason_for_user)
 		, ("%s | invalid bitIdx:%d, reason:%s", __CLASS_FUNCTION__, nBitIdx, str_err_reason_for_debug.c_str()), false);
-	//获取连接状态
-	int nStatus_connect = SC_CONN_STATE_DISCONNECT;
-	bool bSuccess = get_connect_status(nConn_idx, nStatus_connect, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | failed, reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+	//判定连接是否正常
+	bool bSuccess = is_connected(nConn_idx, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(bSuccess, ("%s | Connection is over, reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
 
 	//读取数据
 	nValue = m_sc2_obj.memRBit(nConn_idx, nAddr, nBitIdx);
