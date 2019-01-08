@@ -514,6 +514,19 @@ bool CBaoyuan_Lib::is_connected(const Json::Value& json_conn_value, string& str_
 	return true;
 }
 
+bool CBaoyuan_Lib::get_current_line_num(const Json::Value& json_conn_value, int& nCurrent_line_num, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	businlog_tracer_perf(CBaoyuan_Lib::get_current_line_num);
+	//判定是否含有conn idx
+	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
+	//获取连接索引
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+	//读取指定位置数据以获取当前文件的行号
+	return get_RValue(nConn_idx, 3006072, nCurrent_line_num, str_err_reason_for_debug, str_err_reason_for_user);
+}
+
 bool CBaoyuan_Lib::upload_1file(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	businlog_tracer_perf(CBaoyuan_Lib::upload_1file);
