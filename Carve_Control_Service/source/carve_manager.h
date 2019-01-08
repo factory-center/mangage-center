@@ -36,7 +36,7 @@ class CCarve_Manager
 {
 public:
 	static CCarve_Manager* instance();
-	int connect_carve(const Json::Value& json_params, string& str_err_reason);
+	int connect_carve(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 protected:
 	CCarve_Manager();
 	~CCarve_Manager();
@@ -48,6 +48,7 @@ private:
 	public:
 		~CGarbo();
 	};
+	typedef std::map<string, boost::shared_ptr<CCarve>>::iterator TYPE_MAP_ITER;
 	// 声明一个静态成员，在程序结束时，系统会调用它的析构函数，注意这里仅仅是声明，还需要在相应的cpp文件中对静态成员进行定义哦。
 	static CGarbo Garbo;
 	static CCarve_Manager* ms_pInstance;

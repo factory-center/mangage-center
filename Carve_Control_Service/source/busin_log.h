@@ -79,6 +79,24 @@ typedef busin_log_Cfg						businlog_cfg;
 	if (!(exp)) { std::ostringstream oss_err_msg; oss_err_msg << msg; \
 	              if ( businlog_inst ) businlog_inst->log_err_return_msg(oss_err_msg); \
 				  str_kernel_err_reason = oss_err_msg.str(); return ret; }
+/************************************************************************/
+/*    功能：判定表达式，为真则啥也不做；反之，则构造便于研发人员和用户的错误信息并返回 
+      @exp -[in]支持！操作符的表达式
+	  @msg_for_debug -[in]便于研发人员解决bug的信息，格式为xx<<yy<<zz<<...
+	  @str_err_reason_for_debug -[out] 为研发人员提供的错误提示信息
+	  @msg_for_user -[in] 便于用户解决bug的信息,xx<<yy<<zz<<...（最好为中文）
+	  @str_err_reason_for_user -[out] 为用户提供的错误提示信息
+*/
+/************************************************************************/
+#define businlog_error_return_debug_and_user_reason(exp, msg_for_debug, str_err_reason_for_debug, msg_for_user, str_err_reason_for_user, ret)	\
+	if (!(exp)) {	\
+		std::ostringstream oss_err_msg_for_debug; oss_err_msg_for_debug << msg_for_debug; \
+		if ( businlog_inst ) businlog_inst->log_err_return_msg(oss_err_msg_for_debug); \
+		str_err_reason_for_debug = oss_err_msg_for_debug.str(); \
+		std::ostringstream oss_err_msg_for_user; \
+		oss_err_msg_for_user << msg_for_user; \
+		str_err_reason_for_user = oss_err_msg_for_user.str();\
+		return ret; }
 // 根据返回值打印相同的信息
 #define businlog_func_ret(ret, msg)		if ( ret != 0 ) { businlog_error msg; } else { businlog_verbose msg; }
 #define businlog_func_ret_info(ret, msg)	if ( ret != 0 ) { businlog_error msg; } else { businlog_info msg; }

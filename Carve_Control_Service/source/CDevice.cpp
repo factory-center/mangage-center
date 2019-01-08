@@ -20,7 +20,7 @@
 #include "busin_log.h"
 
 
-CDevice::CDevice(EDevice_Type eType, const Json::Value& json_params) throw (std::exception) 
+CDevice::CDevice(EDevice_Type eType, const Json::Value& json_params) 
 	: m_eType(eType)
 {
 	std::string str_err_reason;

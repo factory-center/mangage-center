@@ -35,17 +35,17 @@ class  CCarve : public CDevice
 {
 public:
 	CCarve(const Json::Value& json_params);
-	int connect(string& str_kernel_err_reason);
-	int disconnect(string& str_kernel_err_reason);
-	int set_continue_status(unsigned char nStatus, unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	int reset(unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	int start(const string& str_nc_file_path, unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	int pause(unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	int upload_1_file(const string& str_file_path, string& str_kernel_err_reason);
-	int get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& str_kernel_err_reason);
-	int stop_fast(unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	int cancel_fast_stop(unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	int delete_1_file(const string& str_file_path, string& str_kernel_err_reason);
+	int connect(string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int disconnect(string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int set_continue_status(unsigned char nStatus, unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int reset(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int start(const string& str_nc_file_path, unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int pause(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int upload_1_file(const string& str_file_path, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int stop_fast(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int cancel_fast_stop(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int delete_1_file(const string& str_file_path, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	unsigned short Conn_idx() const { return m_nConn_idx; }
 	void Conn_idx(unsigned short val) { m_nConn_idx = val; }
 	static const string ms_str_factory_type_key; 

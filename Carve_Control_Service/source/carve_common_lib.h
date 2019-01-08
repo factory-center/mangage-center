@@ -61,24 +61,24 @@ public:
 	}
 	bool init(string& str_kernel_err_reason);
 	bool is_baoyuan(int nfactory_type, const string& str_carve_type_key);
-	bool connect(Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool disconnect(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool upload_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool set_continue_status(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool reset_carve(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool pause(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool start(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool get_carve_status(const Json::Value& json_conn_value, ECARVE_STATUS_TYPE& eCommon_carver_status, string& str_kernel_err_reason);
-    bool get_carve_status_description(const ECARVE_STATUS_TYPE& eCommon_carver_status, string& str_carve_status_description, string& str_kernel_err_reason);
-    bool stop_fast(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool cancel_fast_stop(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool delete_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason);
+	bool connect(Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool disconnect(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool upload_1file(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool set_continue_status(const Json::Value& json_conn_value, string& str__err_reason_for_debug, string& str__err_reason_for_user);
+	bool reset_carve(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool pause(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool start(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool get_carve_status(const Json::Value& json_conn_value, ECARVE_STATUS_TYPE& eCommon_carver_status, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+    bool get_carve_status_description(const ECARVE_STATUS_TYPE& eCommon_carver_status, string& str_carve_status_description, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+    bool stop_fast(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool cancel_fast_stop(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool delete_1file(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 protected:
-	bool get_carve_factory_and_type(const Json::Value& json_conn_value, int& nfactory_type, string& str_str_carve_type_key, string& str_kernel_err_reason);
+	bool get_carve_factory_and_type(const Json::Value& json_conn_value, int& nfactory_type, string& str_str_carve_type_key, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	CCarve_Common_Lib_Tool();
 	~CCarve_Common_Lib_Tool();
 	
-	bool parse_baoyuan_carve_status_to_common(int nBaoyuan_carve_status, ECARVE_STATUS_TYPE& eCarve_common_status, string& str_kernel_err_reason);
+	bool parse_baoyuan_carve_status_to_common(int nBaoyuan_carve_status, ECARVE_STATUS_TYPE& eCarve_common_status, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 private:
 	CCarve_Common_Lib_Tool& operator=(const CCarve_Common_Lib_Tool&);
 	CCarve_Common_Lib_Tool(const CCarve_Common_Lib_Tool&);

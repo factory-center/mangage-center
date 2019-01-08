@@ -114,6 +114,7 @@ namespace http
 			{
 				ret = MSP_ERROR_INVALID_PARA;
 				str_err_reason = std::string("body:") + str_json_body + std::string(", json without key:") + str_key;
+				rep = reply::construct_message(ret, "", str_err_reason);
 				businlog_error("%s | body:%s without key:%s", __CLASS_FUNCTION__, str_json_body.c_str(), str_key.c_str());
 				return;
 			}
@@ -168,11 +169,11 @@ namespace http
 			return true;
 		}
 
-		int request_handler::on_connect(const Json::Value& json_root, Json::Value& json_result, std::string& str_total_err_reason)
+		int request_handler::on_connect(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
 		{
 			string str_key = "carveInfo";
 			businlog_error_return_err_reason(json_root.isMember(str_key), __CLASS_FUNCTION__ << " | json:" << json_root.toStyledString() << ", without key:" << str_key
-				, str_total_err_reason, MSP_ERROR_INVALID_PARA);
+				, str_err_reason, MSP_ERROR_INVALID_PARA);
 
 			const Json::Value& json_arr_carveInfo = json_root[str_key];
 			int ret = 0;
@@ -182,14 +183,15 @@ namespace http
 			{
 				//获取单个雕刻机信息
 				const Json::Value& json_single_params = json_arr_carveInfo[i];
-				std::string str_single_err_reason;
-			
+				std::string str_err_reason_for_debug;
+				std::string str_err_reason_for_user;
 				//连接雕刻机
-				ret = CCarve_Manager::instance()->connect_carve(json_single_params, str_single_err_reason);
+				ret = CCarve_Manager::instance()->connect_carve(json_single_params, str_err_reason_for_debug, str_err_reason_for_user);
 				Json::Value json_single_resp;
 				//构造结果
 				json_single_resp["ret"] = ret;
-				json_single_resp["errmsg"] = str_single_err_reason;
+				json_single_resp["errmsg"] = str_err_reason_for_debug;
+				json_single_resp["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
 				if (json_single_params.isMember(CCarve::ms_str_carve_id_key))
 				{
 					json_single_resp[CCarve::ms_str_carve_id_key] = json_single_params[CCarve::ms_str_carve_id_key];
@@ -200,7 +202,7 @@ namespace http
 				}
 				//将单个结果添加到结果数组中
 				json_result["results"].append(json_single_resp);
-				str_total_err_reason += string(". ") + str_single_err_reason;
+				str_err_reason += string(". ") + str_err_reason_for_debug;
 			}//end for
 			return MSP_SUCCESS;
 		}

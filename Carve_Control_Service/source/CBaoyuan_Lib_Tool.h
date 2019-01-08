@@ -45,40 +45,41 @@ public:
 	//逆初始化
 	void fini();
 	//雕刻机相关指令
-	bool create_connection(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool disconnect(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool get_connect_status(const Json::Value& json_conn_value, int& nStatus, string& str_kernel_err_reason);
-	bool get_connect_status(int nConn_idx, int& nStatus, string& str_kernel_err_reason);
-	bool confirm_task(unsigned short nConn_idx, size_t nMax_wait_time, string& str_kernel_err_reason);
-	bool set_continue_status(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool reset_carve(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool pause(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool start(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool get_carve_status(const Json::Value& json_conn_value, int& nCarve_status, string& str_kernel_err_reason);
-	bool stop_fast(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool cancel_fast_stop(const Json::Value& json_conn_value, string& str_kernel_err_reason);
+	bool create_connection(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool disconnect(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	//TODO::下面两个函数需要重命名为is_connected
+	bool get_connect_status(const Json::Value& json_conn_value, int& nStatus, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool get_connect_status(int nConn_idx, int& nStatus, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool confirm_task(unsigned short nConn_idx, size_t nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool set_continue_status(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool reset_carve(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool pause(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool start(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool get_carve_status(const Json::Value& json_conn_value, int& nCarve_status, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool stop_fast(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool cancel_fast_stop(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	//NC文件相关
-	bool upload_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool delete_1file(const Json::Value& json_conn_value, string& str_kernel_err_reason);
-	bool parse_carve_status_to_description(const int nCarve_status, string& str_carve_status_description, string& str_kernel_err_reason);
+	bool upload_1file(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool delete_1file(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool parse_carve_status_to_description(const int nCarve_status, string& str_carve_status_description, string& str_err_reason_for_debug, string& str_err_reason_for_user);
     //索引相关
-	bool acquire_conn_idx(int& nConn_idx, string& str_kernel_err_reason);
-	bool release_conn_idx(const Json::Value& json_conn_value, string& str_kernel_err_reason);
+	bool acquire_conn_idx(int& nConn_idx, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool release_conn_idx(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 private:
 	CBaoyuan_Lib();
 	//是否其占有的资源。析构函数为私有，使得其只能被其自己的垃圾工程释放
 	~CBaoyuan_Lib(); 
 	CBaoyuan_Lib& operator=(const CBaoyuan_Lib&);
 	CBaoyuan_Lib(const CBaoyuan_Lib&);
-	bool set_RBit(int nConn_idx, unsigned int nAddr, unsigned char nBitIdx, unsigned char nBitValue, unsigned short nMax_wait_time, string& str_err_reason);
-	bool set_RValue(int nConn_idx, unsigned int  nAddr, unsigned int nVal, unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	bool set_RString(int nConn_idx, size_t nAddr,  size_t nBuff_size, const char* pBuff, unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	bool set_CValue(int nConn_idx, int nAddr, int nValue, unsigned short nMax_wait_time, string& str_kernel_err_reason);
-	bool get_RValue(int Conn_idx, int nAddr, int& nValue, string& str_kernel_err_reason);
-	bool get_RBit(int nConn_idx, int nAddr, int nBitIdx, int& nValue, string& str_kernel_err_reason);
-	bool is_valid_conn_idx(int nConn_idx, string& str_kernel_err_reason);
-	bool is_valid_addr(int nAddr, string& str_kernel_err_reason);
-	bool is_valid_bit_idx(int nBitIdx, string& str_kernel_err_reason);
+	bool set_RBit(int nConn_idx, unsigned int nAddr, unsigned char nBitIdx, unsigned char nBitValue, unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool set_RValue(int nConn_idx, unsigned int  nAddr, unsigned int nVal, unsigned short nMax_wait_time,  string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool set_RString(int nConn_idx, size_t nAddr,  size_t nBuff_size, const char* pBuff, unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool set_CValue(int nConn_idx, int nAddr, int nValue, unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool get_RValue(int Conn_idx, int nAddr, int& nValue, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool get_RBit(int nConn_idx, int nAddr, int nBitIdx, int& nValue, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool is_valid_conn_idx(int nConn_idx, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool is_valid_addr(int nAddr, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool is_valid_bit_idx(int nBitIdx, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	string strerror_ftp(int nResult_ftp);
 	//定时器相关
 	//启动定时器
