@@ -241,7 +241,7 @@ bool CBaoyuan_Lib::get_connect_status(const Json::Value& json_conn_value, int& n
 	//判定参数合法性
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" 
-		<< CCarve::ms_str_conn_idx_key, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		<< CCarve::ms_str_conn_idx_key, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	//获取连线索引
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 
@@ -287,15 +287,15 @@ bool CBaoyuan_Lib::set_continue_status(const Json::Value& json_conn_value, strin
 	//判定是否含有conn idx
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	//判定是否含有状态
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_status_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_status_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	//判定是否含有最大超时时间
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_max_wait_time_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 	int nStatus = json_conn_value[CCarve::ms_str_status_key].asInt();
@@ -313,12 +313,12 @@ bool CBaoyuan_Lib::reset_carve(const Json::Value& json_conn_value, string& str_e
 	//判定是否含有conn idx
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	//判定是否含有最大超时时间
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_max_wait_time_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 	unsigned short nMax_wait_time = json_conn_value[CCarve::ms_str_max_wait_time_key].asInt();
@@ -340,12 +340,12 @@ bool CBaoyuan_Lib::pause(const Json::Value& json_conn_value, string& str_err_rea
 	//判定是否含有conn idx
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	//判定是否含有最大超时时间
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_max_wait_time_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 	unsigned short nMax_wait_time = json_conn_value[CCarve::ms_str_max_wait_time_key].asInt();
@@ -366,16 +366,16 @@ bool CBaoyuan_Lib::start(const Json::Value& json_conn_value, string& str_err_rea
 	//判定是否含有conn idx
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	//判定是否含有文件路径
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_file_path_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_file_path_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	//判定是否含有最大超时时间
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_max_wait_time_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 	const string& str_nc_file_path = json_conn_value[CCarve::ms_str_file_path_key].asString();
@@ -407,7 +407,7 @@ bool CBaoyuan_Lib::get_carve_status(const Json::Value& json_conn_value, int& nCa
 	//判定是否含有conn idx
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 
 	//nConn_idx值必須小於 scif_Init 函式初始化時，struct DLL_USE_SETTING 中 ConnectNum 所設定的連線數目。
@@ -445,11 +445,11 @@ bool CBaoyuan_Lib::stop_fast(const Json::Value& json_conn_value, string& str_err
 	//判定是否含有conn idx
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_max_wait_time_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 	unsigned short nMax_wait_time = json_conn_value[CCarve::ms_str_max_wait_time_key].asInt();
@@ -469,11 +469,11 @@ bool CBaoyuan_Lib::cancel_fast_stop(const Json::Value& json_conn_value, string& 
 	//判定是否含有conn idx
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_max_wait_time_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 	unsigned short nMax_wait_time = json_conn_value[CCarve::ms_str_max_wait_time_key].asInt();
@@ -501,7 +501,7 @@ bool CBaoyuan_Lib::is_connected(const Json::Value& json_conn_value, string& str_
 	//判定参数合法性
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" 
-		<< CCarve::ms_str_conn_idx_key, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		<< CCarve::ms_str_conn_idx_key, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 
@@ -533,11 +533,11 @@ bool CBaoyuan_Lib::upload_1file(const Json::Value& json_conn_value, string& str_
 	//判定参数合法性
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_file_path_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_file_path_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	 int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 	 const string& str_file_path = json_conn_value[CCarve::ms_str_file_path_key].asString();
@@ -611,11 +611,11 @@ bool CBaoyuan_Lib::delete_1file(const Json::Value& json_conn_value, string& str_
 	//判定参数合法性
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_file_path_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_file_path_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 	const string& str_file_path = json_conn_value[CCarve::ms_str_file_path_key].asString();
@@ -708,7 +708,7 @@ bool CBaoyuan_Lib::parse_carve_status_to_description(const int nCarve_status, st
 		break;
 	default:
 		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | Invalid status value:" << nCarve_status
-			<< ", must be [0, 5]", str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+			<< ", must be [0, 5]", str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	}
 	return true;
 }
@@ -754,16 +754,16 @@ bool CBaoyuan_Lib::release_conn_idx(const Json::Value& json_conn_value, string& 
 	//判定是否含有conn idx
 	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
 		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 	//判定参数合法性
 	businlog_error_return_debug_and_user_reason(nConn_idx > -1 && nConn_idx < MAX_CONNECTIONS_NUM
 		, __CLASS_FUNCTION__ << " | Invalid conn idx:" << nConn_idx << ", should be [0,"
-		<< MAX_CONNECTIONS_NUM << ")", str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		<< MAX_CONNECTIONS_NUM << ")", str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	boost::mutex::scoped_lock guard(m_mutex_conn_idx);
 	//判定索引当前是否处于忙碌状态
 	businlog_error_return_debug_and_user_reason(m_vec_conn_idx_used[nConn_idx], __CLASS_FUNCTION__ << " | conn idx:" << nConn_idx << " is already idle"
-		, str_err_reason_for_debug, "操作不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "操作错误", str_err_reason_for_user, false);
 	m_vec_conn_idx_used[nConn_idx] = false;
 	return true;
 }
@@ -814,7 +814,7 @@ bool CBaoyuan_Lib::set_RBit(int nConn_idx, unsigned int nAddr, unsigned char nBi
 		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
 	//設定值只能为 0 或 1
 	businlog_error_return_debug_and_user_reason(0 == nBitValue || 1 == nBitValue, __CLASS_FUNCTION__ << " | Invalid BitValue:"
-		<< nBitValue << ", must 0 or 1.", str_err_reason_for_debug, "参数不合法，操作设备失败", str_err_reason_for_user, false);
+		<< nBitValue << ", must 0 or 1.", str_err_reason_for_debug, "参数错误，操作设备失败", str_err_reason_for_user, false);
 	
 	//判定函数库是否可用
 	{
@@ -918,7 +918,7 @@ bool CBaoyuan_Lib::set_RString(int nConn_idx, size_t nAddr, size_t nBuff_size, c
 	//检查参数合法性
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_err_reason_for_debug, str_err_reason_for_user)
 		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
-	businlog_error_return_debug_and_user_reason(NULL != pBuff, __CLASS_FUNCTION__ << " | p is NULL", str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+	businlog_error_return_debug_and_user_reason(NULL != pBuff, __CLASS_FUNCTION__ << " | p is NULL", str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	
 	//連續資料讀取設定	
 	int nRet_baoyuan = m_sc2_obj.LReadNR(nConn_idx, 0, nBuff_size);
@@ -1066,21 +1066,21 @@ bool CBaoyuan_Lib::is_valid_conn_idx(int nConn_idx, string& str_err_reason_for_d
 	//nConn_idx值必須小於 scif_Init 函式初始化時，struct DLL_USE_SETTING 中 ConnectNum 所設定的連線數目。
 	businlog_error_return_debug_and_user_reason(nConn_idx >= -1 && nConn_idx < m_sDLL_setting.ConnectNum
 		, __CLASS_FUNCTION__ << " | Invalid connection index:" << nConn_idx << ", must be [-1," 
-		<< (m_sDLL_setting.ConnectNum - 1) << "]", str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		<< (m_sDLL_setting.ConnectNum - 1) << "]", str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	return true;
 }
 
 bool CBaoyuan_Lib::is_valid_addr(int nAddr, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	businlog_error_return_debug_and_user_reason(nAddr >= 0, __CLASS_FUNCTION__ << " | invalid addr:" << nAddr << ", should be more than -1"
-		, str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	return true;
 }
 
 bool CBaoyuan_Lib::is_valid_bit_idx(int nBitIdx, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	businlog_error_return_debug_and_user_reason(nBitIdx >=0 && nBitIdx < 32, __CLASS_FUNCTION__ << " | invalid bitIdx:" 
-		<< nBitIdx << ", should be [0, 31]", str_err_reason_for_debug, "参数不合法", str_err_reason_for_user, false);
+		<< nBitIdx << ", should be [0, 31]", str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	return true;
 }
 

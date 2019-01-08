@@ -237,7 +237,7 @@ bool CCarve_Common_Lib_Tool::get_carve_status_description(const ECARVE_STATUS_TY
 	default:
 		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | Not support carve common status:" << eCommon_carver_status 
 			<< ", should be [" << CARVE_STATUS_MIN + 1 << "," << CARVE_STATUS_MAX -1 << "]"
-			, str_err_reason_for_debug, "不合法的设备状态", str_err_reason_for_user, false);
+			, str_err_reason_for_debug, "错误的设备状态", str_err_reason_for_user, false);
 	}
 	return true;
 }
