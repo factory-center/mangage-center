@@ -36,7 +36,19 @@ CBaoyuan_Lib* CBaoyuan_Lib::instance()
 	return ms_pInstance;
 }
 
-bool CBaoyuan_Lib::init(int nMakerID, const string& str_key, unsigned int nConnectNum, unsigned int MemSizeR /*= 100000*/)
+/************************************
+* Method:    init
+* Brief:  函数说明
+* Access:    public 
+* Returns:   bool
+* Qualifier:
+*Parameter: int nMakerID -[in/out]  
+*Parameter: const string & str_key -[in/out]  
+*Parameter: unsigned int nConnectNum -[in/out]  
+*Parameter: unsigned int MemSizeR -[in]  此值决定了操作R位址值的范围，小了可能导致读取不到，大了又占用很大内存
+                                    R值占用内存：MemSizeR*4B
+************************************/
+bool CBaoyuan_Lib::init(int nMakerID, const string& str_key, unsigned int nConnectNum, unsigned int MemSizeR /*= 4000000*/)
 {
 	businlog_tracer_perf(CBaoyuan_Lib::init);
 	//参数校验
@@ -815,7 +827,10 @@ bool CBaoyuan_Lib::set_RBit(int nConn_idx, unsigned int nAddr, unsigned char nBi
 	//設定值只能为 0 或 1
 	businlog_error_return_debug_and_user_reason(0 == nBitValue || 1 == nBitValue, __CLASS_FUNCTION__ << " | Invalid BitValue:"
 		<< nBitValue << ", must 0 or 1.", str_err_reason_for_debug, "参数错误，操作设备失败", str_err_reason_for_user, false);
-	
+	businlog_error_return(is_valid_addr(nAddr, str_err_reason_for_debug, str_err_reason_for_user)
+		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+	businlog_error_return(is_valid_bit_idx(nBitIdx, str_err_reason_for_debug, str_err_reason_for_user)
+		, ("%s | invalid bitIdx, reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
 	//判定函数库是否可用
 	{
 		Thread_Read_Lock guard(m_rw_mutex_for_available);
@@ -874,6 +889,9 @@ bool CBaoyuan_Lib::set_RValue(int nConn_idx, unsigned int nAddr, unsigned int nV
 	//检查参数合法性
 	businlog_error_return(is_valid_conn_idx(nConn_idx, str_err_reason_for_debug, str_err_reason_for_user)
 		, ("%s | error reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+	businlog_error_return(is_valid_addr(nAddr, str_err_reason_for_debug, str_err_reason_for_user)
+		, ("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+
 	//連續資料讀取設定
 //	int nRet_baoyuan = scif_cmd_ReadR(SC_POLLING_CMD, nServer_idx, 0, 32);
 	int nRet_baoyuan = m_sc2_obj.LReadNR(nConn_idx, 0, 32);
@@ -920,6 +938,10 @@ bool CBaoyuan_Lib::set_RString(int nConn_idx, size_t nAddr, size_t nBuff_size, c
 		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
 	businlog_error_return_debug_and_user_reason(NULL != pBuff, __CLASS_FUNCTION__ << " | p is NULL", str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	
+	businlog_error_return(is_valid_addr(nAddr, str_err_reason_for_debug, str_err_reason_for_user)
+		, ("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+
+
 	//連續資料讀取設定	
 	int nRet_baoyuan = m_sc2_obj.LReadNR(nConn_idx, 0, nBuff_size);
 	businlog_error_return_debug_and_user_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | fail to ReadR, conn index:" << nConn_idx
@@ -966,7 +988,11 @@ bool CBaoyuan_Lib::set_RString(int nConn_idx, size_t nAddr, size_t nBuff_size, c
 bool CBaoyuan_Lib::set_CValue(int nConn_idx, int nAddr, int nValue, unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	//参数合法性判定
-	businlog_error_return(is_valid_conn_idx(nConn_idx, str_err_reason_for_debug, str_err_reason_for_user), ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+	businlog_error_return(is_valid_conn_idx(nConn_idx, str_err_reason_for_debug, str_err_reason_for_user)
+		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+	businlog_error_return(is_valid_addr(nAddr, str_err_reason_for_debug, str_err_reason_for_user)
+		, ("%s | invalid addr, reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+
 	//連續資料讀取設定
 	int nRet_baoyuan = m_sc2_obj.LReadNC(nConn_idx, 0, 32);
 	businlog_error_return_debug_and_user_reason(0 != nRet_baoyuan, __CLASS_FUNCTION__ << " | fail to ReadC, server index:" << nConn_idx
@@ -1005,8 +1031,10 @@ bool CBaoyuan_Lib::set_CValue(int nConn_idx, int nAddr, int nValue, unsigned sho
 bool CBaoyuan_Lib::get_RValue(int Conn_idx, int nAddr, int& nValue, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	//参数合法性判定
-	businlog_error_return(is_valid_conn_idx(Conn_idx, str_err_reason_for_debug, str_err_reason_for_user), ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
-
+	businlog_error_return(is_valid_conn_idx(Conn_idx, str_err_reason_for_debug, str_err_reason_for_user)
+		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+	businlog_error_return(is_valid_addr(nAddr, str_err_reason_for_debug, str_err_reason_for_user)
+		, ("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
 	//判定连接状态
 	bool bSuccess = is_connected(Conn_idx, str_err_reason_for_debug, str_err_reason_for_user);
 	businlog_error_return(bSuccess, ("%s | Connection is over, reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
@@ -1024,6 +1052,7 @@ bool CBaoyuan_Lib::get_RBit(int nConn_idx, int nAddr, int nBitIdx, int& nValue, 
 		, ("%s | invalid addr:%d, reason:%s", __CLASS_FUNCTION__, nAddr, str_err_reason_for_debug.c_str()), false);
 	businlog_error_return(is_valid_bit_idx(nBitIdx, str_err_reason_for_debug, str_err_reason_for_user)
 		, ("%s | invalid bitIdx:%d, reason:%s", __CLASS_FUNCTION__, nBitIdx, str_err_reason_for_debug.c_str()), false);
+
 	//判定连接是否正常
 	bool bSuccess = is_connected(nConn_idx, str_err_reason_for_debug, str_err_reason_for_user);
 	businlog_error_return(bSuccess, ("%s | Connection is over, reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
@@ -1072,8 +1101,9 @@ bool CBaoyuan_Lib::is_valid_conn_idx(int nConn_idx, string& str_err_reason_for_d
 
 bool CBaoyuan_Lib::is_valid_addr(int nAddr, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
-	businlog_error_return_debug_and_user_reason(nAddr >= 0, __CLASS_FUNCTION__ << " | invalid addr:" << nAddr << ", should be more than -1"
-		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
+	businlog_error_return_debug_and_user_reason(nAddr >= 0 && nAddr < m_sDLL_setting.MemSizeR, __CLASS_FUNCTION__ 
+		<< " | invalid addr:" << nAddr << ", should be between 0 and MemSizeR:" << m_sDLL_setting.MemSizeR
+        , str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	return true;
 }
 

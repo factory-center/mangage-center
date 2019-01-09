@@ -41,7 +41,7 @@ public:
 	static CBaoyuan_Lib* instance();
 	//库相关
 	//初始化
-	bool init(int nMakerID, const string& str_key, unsigned int nConnectNum, unsigned int  MemSizeR = 100000);
+	bool init(int nMakerID, const string& str_key, unsigned int nConnectNum, unsigned int  MemSizeR = 4000000);
 	//逆初始化
 	void fini();
 	//雕刻机相关指令

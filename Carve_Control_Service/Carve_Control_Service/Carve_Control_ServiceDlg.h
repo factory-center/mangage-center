@@ -41,4 +41,5 @@ public:
 	afx_msg void OnBnClickedButton8();
 	afx_msg void OnBnClickedButtoncancelstopfast();
 	afx_msg void OnClose();
+	afx_msg void OnBnClickedgetlinenum();
 };

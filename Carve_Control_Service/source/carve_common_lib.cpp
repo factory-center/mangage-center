@@ -32,7 +32,7 @@ bool CCarve_Common_Lib_Tool::init(string& str_kernel_err_reason)
 	//³õÊ¼»¯±¦Ôª¿â
 	int nMakeId = 1111;
 	string str_key = "79A08F845B1BCADC25EF0B396062EE91C06EB78EFFE16A7A";
-	bool bSuccess = CBaoyuan_Lib::instance()->init(nMakeId, str_key, 100, 1000000);
+	bool bSuccess = CBaoyuan_Lib::instance()->init(nMakeId, str_key, 100, 4000000);
 	businlog_error_return_err_reason(bSuccess, __CLASS_FUNCTION__ << " | fail to init baoyuan lib, makeId:" 
 		<< nMakeId << ", key:" << str_key, str_kernel_err_reason, false);
 	businlog_crit("%s | init baoyuan lib successfully.", __CLASS_FUNCTION__);

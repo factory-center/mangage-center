@@ -84,6 +84,7 @@ BEGIN_MESSAGE_MAP(CCarve_Control_ServiceDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON8, &CCarve_Control_ServiceDlg::OnBnClickedButton8)
 	ON_BN_CLICKED(IDC_BUTTON_cancel_stop_fast, &CCarve_Control_ServiceDlg::OnBnClickedButtoncancelstopfast)
 	ON_WM_CLOSE()
+	ON_BN_CLICKED(IDC_get_line_num, &CCarve_Control_ServiceDlg::OnBnClickedgetlinenum)
 END_MESSAGE_MAP()
 
 
@@ -300,7 +301,14 @@ int test_delete_file()
 		, __FUNCTION__, str_nc_file_path.c_str(), nConn_idx, str_err_reason_for_debug.c_str()), ret);
 	return 0;
 }
-
+int test_get_line_num(int& nLine_num)
+{
+	string str_err_reason_for_debug, str_err_reason_for_user;
+	int ret = carve_ptr->get_current_line_num(nLine_num, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(0 == ret, ("%s | fail to get line num:%s, nConn:%d, reason:%s"
+		, __FUNCTION__, str_nc_file_path.c_str(), nConn_idx, str_err_reason_for_debug.c_str()), ret);
+	return 0;
+}
 //test end
 void CCarve_Control_ServiceDlg::OnBnClickedButton1()
 {
@@ -462,4 +470,20 @@ void CCarve_Control_ServiceDlg::OnClose()
 	//完成一些退出操作
 	singleton_default<CSingleton_Server>::instance().stop();
 	CDialogEx::OnClose();
+}
+
+
+void CCarve_Control_ServiceDlg::OnBnClickedgetlinenum()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	int nLine_num = -1;
+	int ret = test_get_line_num(nLine_num);
+	if (ret)
+	{
+		MessageBox(_T("get line num failed"));
+	}
+	else
+	{
+		MessageBox(_T("get line num successfully, num:") + CString(sp::itostr(nLine_num).c_str()));
+	}
 }

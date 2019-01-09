@@ -47,9 +47,10 @@ int CCarve_Manager::connect_carve(const Json::Value& json_params, string& str_er
 		unsigned short nMax_wait_time = 1000;
 		string str_key = "max_wait_time";
 		int ret = 0;
-		//判定此编号对应的雕刻机是否已经存在
+
 		{
 			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			//判定此编号对应的雕刻机是否已经存在
 			businlog_error_return_debug_and_user_reason(m_map_carveId_carvePtr.find(str_carve_id) == m_map_carveId_carvePtr.end()
 				, __CLASS_FUNCTION__ << " | carve id:" << str_carve_id << " already exist.", str_err_reason_for_debug
 				, "设备编号对应的设备已经连接", str_err_reason_for_user, MSP_ERROR_ALREADY_EXIST);
