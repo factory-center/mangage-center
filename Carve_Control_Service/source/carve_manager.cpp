@@ -114,6 +114,41 @@ Err_exit: //仅当对雕刻机操作出错了，则将雕刻机移除
 	}
 }
 
+int CCarve_Manager::get_carve_status(const Json::Value& json_params, ECARVE_STATUS_TYPE& eCarve_common_status, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	try
+	{
+		//从参数中获取设备编号
+		businlog_error_return_debug_and_user_reason(json_params.isMember(CCarve::ms_str_carve_id_key), __CLASS_FUNCTION__
+			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
+			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		const string& str_carve_id = json_params[CCarve::ms_str_carve_id_key].asString();
+		boost::shared_ptr<CCarve> ptr_carve;
+		//根据设备编号查找对应的雕刻机
+		{
+			Thread_Read_Lock guard(m_rw_carveId_carvePtr);
+			TYPE_MAP_ITER iter = m_map_carveId_carvePtr.find(str_carve_id);
+			businlog_error_return_debug_and_user_reason(iter != m_map_carveId_carvePtr.end(), __CLASS_FUNCTION__ 
+				<< " | Can not find carve id:" << str_carve_id << " in map", str_err_reason_for_debug
+				, "设备编号对应的设备未连接", str_err_reason_for_user, MSP_ERROR_NOT_FOUND);
+			ptr_carve = iter->second;
+		}
+		//走到这里，说明找到了对应的雕刻机
+		//查询雕刻机状态
+		int ret = ptr_carve->get_carve_status(eCarve_common_status, str_err_reason_for_debug, str_err_reason_for_user);
+		businlog_error_return(!ret, ("%s | fail to get carve status, reason:%s."
+			, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+		return MSP_SUCCESS;
+	}
+	catch (std::exception& e)
+	{
+		str_err_reason_for_debug = string("Has exception:") + string(e.what());
+		str_err_reason_for_user = "服务异常";
+		businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+		return MSP_ERROR_EXCEPTION;
+	}
+}
+
 CCarve_Manager::CCarve_Manager()
 {
 

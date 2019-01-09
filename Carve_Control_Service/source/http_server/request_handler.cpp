@@ -127,6 +127,7 @@ namespace http
 			}
 			else if ("query_one_machine_status" == str_cmd)
 			{
+				ret = on_query_one_carve_status(root, json_result, str_err_reason);
 			}
 			rep = reply::construct_message(ret, json_result.toStyledString(), str_err_reason);
 		}
@@ -204,6 +205,33 @@ namespace http
 				json_result["results"].append(json_single_resp);
 				str_err_reason += string(". ") + str_err_reason_for_debug;
 			}//end for
+			return MSP_SUCCESS;
+		}
+
+		int request_handler::on_query_one_carve_status(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		{
+			int ret = 0;
+			std::string str_err_reason_for_debug;
+			std::string str_err_reason_for_user;
+			//获取雕刻机状态
+			ECARVE_STATUS_TYPE eCarve_common_status = CARVE_STATUS_MIN;
+			ret = CCarve_Manager::instance()->get_carve_status(json_root, eCarve_common_status, str_err_reason_for_debug, str_err_reason_for_user);
+			//注意：无论成败，都构造结果
+			//构造结果
+			json_result["ret"] = ret;
+			json_result["errmsg"] = str_err_reason_for_debug;
+			json_result["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
+			json_result["currentStatus"] = eCarve_common_status;
+			if (json_root.isMember(CCarve::ms_str_carve_id_key))
+			{
+				json_result[CCarve::ms_str_carve_id_key] = json_root[CCarve::ms_str_carve_id_key];
+			}
+			else
+			{
+				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
+			}
+			str_err_reason =  str_err_reason_for_debug;
+			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
 			return MSP_SUCCESS;
 		}
 

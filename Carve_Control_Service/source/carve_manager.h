@@ -28,6 +28,7 @@ extern "C" {
 #include <boost_common.h>
 #include <string>
 #include <json/json.h>
+#include "carve_common_lib.h"
 using std::string;
 //∫Í∂®“Â
 class CCarve;
@@ -37,6 +38,7 @@ class CCarve_Manager
 public:
 	static CCarve_Manager* instance();
 	int connect_carve(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int get_carve_status(const Json::Value& json_params, ECARVE_STATUS_TYPE& eCarve_common_status, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 protected:
 	CCarve_Manager();
 	~CCarve_Manager();
