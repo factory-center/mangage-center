@@ -46,6 +46,7 @@ public:
 	CDevice(EDevice_Type eType, const Json::Value& json_params);
 	const string& get_ip() const;
 	const string& get_id();
+	virtual ~CDevice();
 protected:
 	string m_str_ip; //设备的ip地址列表，可能存在多网卡
 	std::string  m_str_id; //设备编号，全局唯一

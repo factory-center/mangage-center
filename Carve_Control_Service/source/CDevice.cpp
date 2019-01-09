@@ -50,3 +50,8 @@ const string& CDevice::get_id()
 {
 	return m_str_id;
 }
+
+CDevice::~CDevice()
+{
+
+}

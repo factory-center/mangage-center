@@ -46,7 +46,7 @@ int CCarve_Manager::connect_carve(const Json::Value& json_params, string& str_er
 		pair_insert_result.second = false;
 		unsigned short nMax_wait_time = 1000;
 		string str_key = "max_wait_time";
-
+		int ret = 0;
 		//判定此编号对应的雕刻机是否已经存在
 		{
 			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
@@ -56,6 +56,10 @@ int CCarve_Manager::connect_carve(const Json::Value& json_params, string& str_er
 			//map中不存在对应的设备编号
 			//构造雕刻机对象
 			ptr_carve = boost::make_shared<CCarve>(json_params);
+			//申请资源，如果失败则直接返回
+			ret = ptr_carve->acquire_resource(str_err_reason_for_debug, str_err_reason_for_user);
+			businlog_error_return(!ret, ("%s | fail to acquire resource, reason:%s."
+				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
 			pair_insert_result = m_map_carveId_carvePtr.insert(std::make_pair(str_carve_id, ptr_carve));
 			//判定插入结果，如果失败，则说明键已经存在了.（map插入失败，是不会覆盖原来的value）
 			businlog_error_return_debug_and_user_reason(pair_insert_result.second, __CLASS_FUNCTION__ << " | fail to insert, carve id:" << str_carve_id << " alread exist."
@@ -63,7 +67,7 @@ int CCarve_Manager::connect_carve(const Json::Value& json_params, string& str_er
 		}
 		//所有关于雕刻机的操作，如果有一个出错，则将其从map中删除，并出错返回
 		//连接雕刻机
-		int ret = ptr_carve->connect(str_err_reason_for_debug, str_err_reason_for_user);
+		ret = ptr_carve->connect(str_err_reason_for_debug, str_err_reason_for_user);
 		if (ret)
 		{
 			businlog_error("%s | fail to connect carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
@@ -94,7 +98,7 @@ Err_exit: //仅当对雕刻机操作出错了，则将雕刻机移除
 		//如果之前添加成功了，则将其移除
 		if(pair_insert_result.second)
 		{
-			//移除
+			//移除（资源、连接等交给其析构函数来调用）
 			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
 			m_map_carveId_carvePtr.erase(pair_insert_result.first);
 		}

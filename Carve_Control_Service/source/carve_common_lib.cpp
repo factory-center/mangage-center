@@ -55,7 +55,7 @@ bool CCarve_Common_Lib_Tool::is_baoyuan(int nfactory_type, const string& str_str
 	}
 }
 
-bool CCarve_Common_Lib_Tool::connect(Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+bool CCarve_Common_Lib_Tool::connect(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	//获取雕刻机厂商和设备型号信息
 	int nfactory_type = CARVE_FACTORY_TYPE_MAX;
@@ -66,12 +66,6 @@ bool CCarve_Common_Lib_Tool::connect(Json::Value& json_conn_value, string& str_e
 		, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
 	if (is_baoyuan(nfactory_type, str_carve_type_key))
 	{//是宝元
-		//从宝元库申请索引
-		int nConn_idx = -2;
-		bool bSuccess = CBaoyuan_Lib::instance()->acquire_conn_idx(nConn_idx, str_err_reason_for_debug, str_err_reason_for_user);
-		businlog_error_return(bSuccess, ("%s | fail to acquire conn index, reason:%s."
-			, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
-		json_conn_value[CCarve::ms_str_conn_idx_key] = nConn_idx;
 		return CBaoyuan_Lib::instance()->create_connection(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
 	}
 	//TODO::判定是否为其他的库
@@ -88,10 +82,7 @@ bool CCarve_Common_Lib_Tool::disconnect(const Json::Value& json_conn_value, stri
 		, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
 	if (is_baoyuan(nfactory_type, str_carve_type_key))
 	{//是宝元
-		bool bSuccess = CBaoyuan_Lib::instance()->disconnect(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
-		businlog_error_return(bSuccess, ("%s | fail to disconnect, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
-		//释放索引
-		return CBaoyuan_Lib::instance()->release_conn_idx(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
+		return CBaoyuan_Lib::instance()->disconnect(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
 	}
 	//TODO::判定是否为其他的库
 	return false;
@@ -306,6 +297,56 @@ bool CCarve_Common_Lib_Tool::get_current_line_num(const Json::Value& json_conn_v
 	if (is_baoyuan(nfactory_type, str_carve_type_key))
 	{//是宝元
 		 return CBaoyuan_Lib::instance()->get_current_line_num(json_conn_value, nCurrent_line_num, str_err_reason_for_debug, str_err_reason_for_user);
+	}
+	//TODO::判定是否为其他的库
+	return false;
+}
+
+/************************************
+* Method:    acquire_resource
+* Brief:  申请资源，并放入josn中
+* Access:    public 
+* Returns:   bool
+* Qualifier:
+*Parameter: Json::Value & json_conn_value -[in/out]  
+*Parameter: string & str_err_reason_for_debug -[in/out]  
+*Parameter: string & str_err_reason_for_user -[in/out]  
+************************************/
+bool CCarve_Common_Lib_Tool::acquire_resource(Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	//获取雕刻机厂商和设备型号信息
+	int nfactory_type = CARVE_FACTORY_TYPE_MAX;
+	string str_carve_type_key;
+	bool bSuccess = get_carve_factory_and_type(json_conn_value, nfactory_type
+		, str_carve_type_key, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(bSuccess, ("%s | fail to get carve factory and type, reason:%s"
+		, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+	if (is_baoyuan(nfactory_type, str_carve_type_key))
+	{
+		//从宝元库申请索引
+		int nConn_idx = -2;
+		bool bSuccess = CBaoyuan_Lib::instance()->acquire_conn_idx(nConn_idx, str_err_reason_for_debug, str_err_reason_for_user);
+		businlog_error_return(bSuccess, ("%s | fail to acquire conn index, reason:%s."
+			, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+		json_conn_value[CCarve::ms_str_conn_idx_key] = nConn_idx;
+		return true;
+	}
+	//TODO::判定是否为其他的库
+	return false;
+}
+
+bool CCarve_Common_Lib_Tool::release_resource(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	//获取雕刻机厂商和设备型号信息
+	int nfactory_type = CARVE_FACTORY_TYPE_MAX;
+	string str_carve_type_key;
+	businlog_error_return(get_carve_factory_and_type(json_conn_value, nfactory_type, str_carve_type_key, str_err_reason_for_debug, str_err_reason_for_user)
+		, ("%s | fail to get carve factory and type, reason:%s"
+		, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+	if (is_baoyuan(nfactory_type, str_carve_type_key))
+	{
+		//释放索引
+		return CBaoyuan_Lib::instance()->release_conn_idx(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
 	}
 	//TODO::判定是否为其他的库
 	return false;

@@ -35,6 +35,9 @@ int CCarve::connect(string& str_err_reason_for_debug, string& str_err_reason_for
 		businlog_warn("%s | carve ip:%s is connected.", __CLASS_FUNCTION__, m_str_ip.c_str());
 		return MSP_SUCCESS;
 	}
+	//判定资源是否申请成功
+	businlog_error_return_debug_and_user_reason(true == m_bAcq_Res_Success, __CLASS_FUNCTION__ << " | resources is not OK, ip:"
+		<< m_str_ip, str_err_reason_for_debug, "没有成功申请资源", str_err_reason_for_user, MSP_ERROR_RES_LOAD);
 	//构造连接参数
 	Json::Value json_conn_value;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
@@ -43,6 +46,7 @@ int CCarve::connect(string& str_err_reason_for_debug, string& str_err_reason_for
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_ip_key] = m_str_ip;
+		json_conn_value[ms_str_conn_idx_key] =  m_nConn_idx;
 	}
 	else if(false)
 	{
@@ -437,6 +441,72 @@ int CCarve::get_current_line_num(int& nCurrent_line_num, string& str_err_reason_
 	return MSP_SUCCESS;
 }
 
+int CCarve::acquire_resource(string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	businlog_tracer_perf(CCarve::acquire_resource);
+	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+
+	//构造参数
+	Json::Value json_conn_value;
+	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
+	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	{
+		//宝元库所需要的参数
+	}
+	else if(false)
+	{
+		//TODO::其他厂商
+	}
+	else
+	{
+		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
+			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+	}
+
+	//申请资源
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->acquire_resource(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(bSuccess, ("%s | fail to acquire resource, carve ip:%s, json info:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str()
+		, str_err_reason_for_debug.c_str()), MSP_ERROR_RES_LOAD);
+	m_nConn_idx = json_conn_value[ms_str_conn_idx_key].asInt();
+	m_bAcq_Res_Success = true;
+	return MSP_SUCCESS;
+}
+
+int CCarve::release_resource(string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	businlog_tracer_perf(CCarve::release_resource);
+	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+
+	//构造参数
+	Json::Value json_conn_value;
+	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
+	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	{
+		//宝元库所需要的参数
+		json_conn_value[ms_str_conn_idx_key] =  m_nConn_idx;
+	}
+	else if(false)
+	{
+		//TODO::其他厂商
+	}
+	else
+	{
+		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
+			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+	}
+
+	//释放资源
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->release_resource(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(bSuccess, ("%s | fail to release resource, carve ip:%s, json info:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str()
+		, str_err_reason_for_debug.c_str()), MSP_ERROR_RES_FREE);
+	m_bAcq_Res_Success = false;
+	return MSP_SUCCESS;
+}
+
 const string CCarve::ms_str_factory_type_key = "carveExFactory";
 
 const string CCarve::ms_str_carve_type_key = "carveType";
@@ -453,10 +523,46 @@ const string CCarve::ms_str_max_wait_time_key = "max_wait_time";
 
 const string CCarve::ms_str_carve_id_key = "carveId";
 
+CCarve::~CCarve()
+{
+	businlog_tracer_perf(CCarve::~CCarve);
+	__ph__.log("%s | ip:%s.", __CLASS_FUNCTION__, m_str_ip.c_str());
+	//由于涉及自己调用自己，故这里m_mutex_for_cmd无需上锁
+	//如果处于链接状态，则将其断开
+	int ret = 0;
+	string str_err_reason_for_debug, str_err_reason_for_user;
+	if (m_bConnected)
+	{
+		ret = disconnect(str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{//断开连接失败
+			businlog_error("%s | fail to disconnect, ip:%s, reason:%s", __CLASS_FUNCTION__, m_str_ip.c_str(), str_err_reason_for_debug.c_str());
+		}
+		else
+		{
+			m_bConnected = false;
+		}
+	}
+	//如果资源处于占用状态，则将其释放
+	if (m_bAcq_Res_Success)
+	{
+		ret = release_resource(str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{//释放资源失败
+			businlog_error("%s | fail to release resource, ip:%s, reason:%s", __CLASS_FUNCTION__, m_str_ip.c_str(), str_err_reason_for_debug.c_str());
+		}
+		else
+		{
+			m_bAcq_Res_Success = false;
+		}
+	}
+}
+
 CCarve::CCarve(const Json::Value& json_params)
 	: CDevice(ECARVE, json_params)
 	, m_bConnected(false)
 	, m_nConn_idx(-2)
+	, m_bAcq_Res_Success(false)
 {
 	std::string str_err_reason;
 	if (!json_params.isMember(CCarve::ms_str_factory_type_key))

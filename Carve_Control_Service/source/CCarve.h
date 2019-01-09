@@ -47,6 +47,8 @@ public:
 	int cancel_fast_stop(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int delete_1_file(const string& str_file_path, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_current_line_num(int& nCurrent_line_num, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int acquire_resource(string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int release_resource(string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	unsigned short Conn_idx() const { return m_nConn_idx; }
 	void Conn_idx(unsigned short val) { m_nConn_idx = val; }
 	static const string ms_str_factory_type_key; 
@@ -57,6 +59,7 @@ public:
 	static const string ms_str_status_key;
 	static const string ms_str_max_wait_time_key;
 	static const string ms_str_carve_id_key;
+	virtual ~CCarve();
 protected:
 	CCarve();
 	CCarve(const CCarve&);
@@ -65,6 +68,7 @@ private:
 	int m_nConn_idx;//一个雕刻机对应一个连接编号，唯一标识一个控制器，此值必须小于ConnectNum，取值范围[0, ConnectNum-1]
     Uni_Mutex m_mutex_for_cmd; //同一时刻只能执行一个命令
 	bool m_bConnected; //雕刻机当前是否连接正常。由于每次只能执行一个命令，故无需给其增加锁
+	bool m_bAcq_Res_Success; //申请资源是否成功
 	ECARVE_FACTORY_TYPE m_eFactory_type; //雕刻机厂商类型
 	string m_str_carve_type; //设备型号
 };

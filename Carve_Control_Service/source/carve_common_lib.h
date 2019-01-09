@@ -61,7 +61,7 @@ public:
 	}
 	bool init(string& str_kernel_err_reason);
 	bool is_baoyuan(int nfactory_type, const string& str_carve_type_key);
-	bool connect(Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool connect(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	bool disconnect(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	bool upload_1file(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	bool set_continue_status(const Json::Value& json_conn_value, string& str__err_reason_for_debug, string& str__err_reason_for_user);
@@ -74,6 +74,9 @@ public:
 	bool cancel_fast_stop(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	bool delete_1file(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
     bool get_current_line_num(const Json::Value& json_conn_value, int& nCurrent_line_num, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+    //资源相关
+	bool acquire_resource(Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+    bool release_resource(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 protected:
 	bool get_carve_factory_and_type(const Json::Value& json_conn_value, int& nfactory_type, string& str_str_carve_type_key, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	CCarve_Common_Lib_Tool();

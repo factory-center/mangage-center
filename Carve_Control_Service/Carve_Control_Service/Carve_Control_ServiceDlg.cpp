@@ -212,7 +212,11 @@ int test_connect()
 {
 	string str_err_reason_for_debug;
 	string str_err_reason_for_user;
-	int ret = carve_ptr->connect(str_err_reason_for_debug, str_err_reason_for_user);
+	int ret = 0;
+	ret = carve_ptr->acquire_resource(str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(0 == ret, ("%s | fail to acquire resource, ip:%s, reason:%s"
+		, __FUNCTION__, str_ip.c_str(), str_err_reason_for_debug.c_str()), ret);
+	ret = carve_ptr->connect(str_err_reason_for_debug, str_err_reason_for_user);
 	businlog_error_return(0 == ret, ("%s | fail to connect ip:%s, reason:%s"
 		, __FUNCTION__, str_ip.c_str(), str_err_reason_for_debug.c_str()), ret);
 	//更新设备为继续状态
@@ -252,7 +256,11 @@ int test_disconnect()
 	string str_err_reason_for_debug, str_err_reason_for_user;
 	//断开设备
 	int ret = carve_ptr->disconnect(str_err_reason_for_debug, str_err_reason_for_user);
+	//注意：可能导致资源未释放就返回了
 	businlog_error_return(0 == ret, ("%s | fail to disconnect, nConn:%d, reason:%s"
+		, __FUNCTION__, nConn_idx, str_err_reason_for_debug.c_str()), ret);
+	ret = carve_ptr->release_resource(str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(0 == ret, ("%s | fail to release resource, nConn:%d, reason:%s"
 		, __FUNCTION__, nConn_idx, str_err_reason_for_debug.c_str()), ret);
 	return 0;
 }
