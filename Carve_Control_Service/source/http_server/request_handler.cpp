@@ -129,6 +129,24 @@ namespace http
 			{
 				ret = on_query_one_carve_status(root, json_result, str_err_reason);
 			}
+			else if ("query_all_machine_status" == str_cmd)
+			{
+				ret = MSP_ERROR_NOT_IMPLEMENT;
+			}
+			else if("query_one_machine_info" == str_cmd)
+			{
+				
+			}
+			else if("query_all_machine_info" == str_cmd)
+			{
+
+			}
+			else
+			{
+				//命令值错误
+				ret = MSP_ERROR_INVALID_PARA;
+				str_err_reason = str_key +  string(":") + str_cmd + string(" is invalid.");
+			}
 			rep = reply::construct_message(ret, json_result.toStyledString(), str_err_reason);
 		}
 		bool request_handler::url_decode(const std::string& in, std::string& out)
@@ -222,6 +240,38 @@ namespace http
 			json_result["errmsg"] = str_err_reason_for_debug;
 			json_result["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
 			json_result["currentStatus"] = eCarve_common_status;
+			if (json_root.isMember(CCarve::ms_str_carve_id_key))
+			{
+				json_result[CCarve::ms_str_carve_id_key] = json_root[CCarve::ms_str_carve_id_key];
+			}
+			else
+			{
+				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
+			}
+			str_err_reason =  str_err_reason_for_debug;
+			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
+			return MSP_SUCCESS;
+		}
+
+		int request_handler::on_query_one_carve_info(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		{
+			int ret = 0;
+			std::string str_err_reason_for_debug;
+			std::string str_err_reason_for_user;
+			//获取雕刻机信息
+			SCarve_Info carve_info;
+			ret = CCarve_Manager::instance()->get_carve_info(json_root, carve_info, str_err_reason_for_debug, str_err_reason_for_user);
+			//注意：无论成败，都构造结果
+			//构造结果
+			json_result["ret"] = ret;
+			json_result["errmsg"] = str_err_reason_for_debug;
+			json_result["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
+			json_result["taskNo"] = carve_info.str_task_no;
+			json_result["machine_ip"] = carve_info.str_machine_ip;
+			json_result["currentStatus"] = carve_info.eCarve_status;
+			json_result["worktime"] = carve_info.nTotal_engraving_time;
+			json_result["gNo"] = carve_info.str_gCode_no;
+			json_result["rowNo"] = carve_info.nCurrent_line_num;
 			if (json_root.isMember(CCarve::ms_str_carve_id_key))
 			{
 				json_result[CCarve::ms_str_carve_id_key] = json_root[CCarve::ms_str_carve_id_key];

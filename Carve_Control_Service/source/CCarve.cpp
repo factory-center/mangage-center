@@ -507,6 +507,81 @@ int CCarve::release_resource(string& str_err_reason_for_debug, string& str_err_r
 	return MSP_SUCCESS;
 }
 
+int CCarve::get_total_engraving_time(int& nTotal_engraving_time, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	businlog_tracer_perf(CCarve::get_current_line_num);
+	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
+		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
+
+	//构造参数
+	Json::Value json_conn_value;
+	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
+	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	{
+		//宝元库所需要的参数
+		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
+	}
+	else if(false)
+	{
+		//TODO::其他厂商
+	}
+	else
+	{
+		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
+			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+	}
+
+	//获取总的雕刻时间
+	bool bSuccess = false/*CCarve_Common_Lib_Tool::instance()->get_current_line_num(json_conn_value, nCurrent_line_num, str_err_reason_for_debug, str_err_reason_for_user)*/;
+	businlog_error_return(bSuccess, ("%s | fail to get total engraving time, carve ip:%s, json info:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str()
+		, str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	return MSP_SUCCESS;
+}
+
+int CCarve::get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	//由于相关接口已经上锁，故这里不用上锁
+	carve_info.eCarve_status;
+	string str_single_err_for_debug, str_single_err_for_user; //获取单个信息时的错误
+	//获取单个信息出错时，不返回。
+	bool bHas_error = false; //是否出错过
+	//获取雕刻机状态
+	int ret = get_carve_status(carve_info.eCarve_status, str_single_err_for_debug, str_single_err_for_user);
+	if (ret)
+	{
+		businlog_error("%s | fail to get carve status, reason:%s", __CLASS_FUNCTION__, str_single_err_for_debug.c_str());
+		str_err_reason_for_debug += "." + str_single_err_for_debug;
+		str_err_reason_for_user += "." + str_single_err_for_user;
+		bHas_error = true;
+	}
+	//获取当前文件行号
+	ret = get_current_line_num(carve_info.nCurrent_line_num, str_single_err_for_debug, str_single_err_for_user);
+	if (ret)
+	{
+		businlog_error("%s | fail to get current line num, reason:%s", __CLASS_FUNCTION__, str_single_err_for_debug.c_str());
+		str_err_reason_for_debug += "." + str_single_err_for_debug;
+		str_err_reason_for_user += "." + str_single_err_for_user;
+		bHas_error = true;
+	}
+	//todo::获取总的雕刻时间
+	//carve_info.str_gCode_no
+	carve_info.str_id = m_str_id;
+	carve_info.str_machine_ip = m_str_ip;
+	//carve_info.str_task_no
+	if (bHas_error)
+	{
+		ret = MSP_ERROR_FAIL;
+	}
+	else
+	{
+		ret = MSP_SUCCESS;
+	}
+	return ret;
+}
+
 const string CCarve::ms_str_factory_type_key = "carveExFactory";
 
 const string CCarve::ms_str_carve_type_key = "carveType";
@@ -584,4 +659,12 @@ CCarve::CCarve(const Json::Value& json_params)
 	{
 		m_eFactory_type = CARVE_FACTORY_TYPE_BAOYUAN;
 	}
+}
+
+SCarve_Info::SCarve_Info() 
+	: eCarve_status(CARVE_STATUS_MIN)
+	, nTotal_engraving_time(0)
+	, nCurrent_line_num(0)
+{
+
 }

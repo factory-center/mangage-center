@@ -39,6 +39,10 @@ public:
 	static CCarve_Manager* instance();
 	int connect_carve(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_carve_status(const Json::Value& json_params, ECARVE_STATUS_TYPE& eCarve_common_status, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+    int get_carve_info(const Json::Value& json_params, SCarve_Info& carve_info, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+	{
+
+	}
 protected:
 	CCarve_Manager();
 	~CCarve_Manager();

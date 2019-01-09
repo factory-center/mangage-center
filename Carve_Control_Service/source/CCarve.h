@@ -29,7 +29,18 @@ extern "C" {
 #include "boost_common.h"
 #include "carve_common_lib.h"
 //宏定义
-
+//雕刻机信息
+struct SCarve_Info
+{
+	string str_task_no; //任务编号
+	string str_machine_ip; //设备ip地址
+	ECARVE_STATUS_TYPE eCarve_status; //雕刻机状态
+	int nTotal_engraving_time; //雕刻机总的雕刻时间，单位分钟
+	string str_gCode_no; //G代码编号
+	int nCurrent_line_num; //当前雕刻的G代码行号
+	string str_id; //设备编号
+	SCarve_Info();
+};
 //类型定义
 class  CCarve : public CDevice
 {
@@ -49,6 +60,8 @@ public:
 	int get_current_line_num(int& nCurrent_line_num, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int acquire_resource(string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int release_resource(string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int get_total_engraving_time(int& nTotal_engraving_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	unsigned short Conn_idx() const { return m_nConn_idx; }
 	void Conn_idx(unsigned short val) { m_nConn_idx = val; }
 	static const string ms_str_factory_type_key; 
