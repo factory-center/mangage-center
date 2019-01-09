@@ -155,7 +155,7 @@ int CCarve::reset(unsigned short nMax_wait_time, string& str_err_reason_for_debu
 	else
 	{
 		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "不合法的厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+			<< m_eFactory_type, str_err_reason_for_debug, "错误的厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
 	}
 
 
@@ -192,7 +192,7 @@ int CCarve::start(const string& str_nc_file_path, unsigned short nMax_wait_time,
 	else
 	{
 		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "不合法的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
 	}
 
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->start(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
@@ -293,7 +293,7 @@ int CCarve::get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& s
 	else
 	{
 		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "不合法的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
 	}
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->get_carve_status(json_conn_value, eCarve_common_status, str_err_reason_for_debug, str_err_reason_for_user);
 	businlog_error_return(bSuccess, ("%s | fail to get baoyuan carve status, json:%s, reason:%s"
