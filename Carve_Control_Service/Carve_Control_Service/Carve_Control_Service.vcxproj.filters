@@ -13,50 +13,38 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="头文件\log">
-      <UniqueIdentifier>{88d6fa00-ce40-4f31-9848-025a8791e638}</UniqueIdentifier>
-    </Filter>
     <Filter Include="头文件\Baoyuan">
-      <UniqueIdentifier>{b7769fa5-a0d7-4991-acc9-a81f9b05045c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\log">
-      <UniqueIdentifier>{ff129691-13ef-4a8f-a764-6e96ad0e15f8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="头文件\device">
-      <UniqueIdentifier>{589603b6-6fb1-4322-836b-8d8bb21c0c9c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="头文件\dlg">
-      <UniqueIdentifier>{3225c414-5686-4368-b23b-80513395a6d3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\dlg">
-      <UniqueIdentifier>{728e800d-4d1b-435c-82df-b71baf12407d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\baoyuan">
-      <UniqueIdentifier>{bf19f86c-76c2-4a53-ba35-a9496cb15f7f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\device">
-      <UniqueIdentifier>{d7c9b6c6-9b46-4f66-a479-bbaaa0655111}</UniqueIdentifier>
+      <UniqueIdentifier>{bac934f3-7002-4527-bb44-a68b0aedff9b}</UniqueIdentifier>
     </Filter>
     <Filter Include="头文件\carve_common_lib">
-      <UniqueIdentifier>{0454903f-e232-4223-8981-8d8164baa736}</UniqueIdentifier>
+      <UniqueIdentifier>{91d48e9b-4011-4eb9-915d-d505af38a9fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\device">
+      <UniqueIdentifier>{3b5bc226-2cb0-4411-8cb6-d2dd6495ae30}</UniqueIdentifier>
     </Filter>
     <Filter Include="头文件\http_server">
-      <UniqueIdentifier>{72e6f26d-044e-43df-8856-e7789fd41440}</UniqueIdentifier>
+      <UniqueIdentifier>{e8acb090-2f9d-47b9-905b-7df99b392797}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\log">
+      <UniqueIdentifier>{7e353833-b6d8-42b3-92d1-06c118b32c95}</UniqueIdentifier>
     </Filter>
     <Filter Include="源文件\http_server">
-      <UniqueIdentifier>{f1cfc848-b092-4428-95fc-c203a153f642}</UniqueIdentifier>
+      <UniqueIdentifier>{30f7c5af-d23a-45ca-a198-110683ddd16d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\baoyuan">
+      <UniqueIdentifier>{52717276-65ed-4232-800d-591fc1f918da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\device">
+      <UniqueIdentifier>{d7866e77-14a9-4daa-b4bf-306a85fb2d80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\log">
+      <UniqueIdentifier>{2db59371-cf5f-4a5d-a42c-c6298bdcc2d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\main">
+      <UniqueIdentifier>{be7aad93-4cd2-4674-acfd-05ce2f4dc8e8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\source\busin_log.h">
-      <Filter>头文件\log</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\log_base.h">
-      <Filter>头文件\log</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\baoyuan\scif2.h">
       <Filter>头文件\Baoyuan</Filter>
     </ClInclude>
@@ -66,29 +54,17 @@
     <ClInclude Include="..\source\CBaoyuan_Lib_Tool.h">
       <Filter>头文件\Baoyuan</Filter>
     </ClInclude>
-    <ClInclude Include="Carve_Control_Service.h">
-      <Filter>头文件\dlg</Filter>
+    <ClInclude Include="..\source\carve_common_lib.h">
+      <Filter>头文件\carve_common_lib</Filter>
     </ClInclude>
-    <ClInclude Include="Carve_Control_ServiceDlg.h">
-      <Filter>头文件\dlg</Filter>
-    </ClInclude>
-    <ClInclude Include="Resource.h">
-      <Filter>头文件\dlg</Filter>
-    </ClInclude>
-    <ClInclude Include="stdafx.h">
-      <Filter>头文件\dlg</Filter>
-    </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>头文件\dlg</Filter>
+    <ClInclude Include="..\source\carve_manager.h">
+      <Filter>头文件\device</Filter>
     </ClInclude>
     <ClInclude Include="..\source\CCarve.h">
       <Filter>头文件\device</Filter>
     </ClInclude>
     <ClInclude Include="..\source\CDevice.h">
       <Filter>头文件\device</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\carve_common_lib.h">
-      <Filter>头文件\carve_common_lib</Filter>
     </ClInclude>
     <ClInclude Include="..\source\http_server\connection.hpp">
       <Filter>头文件\http_server</Filter>
@@ -126,85 +102,67 @@
     <ClInclude Include="..\source\http_server\singleton_server.h">
       <Filter>头文件\http_server</Filter>
     </ClInclude>
+    <ClInclude Include="..\source\log_base.h">
+      <Filter>头文件\log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\busin_log.h">
+      <Filter>头文件\log</Filter>
+    </ClInclude>
     <ClInclude Include="..\include\boost_common.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\source\carve_manager.h">
-      <Filter>头文件\device</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\source\carve_common_lib.cpp">
+      <Filter>头文件\carve_common_lib</Filter>
+    </ClCompile>
     <ClCompile Include="..\source\log_base.cpp">
       <Filter>源文件\log</Filter>
-    </ClCompile>
-    <ClCompile Include="Carve_Control_ServiceDlg.cpp">
-      <Filter>源文件\dlg</Filter>
-    </ClCompile>
-    <ClCompile Include="Carve_Control_Service.cpp">
-      <Filter>源文件\dlg</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\CBaoyuan_Lib_Tool.cpp">
-      <Filter>源文件\baoyuan</Filter>
     </ClCompile>
     <ClCompile Include="..\source\CCarve.cpp">
       <Filter>源文件\device</Filter>
     </ClCompile>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>源文件\dlg</Filter>
+    <ClCompile Include="..\source\CDevice.cpp">
+      <Filter>源文件\device</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\carve_common_lib.cpp">
-      <Filter>头文件\carve_common_lib</Filter>
+    <ClCompile Include="..\source\carve_manager.cpp">
+      <Filter>源文件\device</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\http_server\server.cpp">
-      <Filter>源文件\http_server</Filter>
+    <ClCompile Include="..\source\CBaoyuan_Lib_Tool.cpp">
+      <Filter>源文件\baoyuan</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\http_server\request_parser.cpp">
-      <Filter>源文件\http_server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\http_server\request_handler.cpp">
-      <Filter>源文件\http_server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\http_server\reply.cpp">
-      <Filter>源文件\http_server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\http_server\mime_types.cpp">
-      <Filter>源文件\http_server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\http_server\http_settings.cpp">
-      <Filter>源文件\http_server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\http_server\deal_http_msg.cpp">
+    <ClCompile Include="..\source\http_server\http_parser.c">
       <Filter>源文件\http_server</Filter>
     </ClCompile>
     <ClCompile Include="..\source\http_server\connection.cpp">
       <Filter>源文件\http_server</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\http_server\http_parser.c">
+    <ClCompile Include="..\source\http_server\deal_http_msg.cpp">
       <Filter>源文件\http_server</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\CDevice.cpp">
-      <Filter>源文件\device</Filter>
+    <ClCompile Include="..\source\http_server\http_settings.cpp">
+      <Filter>源文件\http_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\http_server\mime_types.cpp">
+      <Filter>源文件\http_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\http_server\reply.cpp">
+      <Filter>源文件\http_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\http_server\request_handler.cpp">
+      <Filter>源文件\http_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\http_server\request_parser.cpp">
+      <Filter>源文件\http_server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\http_server\server.cpp">
+      <Filter>源文件\http_server</Filter>
     </ClCompile>
     <ClCompile Include="..\source\http_server\singleton_server.cpp">
       <Filter>源文件\http_server</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\carve_manager.cpp">
-      <Filter>源文件\device</Filter>
+    <ClCompile Include="Carve_Control_Service.cpp">
+      <Filter>源文件\main</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="Carve_Control_Service.rc">
-      <Filter>资源文件</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="res\Carve_Control_Service.rc2">
-      <Filter>资源文件</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="res\Carve_Control_Service.ico">
-      <Filter>资源文件</Filter>
-    </Image>
   </ItemGroup>
 </Project>

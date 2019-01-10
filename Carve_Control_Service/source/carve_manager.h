@@ -28,7 +28,7 @@ extern "C" {
 #include <boost_common.h>
 #include <string>
 #include <json/json.h>
-#include "carve_common_lib.h"
+#include "CCarve.h"
 using std::string;
 //∫Í∂®“Â
 class CCarve;
@@ -38,10 +38,20 @@ class CCarve_Manager
 public:
 	static CCarve_Manager* instance();
 	int connect_carve(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
-	int get_carve_status(const Json::Value& json_params, ECARVE_STATUS_TYPE& eCarve_common_status, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int query_all_machines_status(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int query_one_machine_status(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int download_gcode_OK(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int emergency_stop_one(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int emergency_stop_all(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int reboot_one(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int reboot_all(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int adjust_speed(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int disconnect(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int start(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+
     int get_carve_info(const Json::Value& json_params, SCarve_Info& carve_info, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 	{
-
+		return true;
 	}
 protected:
 	CCarve_Manager();

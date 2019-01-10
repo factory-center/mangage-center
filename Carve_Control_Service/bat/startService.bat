@@ -11,4 +11,5 @@ IF ERRORLEVEL 1060 (
 		net start gqxtestservice
 	)
 )
+
 pause

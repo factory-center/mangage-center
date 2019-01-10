@@ -21,6 +21,9 @@
 #include "CCarve.h"
 #include <memory>
 #include "utils/msp_errors.h"
+
+const string str_nc_file_path = "F:\\GitHub\\mangage-center\\Carve_Control_Service\\Win32\\Debug\\1224.nc";
+
 #ifdef _WINDOWS
 #define __CLASS_FUNCTION__ ((std::string(__FUNCTION__)).c_str()) 
 #else
@@ -40,7 +43,6 @@ int CCarve_Manager::connect_carve(const Json::Value& json_params, string& str_er
 			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
 			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
 		const string& str_carve_id = json_params[CCarve::ms_str_carve_id_key].asString();
-		
 		boost::shared_ptr<CCarve> ptr_carve;
 		std::pair<TYPE_MAP_ITER, bool> pair_insert_result;
 		pair_insert_result.second = false;
@@ -56,6 +58,9 @@ int CCarve_Manager::connect_carve(const Json::Value& json_params, string& str_er
 				, "设备编号对应的设备已经连接", str_err_reason_for_user, MSP_ERROR_ALREADY_EXIST);
 			//map中不存在对应的设备编号
 			//构造雕刻机对象
+
+			string aaa = json_params.toStyledString();
+
 			ptr_carve = boost::make_shared<CCarve>(json_params);
 			//申请资源，如果失败则直接返回
 			ret = ptr_carve->acquire_resource(str_err_reason_for_debug, str_err_reason_for_user);
@@ -113,8 +118,7 @@ Err_exit: //仅当对雕刻机操作出错了，则将雕刻机移除
 		return MSP_ERROR_EXCEPTION;
 	}
 }
-
-int CCarve_Manager::get_carve_status(const Json::Value& json_params, ECARVE_STATUS_TYPE& eCarve_common_status, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+int CCarve_Manager::disconnect(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	try
 	{
@@ -123,6 +127,460 @@ int CCarve_Manager::get_carve_status(const Json::Value& json_params, ECARVE_STAT
 			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
 			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
 		const string& str_carve_id = json_params[CCarve::ms_str_carve_id_key].asString();
+
+		boost::shared_ptr<CCarve> ptr_carve;
+		std::pair<TYPE_MAP_ITER, bool> pair_insert_result;
+		pair_insert_result.second = false;
+		unsigned short nMax_wait_time = 1000;
+		string str_key = "max_wait_time";
+
+		//判定此编号对应的雕刻机是否已经存在
+		{
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			businlog_error_return_debug_and_user_reason(m_map_carveId_carvePtr.find(str_carve_id) == m_map_carveId_carvePtr.end()
+				, __CLASS_FUNCTION__ << " | carve id:" << str_carve_id << " already exist.", str_err_reason_for_debug
+				, "设备编号对应的设备已经连接", str_err_reason_for_user, MSP_ERROR_ALREADY_EXIST);
+			//map中不存在对应的设备编号
+			//构造雕刻机对象
+			ptr_carve = boost::make_shared<CCarve>(json_params);
+			pair_insert_result = m_map_carveId_carvePtr.insert(std::make_pair(str_carve_id, ptr_carve));
+			//判定插入结果，如果失败，则说明键已经存在了.（map插入失败，是不会覆盖原来的value）
+			businlog_error_return_debug_and_user_reason(pair_insert_result.second, __CLASS_FUNCTION__ << " | fail to insert, carve id:" << str_carve_id << " alread exist."
+				, str_err_reason_for_debug, "重复连接设备", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		}
+		//所有关于雕刻机的操作，如果有一个出错，则将其从map中删除，并出错返回
+		//断开雕刻机
+		int ret = ptr_carve->disconnect(str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to connect carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+
+		//设置continue状态
+		if (json_params.isMember(str_key))
+		{//参数中含有最大等待时间
+			nMax_wait_time = json_params[str_key].asInt();
+		}
+		ret = ptr_carve->set_continue_status(0, nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to set carve continue status, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+		return MSP_SUCCESS;
+Err_exit: //仅当对雕刻机操作出错了，则将雕刻机移除
+		//如果之前添加成功了，则将其移除
+		if(pair_insert_result.second)
+		{
+			//移除
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			m_map_carveId_carvePtr.erase(pair_insert_result.first);
+		}
+		return ret;
+	}
+	catch (std::exception& e)
+	{
+		str_err_reason_for_debug = string("Has exception:") + string(e.what());
+		str_err_reason_for_user = "服务端发生异常";
+		businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+		return MSP_ERROR_EXCEPTION;
+	}
+}
+int CCarve_Manager::start(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	try
+	{
+		//从参数中获取设备编号
+		businlog_error_return_debug_and_user_reason(json_params.isMember(CCarve::ms_str_carve_id_key), __CLASS_FUNCTION__
+			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
+			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		const string& str_carve_id = json_params[CCarve::ms_str_carve_id_key].asString();
+
+		boost::shared_ptr<CCarve> ptr_carve;
+		std::pair<TYPE_MAP_ITER, bool> pair_insert_result;
+		pair_insert_result.second = false;
+		unsigned short nMax_wait_time = 1000;
+		string str_key = "max_wait_time";
+
+		//判定此编号对应的雕刻机是否已经存在
+		{
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			businlog_error_return_debug_and_user_reason(m_map_carveId_carvePtr.find(str_carve_id) == m_map_carveId_carvePtr.end()
+				, __CLASS_FUNCTION__ << " | carve id:" << str_carve_id << " already exist.", str_err_reason_for_debug
+				, "设备编号对应的设备已经连接", str_err_reason_for_user, MSP_ERROR_ALREADY_EXIST);
+			//map中不存在对应的设备编号
+			//构造雕刻机对象
+			ptr_carve = boost::make_shared<CCarve>(json_params);
+			pair_insert_result = m_map_carveId_carvePtr.insert(std::make_pair(str_carve_id, ptr_carve));
+			//判定插入结果，如果失败，则说明键已经存在了.（map插入失败，是不会覆盖原来的value）
+			businlog_error_return_debug_and_user_reason(pair_insert_result.second, __CLASS_FUNCTION__ << " | fail to insert, carve id:" << str_carve_id << " alread exist."
+				, str_err_reason_for_debug, "重复连接设备", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		}
+		//所有关于雕刻机的操作，如果有一个出错，则将其从map中删除，并出错返回
+		//开始雕刻
+		int ret = ptr_carve->start(str_nc_file_path,1000, str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to start carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+
+	
+		return MSP_SUCCESS;
+Err_exit: //仅当对雕刻机操作出错了，则将雕刻机移除
+		//如果之前添加成功了，则将其移除
+		if(pair_insert_result.second)
+		{
+			//移除
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			m_map_carveId_carvePtr.erase(pair_insert_result.first);
+		}
+		return ret;
+	}
+	catch (std::exception& e)
+	{
+		str_err_reason_for_debug = string("Has exception:") + string(e.what());
+		str_err_reason_for_user = "服务端发生异常";
+		businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+		return MSP_ERROR_EXCEPTION;
+	}
+}
+int CCarve_Manager::adjust_speed(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	try
+	{
+		//从参数中获取设备编号
+		businlog_error_return_debug_and_user_reason(json_params.isMember(CCarve::ms_str_carve_id_key), __CLASS_FUNCTION__
+			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
+			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		const string& str_carve_id = json_params[CCarve::ms_str_carve_id_key].asString();
+
+		boost::shared_ptr<CCarve> ptr_carve;
+		std::pair<TYPE_MAP_ITER, bool> pair_insert_result;
+		pair_insert_result.second = false;
+		unsigned short nMax_wait_time = 1000;
+		string str_key = "max_wait_time";
+
+		//判定此编号对应的雕刻机是否已经存在
+		{
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			businlog_error_return_debug_and_user_reason(m_map_carveId_carvePtr.find(str_carve_id) == m_map_carveId_carvePtr.end()
+				, __CLASS_FUNCTION__ << " | carve id:" << str_carve_id << " already exist.", str_err_reason_for_debug
+				, "设备编号对应的设备已经连接", str_err_reason_for_user, MSP_ERROR_ALREADY_EXIST);
+			//map中不存在对应的设备编号
+			//构造雕刻机对象
+			ptr_carve = boost::make_shared<CCarve>(json_params);
+			pair_insert_result = m_map_carveId_carvePtr.insert(std::make_pair(str_carve_id, ptr_carve));
+			//判定插入结果，如果失败，则说明键已经存在了.（map插入失败，是不会覆盖原来的value）
+			businlog_error_return_debug_and_user_reason(pair_insert_result.second, __CLASS_FUNCTION__ << " | fail to insert, carve id:" << str_carve_id << " alread exist."
+				, str_err_reason_for_debug, "重复连接设备", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		}
+		//所有关于雕刻机的操作，如果有一个出错，则将其从map中删除，并出错返回
+		//连接雕刻机
+		int ret = ptr_carve->connect(str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to connect carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+
+		//设置continue状态
+		if (json_params.isMember(str_key))
+		{//参数中含有最大等待时间
+			nMax_wait_time = json_params[str_key].asInt();
+		}
+		ret = ptr_carve->set_continue_status(0, nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to set carve continue status, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+
+		//重置设备
+		ret = ptr_carve->reset(nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to reset carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+		return MSP_SUCCESS;
+Err_exit: //仅当对雕刻机操作出错了，则将雕刻机移除
+		//如果之前添加成功了，则将其移除
+		if(pair_insert_result.second)
+		{
+			//移除
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			m_map_carveId_carvePtr.erase(pair_insert_result.first);
+		}
+		return ret;
+	}
+	catch (std::exception& e)
+	{
+		str_err_reason_for_debug = string("Has exception:") + string(e.what());
+		str_err_reason_for_user = "服务端发生异常";
+		businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+		return MSP_ERROR_EXCEPTION;
+	}
+}
+int CCarve_Manager::reboot_all(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	try
+	{
+		//从参数中获取设备编号
+		businlog_error_return_debug_and_user_reason(json_params.isMember(CCarve::ms_str_carve_id_key), __CLASS_FUNCTION__
+			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
+			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		const string& str_carve_id = json_params[CCarve::ms_str_carve_id_key].asString();
+
+		boost::shared_ptr<CCarve> ptr_carve;
+		std::pair<TYPE_MAP_ITER, bool> pair_insert_result;
+		pair_insert_result.second = false;
+		unsigned short nMax_wait_time = 1000;
+		string str_key = "max_wait_time";
+
+		//判定此编号对应的雕刻机是否已经存在
+		{
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			businlog_error_return_debug_and_user_reason(m_map_carveId_carvePtr.find(str_carve_id) == m_map_carveId_carvePtr.end()
+				, __CLASS_FUNCTION__ << " | carve id:" << str_carve_id << " already exist.", str_err_reason_for_debug
+				, "设备编号对应的设备已经连接", str_err_reason_for_user, MSP_ERROR_ALREADY_EXIST);
+			//map中不存在对应的设备编号
+			//构造雕刻机对象
+			ptr_carve = boost::make_shared<CCarve>(json_params);
+			pair_insert_result = m_map_carveId_carvePtr.insert(std::make_pair(str_carve_id, ptr_carve));
+			//判定插入结果，如果失败，则说明键已经存在了.（map插入失败，是不会覆盖原来的value）
+			businlog_error_return_debug_and_user_reason(pair_insert_result.second, __CLASS_FUNCTION__ << " | fail to insert, carve id:" << str_carve_id << " alread exist."
+				, str_err_reason_for_debug, "重复连接设备", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		}
+		//所有关于雕刻机的操作，如果有一个出错，则将其从map中删除，并出错返回
+		//连接雕刻机
+		int ret = ptr_carve->connect(str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to connect carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+
+		//设置continue状态
+		if (json_params.isMember(str_key))
+		{//参数中含有最大等待时间
+			nMax_wait_time = json_params[str_key].asInt();
+		}
+		ret = ptr_carve->set_continue_status(0, nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to set carve continue status, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+
+		//重置设备
+		ret = ptr_carve->reset(nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to reset carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+		return MSP_SUCCESS;
+Err_exit: //仅当对雕刻机操作出错了，则将雕刻机移除
+		//如果之前添加成功了，则将其移除
+		if(pair_insert_result.second)
+		{
+			//移除
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			m_map_carveId_carvePtr.erase(pair_insert_result.first);
+		}
+		return ret;
+	}
+	catch (std::exception& e)
+	{
+		str_err_reason_for_debug = string("Has exception:") + string(e.what());
+		str_err_reason_for_user = "服务端发生异常";
+		businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+		return MSP_ERROR_EXCEPTION;
+	}
+}
+int CCarve_Manager::reboot_one(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	try
+	{
+		//从参数中获取设备编号
+		businlog_error_return_debug_and_user_reason(json_params.isMember(CCarve::ms_str_carve_id_key), __CLASS_FUNCTION__
+			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
+			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		const string& str_carve_id = json_params[CCarve::ms_str_carve_id_key].asString();
+
+		boost::shared_ptr<CCarve> ptr_carve;
+		std::pair<TYPE_MAP_ITER, bool> pair_insert_result;
+		pair_insert_result.second = false;
+		unsigned short nMax_wait_time = 1000;
+		string str_key = "max_wait_time";
+
+		//判定此编号对应的雕刻机是否已经存在
+		{
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			businlog_error_return_debug_and_user_reason(m_map_carveId_carvePtr.find(str_carve_id) == m_map_carveId_carvePtr.end()
+				, __CLASS_FUNCTION__ << " | carve id:" << str_carve_id << " already exist.", str_err_reason_for_debug
+				, "设备编号对应的设备已经连接", str_err_reason_for_user, MSP_ERROR_ALREADY_EXIST);
+			//map中不存在对应的设备编号
+			//构造雕刻机对象
+			ptr_carve = boost::make_shared<CCarve>(json_params);
+			pair_insert_result = m_map_carveId_carvePtr.insert(std::make_pair(str_carve_id, ptr_carve));
+			//判定插入结果，如果失败，则说明键已经存在了.（map插入失败，是不会覆盖原来的value）
+			businlog_error_return_debug_and_user_reason(pair_insert_result.second, __CLASS_FUNCTION__ << " | fail to insert, carve id:" << str_carve_id << " alread exist."
+				, str_err_reason_for_debug, "重复连接设备", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		}
+		//所有关于雕刻机的操作，如果有一个出错，则将其从map中删除，并出错返回
+		//连接雕刻机
+		int ret = ptr_carve->connect(str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to connect carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+
+		//设置continue状态
+		if (json_params.isMember(str_key))
+		{//参数中含有最大等待时间
+			nMax_wait_time = json_params[str_key].asInt();
+		}
+		ret = ptr_carve->set_continue_status(0, nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to set carve continue status, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+
+		//重置设备
+		ret = ptr_carve->reset(nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to reset carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+		return MSP_SUCCESS;
+Err_exit: //仅当对雕刻机操作出错了，则将雕刻机移除
+		//如果之前添加成功了，则将其移除
+		if(pair_insert_result.second)
+		{
+			//移除
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			m_map_carveId_carvePtr.erase(pair_insert_result.first);
+		}
+		return ret;
+	}
+	catch (std::exception& e)
+	{
+		str_err_reason_for_debug = string("Has exception:") + string(e.what());
+		str_err_reason_for_user = "服务端发生异常";
+		businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+		return MSP_ERROR_EXCEPTION;
+	}
+}
+int CCarve_Manager::emergency_stop_one(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	try
+	{
+		//从参数中获取设备编号
+		businlog_error_return_debug_and_user_reason(json_params.isMember(CCarve::ms_str_carve_id_key), __CLASS_FUNCTION__
+			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
+			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		const string& str_carve_id = json_params[CCarve::ms_str_carve_id_key].asString();
+
+		boost::shared_ptr<CCarve> ptr_carve;
+		std::pair<TYPE_MAP_ITER, bool> pair_insert_result;
+		pair_insert_result.second = false;
+
+		//判定此编号对应的雕刻机是否已经存在
+		{
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			businlog_error_return_debug_and_user_reason(m_map_carveId_carvePtr.find(str_carve_id) == m_map_carveId_carvePtr.end()
+				, __CLASS_FUNCTION__ << " | carve id:" << str_carve_id << " already exist.", str_err_reason_for_debug
+				, "设备编号对应的设备已经连接", str_err_reason_for_user, MSP_ERROR_ALREADY_EXIST);
+			//map中不存在对应的设备编号
+			//构造雕刻机对象
+			ptr_carve = boost::make_shared<CCarve>(json_params);
+			pair_insert_result = m_map_carveId_carvePtr.insert(std::make_pair(str_carve_id, ptr_carve));
+			//判定插入结果，如果失败，则说明键已经存在了.（map插入失败，是不会覆盖原来的value）
+			businlog_error_return_debug_and_user_reason(pair_insert_result.second, __CLASS_FUNCTION__ << " | fail to insert, carve id:" << str_carve_id << " alread exist."
+				, str_err_reason_for_debug, "重复连接设备", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		}
+		//所有关于雕刻机的操作，如果有一个出错，则将其从map中删除，并出错返回
+		//通知一台雕刻机急停
+
+		int ret = ptr_carve->stop_fast(1000, str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to stop_fast carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+
+		return MSP_SUCCESS;
+Err_exit: //仅当对雕刻机操作出错了，则将雕刻机移除
+		//如果之前添加成功了，则将其移除
+		if(pair_insert_result.second)
+		{
+			//移除
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			m_map_carveId_carvePtr.erase(pair_insert_result.first);
+		}
+		return ret;
+	}
+	catch (std::exception& e)
+	{
+		str_err_reason_for_debug = string("Has exception:") + string(e.what());
+		str_err_reason_for_user = "服务端发生异常";
+		businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+		return MSP_ERROR_EXCEPTION;
+	}
+}
+int CCarve_Manager::emergency_stop_all(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	try
+	{
+		int ret = 0;
+		Json::Value json_root;
+		std::map<string, boost::shared_ptr<CCarve>>::iterator  it; //键为设备编号，值为CCarve的智能指针
+		for(it = m_map_carveId_carvePtr.begin(); it != m_map_carveId_carvePtr.end(); it++)
+		{
+			json_root["carveId"].clear();
+			json_root["carveId"] = it->first;
+			ret = CCarve_Manager::instance()->emergency_stop_one(json_root, str_err_reason_for_debug, str_err_reason_for_user);	        
+		}
+		return ret;
+	}
+	catch (std::exception& e)
+	{
+		str_err_reason_for_debug = string("Has exception:") + string(e.what());
+		str_err_reason_for_user = "服务端发生异常";
+		businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+		return MSP_ERROR_EXCEPTION;
+	}
+}
+int CCarve_Manager::download_gcode_OK(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	try
+	{
+		//从参数中获取设备编号、nc文件对应的绝对路径、任务编号、G代码编号
+		businlog_error_return_debug_and_user_reason(json_params.isMember("carveId"), __CLASS_FUNCTION__
+			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
+			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		businlog_error_return_debug_and_user_reason(json_params.isMember("filepath"), __CLASS_FUNCTION__
+			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
+			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		businlog_error_return_debug_and_user_reason(json_params.isMember("taskNo"), __CLASS_FUNCTION__
+			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
+			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		businlog_error_return_debug_and_user_reason(json_params.isMember("gNo"), __CLASS_FUNCTION__
+			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
+			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+
+		const string str_file_path = json_params["filepath"].asString();
+		const string str_carve_id = json_params["carveId"].asString();
+		const string str_task_no = json_params["taskNo"].asString();
+		const string str_g_no = json_params["gNo"].asString();
+
+
 		boost::shared_ptr<CCarve> ptr_carve;
 		//根据设备编号查找对应的雕刻机
 		{
@@ -133,21 +591,181 @@ int CCarve_Manager::get_carve_status(const Json::Value& json_params, ECARVE_STAT
 				, "设备编号对应的设备未连接", str_err_reason_for_user, MSP_ERROR_NOT_FOUND);
 			ptr_carve = iter->second;
 		}
-		//走到这里，说明找到了对应的雕刻机
-		//查询雕刻机状态
-		int ret = ptr_carve->get_carve_status(eCarve_common_status, str_err_reason_for_debug, str_err_reason_for_user);
-		businlog_error_return(!ret, ("%s | fail to get carve status, reason:%s."
-			, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+		//雕刻机信息存储
+		ptr_carve->str_carve_task_no = str_task_no;
+		ptr_carve->str_carve_carve_id = str_carve_id;
+		ptr_carve->str_carve_file_path = str_file_path;
+		ptr_carve->str_carve_g_no = str_g_no;
+
+		//下载g代码
+		int ret = ptr_carve->upload_1_file(str_file_path, str_err_reason_for_debug, str_err_reason_for_user);
+		businlog_error_return(!ret, ("%s | fail to get carve status, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+
 		return MSP_SUCCESS;
 	}
 	catch (std::exception& e)
 	{
 		str_err_reason_for_debug = string("Has exception:") + string(e.what());
-		str_err_reason_for_user = "服务异常";
+		str_err_reason_for_user = "服务端发生异常";
 		businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
 		return MSP_ERROR_EXCEPTION;
 	}
 }
+int CCarve_Manager::query_one_machine_status(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	try
+	{
+		//从参数中获取设备编号
+		businlog_error_return_debug_and_user_reason(json_params.isMember(CCarve::ms_str_carve_id_key), __CLASS_FUNCTION__
+			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
+			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		const string& str_carve_id = json_params[CCarve::ms_str_carve_id_key].asString();
+
+		boost::shared_ptr<CCarve> ptr_carve;
+		std::pair<TYPE_MAP_ITER, bool> pair_insert_result;
+		pair_insert_result.second = false;
+		unsigned short nMax_wait_time = 1000;
+		string str_key = "max_wait_time";
+
+		//判定此编号对应的雕刻机是否已经存在
+		{
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			businlog_error_return_debug_and_user_reason(m_map_carveId_carvePtr.find(str_carve_id) == m_map_carveId_carvePtr.end()
+				, __CLASS_FUNCTION__ << " | carve id:" << str_carve_id << " already exist.", str_err_reason_for_debug
+				, "设备编号对应的设备已经连接", str_err_reason_for_user, MSP_ERROR_ALREADY_EXIST);
+			//map中不存在对应的设备编号
+			//构造雕刻机对象
+			ptr_carve = boost::make_shared<CCarve>(json_params);
+			pair_insert_result = m_map_carveId_carvePtr.insert(std::make_pair(str_carve_id, ptr_carve));
+			//判定插入结果，如果失败，则说明键已经存在了.（map插入失败，是不会覆盖原来的value）
+			businlog_error_return_debug_and_user_reason(pair_insert_result.second, __CLASS_FUNCTION__ << " | fail to insert, carve id:" << str_carve_id << " alread exist."
+				, str_err_reason_for_debug, "重复连接设备", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		}
+		//所有关于雕刻机的操作，如果有一个出错，则将其从map中删除，并出错返回
+		//连接雕刻机
+		int ret = ptr_carve->connect(str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to connect carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+
+		//设置continue状态
+		if (json_params.isMember(str_key))
+		{//参数中含有最大等待时间
+			nMax_wait_time = json_params[str_key].asInt();
+		}
+		ret = ptr_carve->set_continue_status(0, nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to set carve continue status, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+
+		//重置设备
+		ret = ptr_carve->reset(nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to reset carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+		return MSP_SUCCESS;
+Err_exit: //仅当对雕刻机操作出错了，则将雕刻机移除
+		//如果之前添加成功了，则将其移除
+		if(pair_insert_result.second)
+		{
+			//移除
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			m_map_carveId_carvePtr.erase(pair_insert_result.first);
+		}
+		return ret;
+	}
+	catch (std::exception& e)
+	{
+		str_err_reason_for_debug = string("Has exception:") + string(e.what());
+		str_err_reason_for_user = "服务端发生异常";
+		businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+		return MSP_ERROR_EXCEPTION;
+	}
+}
+int CCarve_Manager::query_all_machines_status(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	try
+	{
+		//从参数中获取设备编号
+		businlog_error_return_debug_and_user_reason(json_params.isMember(CCarve::ms_str_carve_id_key), __CLASS_FUNCTION__
+			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
+			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		const string& str_carve_id = json_params[CCarve::ms_str_carve_id_key].asString();
+
+		boost::shared_ptr<CCarve> ptr_carve;
+		std::pair<TYPE_MAP_ITER, bool> pair_insert_result;
+		pair_insert_result.second = false;
+		unsigned short nMax_wait_time = 1000;
+		string str_key = "max_wait_time";
+
+		//判定此编号对应的雕刻机是否已经存在
+		{
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			businlog_error_return_debug_and_user_reason(m_map_carveId_carvePtr.find(str_carve_id) == m_map_carveId_carvePtr.end()
+				, __CLASS_FUNCTION__ << " | carve id:" << str_carve_id << " already exist.", str_err_reason_for_debug
+				, "设备编号对应的设备已经连接", str_err_reason_for_user, MSP_ERROR_ALREADY_EXIST);
+			//map中不存在对应的设备编号
+			//构造雕刻机对象
+			ptr_carve = boost::make_shared<CCarve>(json_params);
+			pair_insert_result = m_map_carveId_carvePtr.insert(std::make_pair(str_carve_id, ptr_carve));
+			//判定插入结果，如果失败，则说明键已经存在了.（map插入失败，是不会覆盖原来的value）
+			businlog_error_return_debug_and_user_reason(pair_insert_result.second, __CLASS_FUNCTION__ << " | fail to insert, carve id:" << str_carve_id << " alread exist."
+				, str_err_reason_for_debug, "重复连接设备", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		}
+		//所有关于雕刻机的操作，如果有一个出错，则将其从map中删除，并出错返回
+		//连接雕刻机
+		int ret = ptr_carve->connect(str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to connect carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+
+		//设置continue状态
+		if (json_params.isMember(str_key))
+		{//参数中含有最大等待时间
+			nMax_wait_time = json_params[str_key].asInt();
+		}
+		ret = ptr_carve->set_continue_status(0, nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to set carve continue status, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+
+		//重置设备
+		ret = ptr_carve->reset(nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+		if (ret)
+		{
+			businlog_error("%s | fail to reset carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			goto Err_exit;
+		}
+		return MSP_SUCCESS;
+Err_exit: //仅当对雕刻机操作出错了，则将雕刻机移除
+		//如果之前添加成功了，则将其移除
+		if(pair_insert_result.second)
+		{
+			//移除
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			m_map_carveId_carvePtr.erase(pair_insert_result.first);
+		}
+		return ret;
+	}
+	catch (std::exception& e)
+	{
+		str_err_reason_for_debug = string("Has exception:") + string(e.what());
+		str_err_reason_for_user = "服务端发生异常";
+		businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+		return MSP_ERROR_EXCEPTION;
+	}
+}
+
 
 CCarve_Manager::CCarve_Manager()
 {
