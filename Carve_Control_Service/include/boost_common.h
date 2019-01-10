@@ -1,7 +1,4 @@
 /*#include <boost/serialization/singleton.hpp> */
-
-#ifndef BOOST_COMMON_H_
-#define BOOST_COMMON_H_
 #include <boost/thread.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/mutex.hpp>
@@ -15,5 +12,3 @@ typedef boost::shared_lock<Thread_WR_Mutex>   Thread_Read_Lock;
 
 typedef boost::recursive_mutex         Thread_Recursive_Mutex;
 typedef boost::unique_lock<Thread_Recursive_Mutex>  Thread_Recursive_Lock;
-
-#endif

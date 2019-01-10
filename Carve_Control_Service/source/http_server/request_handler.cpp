@@ -122,59 +122,16 @@ namespace http
 			const std::string str_cmd = root[str_key].asString();
 			//根据不同的命令来响应
 			if ("connect" == str_cmd)
-			{
-				//连接雕刻机begin
-				ret = http_on_connect(root, json_result, str_err_reason);
-			}
-			else if ("disconnect" == str_cmd)
-			{
-				//断开雕刻机
-				ret = http_disconnect(root, json_result, str_err_reason);
-			}
-			else if ("query_all_machines_status" == str_cmd)
-			{
-				//查询所有雕刻机状态
-				ret = http_query_all_machines_status(root, json_result, str_err_reason);
+			{//连接雕刻机
+				ret = on_connect(root, json_result, str_err_reason);
 			}
 			else if ("query_one_machine_status" == str_cmd)
 			{
-				//查询一个雕刻机状态
-				ret = http_query_one_machine_status(root, json_result, str_err_reason);
+				ret = on_query_one_carve_status(root, json_result, str_err_reason);
 			}
-			else if ("download_gcode_OK" == str_cmd)
+			else if ("query_all_machine_status" == str_cmd)
 			{
-				//通知GCode文件下载完毕
-				ret = http_download_gcode_OK(root, json_result, str_err_reason);
-			}
-			else if ("emergency_stop_one" == str_cmd)
-			{
-				//通知一台雕刻机急停
-				ret = http_emergency_stop_one(root, json_result, str_err_reason);
-			}
-			else if ("emergency_stop_all" == str_cmd)
-			{
-				//通知全部雕刻机急停
-				ret = http_emergency_stop_all(root, json_result, str_err_reason);
-			}
-			else if ("reboot_one" == str_cmd)
-			{
-				//通知一台雕刻机重启
-				ret = http_reboot_one(root, json_result, str_err_reason);
-			}
-			else if ("reboot_all" == str_cmd)
-			{
-				//通知全部雕刻机重启
-				ret = http_reboot_all(root, json_result, str_err_reason);
-			}
-			else if ("adjust_speed" == str_cmd)
-			{
-				//调整雕刻机运行速度
-				ret = http_adjust_speed(root, json_result, str_err_reason);
-			}
-			else if ("start" == str_cmd)
-			{
-				//开始雕刻
-				ret = http_start(root, json_result, str_err_reason);
+				ret = MSP_ERROR_NOT_IMPLEMENT;
 			}
 			else if("query_one_machine_info" == str_cmd)
 			{
@@ -231,45 +188,7 @@ namespace http
 			return true;
 		}
 
-		int request_handler::http_on_connect(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
-		{
-			//一个或者多个
-			string str_key = "carveInfo";
-			businlog_error_return_err_reason(json_root.isMember(str_key), __CLASS_FUNCTION__ << " | json:" << json_root.toStyledString() << ", without key:" << str_key
-				, str_err_reason, MSP_ERROR_INVALID_PARA);
-
-			const Json::Value& json_arr_carveInfo = json_root[str_key];
-			int ret = 0;
-
-			//遍历信息数组
-			for (int i = 0; i != json_arr_carveInfo.size(); ++i)
-			{
-				//获取单个雕刻机信息
-				const Json::Value& json_single_params = json_arr_carveInfo[i];
-				std::string str_err_reason_for_debug;
-				std::string str_err_reason_for_user;
-				//连接雕刻机
-				ret = CCarve_Manager::instance()->connect_carve(json_single_params, str_err_reason_for_debug, str_err_reason_for_user);
-				Json::Value json_single_resp;
-				//构造结果
-				json_single_resp["ret"] = ret;
-				json_single_resp["errmsg"] = str_err_reason_for_debug;
-				json_single_resp["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
-				if (json_single_params.isMember(CCarve::ms_str_carve_id_key))
-				{
-					json_single_resp[CCarve::ms_str_carve_id_key] = json_single_params[CCarve::ms_str_carve_id_key];
-				}
-				else
-				{
-					json_single_resp[CCarve::ms_str_carve_id_key] = Json::Value();
-				}
-				//将单个结果添加到结果数组中
-				json_result["results"].append(json_single_resp);
-				str_err_reason += string(". ") + str_err_reason_for_debug;
-			}//end for
-			return MSP_SUCCESS;
-		}
-		int request_handler::http_query_all_machines_status(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		int request_handler::on_connect(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
 		{
 			string str_key = "carveInfo";
 			businlog_error_return_err_reason(json_root.isMember(str_key), __CLASS_FUNCTION__ << " | json:" << json_root.toStyledString() << ", without key:" << str_key
@@ -306,254 +225,31 @@ namespace http
 			}//end for
 			return MSP_SUCCESS;
 		}
-		int request_handler::http_query_one_machine_status(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
-		{
-			string str_key = "carveInfo";
-			businlog_error_return_err_reason(json_root.isMember(str_key), __CLASS_FUNCTION__ << " | json:" << json_root.toStyledString() << ", without key:" << str_key
-				, str_err_reason, MSP_ERROR_INVALID_PARA);
 
-			const Json::Value& json_arr_carveInfo = json_root[str_key];
-			int ret = 0;
-
-			//遍历信息数组
-			for (int i = 0; i != json_arr_carveInfo.size(); ++i)
-			{
-				//获取单个雕刻机信息
-				const Json::Value& json_single_params = json_arr_carveInfo[i];
-				std::string str_err_reason_for_debug;
-				std::string str_err_reason_for_user;
-				//连接雕刻机
-				ret = CCarve_Manager::instance()->connect_carve(json_single_params, str_err_reason_for_debug, str_err_reason_for_user);
-				Json::Value json_single_resp;
-				//构造结果
-				json_single_resp["ret"] = ret;
-				json_single_resp["errmsg"] = str_err_reason_for_debug;
-				json_single_resp["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
-				if (json_single_params.isMember(CCarve::ms_str_carve_id_key))
-				{
-					json_single_resp[CCarve::ms_str_carve_id_key] = json_single_params[CCarve::ms_str_carve_id_key];
-				}
-				else
-				{
-					json_single_resp[CCarve::ms_str_carve_id_key] = Json::Value();
-				}
-				//将单个结果添加到结果数组中
-				json_result["results"].append(json_single_resp);
-				str_err_reason += string(". ") + str_err_reason_for_debug;
-			}//end for
-			return MSP_SUCCESS;
-		}
-		int request_handler::http_download_gcode_OK(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		int request_handler::on_query_one_carve_status(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
 		{
 			int ret = 0;
 			std::string str_err_reason_for_debug;
 			std::string str_err_reason_for_user;
-			//下载G代码
-			ret = CCarve_Manager::instance()->download_gcode_OK(json_root, str_err_reason_for_debug, str_err_reason_for_user);
-			
+			//获取雕刻机状态
+			ECARVE_STATUS_TYPE eCarve_common_status = CARVE_STATUS_MIN;
+			ret = CCarve_Manager::instance()->get_carve_status(json_root, eCarve_common_status, str_err_reason_for_debug, str_err_reason_for_user);
+			//注意：无论成败，都构造结果
 			//构造结果
 			json_result["ret"] = ret;
 			json_result["errmsg"] = str_err_reason_for_debug;
 			json_result["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
-
-			return MSP_SUCCESS;
-		}
-		int request_handler::http_emergency_stop_one(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
-		{
-			int ret = 0;
-			//获取单个雕刻机信息
-			std::string str_err_reason_for_debug;
-			std::string str_err_reason_for_user;
-			//通知一台雕刻机急停
-			ret = CCarve_Manager::instance()->emergency_stop_one(json_root, str_err_reason_for_debug, str_err_reason_for_user);
-			//构造结果
-			json_result["ret"] = ret;
-			json_result["errmsg"] = str_err_reason_for_debug;
-			json_result["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
-
-			return MSP_SUCCESS;
-		}
-		int request_handler::http_emergency_stop_all(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
-		{
-			int ret = 0;
-			std::string str_err_reason_for_debug;
-			std::string str_err_reason_for_user;
-			//连接雕刻机
-			ret = CCarve_Manager::instance()->emergency_stop_all(json_root, str_err_reason_for_debug, str_err_reason_for_user);
-			Json::Value json_single_resp;
-			//构造结果
-			json_single_resp["ret"] = ret;
-			json_single_resp["errmsg"] = str_err_reason_for_debug;
-			json_single_resp["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
-
-			//将单个结果添加到结果数组中
-			json_result["results"].append(json_single_resp);
-			str_err_reason += string(". ") + str_err_reason_for_debug;
-
-			return MSP_SUCCESS;
-		}
-		int request_handler::http_reboot_one(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
-		{
-			string str_key = "carveInfo";
-			businlog_error_return_err_reason(json_root.isMember(str_key), __CLASS_FUNCTION__ << " | json:" << json_root.toStyledString() << ", without key:" << str_key
-				, str_err_reason, MSP_ERROR_INVALID_PARA);
-
-			const Json::Value& json_arr_carveInfo = json_root[str_key];
-			int ret = 0;
-
-			//遍历信息数组
-			for (int i = 0; i != json_arr_carveInfo.size(); ++i)
+			json_result["currentStatus"] = eCarve_common_status;
+			if (json_root.isMember(CCarve::ms_str_carve_id_key))
 			{
-				//获取单个雕刻机信息
-				const Json::Value& json_single_params = json_arr_carveInfo[i];
-				std::string str_err_reason_for_debug;
-				std::string str_err_reason_for_user;
-				//连接雕刻机
-				ret = CCarve_Manager::instance()->connect_carve(json_single_params, str_err_reason_for_debug, str_err_reason_for_user);
-				Json::Value json_single_resp;
-				//构造结果
-				json_single_resp["ret"] = ret;
-				json_single_resp["errmsg"] = str_err_reason_for_debug;
-				json_single_resp["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
-				if (json_single_params.isMember(CCarve::ms_str_carve_id_key))
-				{
-					json_single_resp[CCarve::ms_str_carve_id_key] = json_single_params[CCarve::ms_str_carve_id_key];
-				}
-				else
-				{
-					json_single_resp[CCarve::ms_str_carve_id_key] = Json::Value();
-				}
-				//将单个结果添加到结果数组中
-				json_result["results"].append(json_single_resp);
-				str_err_reason += string(". ") + str_err_reason_for_debug;
-			}//end for
-			return MSP_SUCCESS;
-		}
-		int request_handler::http_reboot_all(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
-		{
-			string str_key = "carveInfo";
-			businlog_error_return_err_reason(json_root.isMember(str_key), __CLASS_FUNCTION__ << " | json:" << json_root.toStyledString() << ", without key:" << str_key
-				, str_err_reason, MSP_ERROR_INVALID_PARA);
-
-			const Json::Value& json_arr_carveInfo = json_root[str_key];
-			int ret = 0;
-
-			//遍历信息数组
-			for (int i = 0; i != json_arr_carveInfo.size(); ++i)
+				json_result[CCarve::ms_str_carve_id_key] = json_root[CCarve::ms_str_carve_id_key];
+			}
+			else
 			{
-				//获取单个雕刻机信息
-				const Json::Value& json_single_params = json_arr_carveInfo[i];
-				std::string str_err_reason_for_debug;
-				std::string str_err_reason_for_user;
-				//连接雕刻机
-				ret = CCarve_Manager::instance()->connect_carve(json_single_params, str_err_reason_for_debug, str_err_reason_for_user);
-				Json::Value json_single_resp;
-				//构造结果
-				json_single_resp["ret"] = ret;
-				json_single_resp["errmsg"] = str_err_reason_for_debug;
-				json_single_resp["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
-				if (json_single_params.isMember(CCarve::ms_str_carve_id_key))
-				{
-					json_single_resp[CCarve::ms_str_carve_id_key] = json_single_params[CCarve::ms_str_carve_id_key];
-				}
-				else
-				{
-					json_single_resp[CCarve::ms_str_carve_id_key] = Json::Value();
-				}
-				//将单个结果添加到结果数组中
-				json_result["results"].append(json_single_resp);
-				str_err_reason += string(". ") + str_err_reason_for_debug;
-			}//end for
-			return MSP_SUCCESS;
-		}
-		int request_handler::http_adjust_speed(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
-		{
-			string str_key = "carveInfo";
-			businlog_error_return_err_reason(json_root.isMember(str_key), __CLASS_FUNCTION__ << " | json:" << json_root.toStyledString() << ", without key:" << str_key
-				, str_err_reason, MSP_ERROR_INVALID_PARA);
-
-			const Json::Value& json_arr_carveInfo = json_root[str_key];
-			int ret = 0;
-
-			//遍历信息数组
-			for (int i = 0; i != json_arr_carveInfo.size(); ++i)
-			{
-				//获取单个雕刻机信息
-				const Json::Value& json_single_params = json_arr_carveInfo[i];
-				std::string str_err_reason_for_debug;
-				std::string str_err_reason_for_user;
-				//连接雕刻机
-				ret = CCarve_Manager::instance()->connect_carve(json_single_params, str_err_reason_for_debug, str_err_reason_for_user);
-				Json::Value json_single_resp;
-				//构造结果
-				json_single_resp["ret"] = ret;
-				json_single_resp["errmsg"] = str_err_reason_for_debug;
-				json_single_resp["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
-				if (json_single_params.isMember(CCarve::ms_str_carve_id_key))
-				{
-					json_single_resp[CCarve::ms_str_carve_id_key] = json_single_params[CCarve::ms_str_carve_id_key];
-				}
-				else
-				{
-					json_single_resp[CCarve::ms_str_carve_id_key] = Json::Value();
-				}
-				//将单个结果添加到结果数组中
-				json_result["results"].append(json_single_resp);
-				str_err_reason += string(". ") + str_err_reason_for_debug;
-			}//end for
-			return MSP_SUCCESS;
-		}
-		int request_handler::http_disconnect(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
-		{
-			//all 多个机器
-			string str_key = "carveInfo";
-			businlog_error_return_err_reason(json_root.isMember(str_key), __CLASS_FUNCTION__ << " | json:" << json_root.toStyledString() << ", without key:" << str_key
-				, str_err_reason, MSP_ERROR_INVALID_PARA);
-
-			const Json::Value& json_arr_carveInfo = json_root[str_key];
-			int ret = 0;
-
-			//遍历信息数组
-			for (int i = 0; i != json_arr_carveInfo.size(); ++i)
-			{
-				//获取单个雕刻机信息
-				const Json::Value& json_single_params = json_arr_carveInfo[i];
-				std::string str_err_reason_for_debug;
-				std::string str_err_reason_for_user;
-				//断开雕刻机
-				ret = CCarve_Manager::instance()->disconnect(json_single_params, str_err_reason_for_debug, str_err_reason_for_user);
-				Json::Value json_single_resp;
-				//构造结果
-				json_single_resp["ret"] = ret;
-				json_single_resp["errmsg"] = str_err_reason_for_debug;
-				json_single_resp["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
-				if (json_single_params.isMember(CCarve::ms_str_carve_id_key))
-				{
-					json_single_resp[CCarve::ms_str_carve_id_key] = json_single_params[CCarve::ms_str_carve_id_key];
-				}
-				else
-				{
-					json_single_resp[CCarve::ms_str_carve_id_key] = Json::Value();
-				}
-				//将单个结果添加到结果数组中
-				json_result["results"].append(json_single_resp);
-				str_err_reason += string(". ") + str_err_reason_for_debug;
-			}//end for
-			return MSP_SUCCESS;
-		}
-		int request_handler::http_start(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
-		{
-			int ret = 0;
-			std::string str_err_reason_for_debug;
-			std::string str_err_reason_for_user;
-			//连接雕刻机
-			ret = CCarve_Manager::instance()->start(json_root, str_err_reason_for_debug, str_err_reason_for_user);
-
-			//构造结果
-			json_result["ret"] = ret;
-			json_result["errmsg"] = str_err_reason_for_debug;
-			json_result["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
-			
+				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
+			}
+			str_err_reason =  str_err_reason_for_debug;
+			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
 			return MSP_SUCCESS;
 		}
 
@@ -588,5 +284,6 @@ namespace http
 			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
 			return MSP_SUCCESS;
 		}
+
 	} // namespace server3
 } // namespace http

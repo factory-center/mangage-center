@@ -1,108 +1,102 @@
-#include <stdio.h>
-#include <iostream>
-#include <SDKDDKVer.h>
-#include "../source/busin_log.h"
-#include "../source/CCarve.h"
-#include "utils/msp_errors.h"
-#include "../source/carve_common_lib.h"
-#include "../source/http_server/server.hpp"
-#include "../source/http_server/singleton_server.h"
-#include <boost_common.h>
-#include <json/json.h>
+
+// Carve_Control_Service.cpp : 定义应用程序的类行为。
+//
+
+#include "stdafx.h"
+#include "Carve_Control_Service.h"
+#include "Carve_Control_ServiceDlg.h"
+
+#ifdef _DEBUG
+#define new DEBUG_NEW
+#endif
 
 
-using namespace std;
+// CCarve_Control_ServiceApp
+
+BEGIN_MESSAGE_MAP(CCarve_Control_ServiceApp, CWinApp)
+	ON_COMMAND(ID_HELP, &CWinApp::OnHelp)
+END_MESSAGE_MAP()
 
 
+// CCarve_Control_ServiceApp 构造
 
-unsigned int nConn_idx = 0;
-const string str_ip = "192.168.101.212";
-boost::shared_ptr<CCarve> carve_ptr;
-
-
-bool brun=false;
-SERVICE_STATUS servicestatus;
-SERVICE_STATUS_HANDLE hstatus;
-void WINAPI ServiceMain(int argc, char** argv);
-void WINAPI CtrlHandler(DWORD request);
-
-void WINAPI ServiceMain(int argc, char** argv)
+CCarve_Control_ServiceApp::CCarve_Control_ServiceApp()
 {
-	servicestatus.dwServiceType = SERVICE_WIN32;
-	servicestatus.dwCurrentState = SERVICE_START_PENDING;
-	servicestatus.dwControlsAccepted = SERVICE_ACCEPT_SHUTDOWN|SERVICE_ACCEPT_STOP;//在本例中只接受系统关机和停止服务两种控制命令
-	servicestatus.dwWin32ExitCode = 0;
-	servicestatus.dwServiceSpecificExitCode = 0;
-	servicestatus.dwCheckPoint = 0;
-	servicestatus.dwWaitHint = 0;
+	// 支持重新启动管理器
+	m_dwRestartManagerSupportFlags = AFX_RESTART_MANAGER_SUPPORT_RESTART;
 
-	hstatus = ::RegisterServiceCtrlHandler(L"CarveControlServiceTest", CtrlHandler);
-	if (hstatus==0)
-	{
-		return;
-	}
-
-	//向SCM 报告运行状态
-	servicestatus.dwCurrentState = SERVICE_RUNNING;
-	SetServiceStatus (hstatus, &servicestatus);
-
-	//启动服务操作
-
-	//默认日志配置，具体参见类型Log_Cfg_T
-	string str_log_path = "../log/emcs.log";
-	businlog_cfg default_cfg(str_log_path.c_str(), "Network Engraving Machine Logging");
-	default_cfg.level(7);
-	//打开配置文件，如果失败，则使用默认日志配置
-	int ret = businlog_open(default_cfg, "emcs.cfg");
-	if (ret)
-	{
-		businlog_error("%s | open log file:%s error, ret:%d", __FUNCTION__, str_log_path.c_str(), ret);
-	}
-
-	//初始化库
-	string str_err_reason;
-	bool bSuccess = CCarve_Common_Lib_Tool::instance()->init(str_err_reason);
-	//businlog_error_return(bSuccess, ("%s | fail to init CCarve_Common_Lib_Tool, reason:%s", __FUNCTION__, str_err_reason.c_str()), FALSE);
-
-	//启动网络模块：创建线程以监听端口
-	//TODO::后面放在其他地方并且设置好ip:port，目前放在这里并写死
-	string str_local_ip  = "192.168.101.20";
-	string str_port = "8899";
-	size_t nThread_num = 5;
-
-	singleton_default<CSingleton_Server>::instance().start(str_local_ip, str_port, nThread_num, str_err_reason);
-}
-
-void WINAPI CtrlHandler(DWORD request)
-{
-	switch (request)
-	{
-	case SERVICE_CONTROL_STOP:
-		brun=false;
-		servicestatus.dwCurrentState = SERVICE_STOPPED;
-		break;
-
-	case SERVICE_CONTROL_SHUTDOWN:
-		brun=false;
-		servicestatus.dwCurrentState = SERVICE_STOPPED;
-		break;
-
-	default:
-		break;
-	}
-
-	SetServiceStatus (hstatus, &servicestatus);
+	// TODO: 在此处添加构造代码，
+	// 将所有重要的初始化放置在 InitInstance 中
 }
 
 
-int main()
-{
-	SERVICE_TABLE_ENTRY entrytable[2];
-	entrytable[0].lpServiceName= L"CarveControlServiceTest";
-	entrytable[0].lpServiceProc=(LPSERVICE_MAIN_FUNCTION)ServiceMain;
-	entrytable[1].lpServiceName=NULL;
-	entrytable[1].lpServiceProc=NULL;
-	StartServiceCtrlDispatcher(entrytable);
+// 唯一的一个 CCarve_Control_ServiceApp 对象
 
-	return 0;
+CCarve_Control_ServiceApp theApp;
+
+
+// CCarve_Control_ServiceApp 初始化
+
+BOOL CCarve_Control_ServiceApp::InitInstance()
+{
+	// 如果一个运行在 Windows XP 上的应用程序清单指定要
+	// 使用 ComCtl32.dll 版本 6 或更高版本来启用可视化方式，
+	//则需要 InitCommonControlsEx()。否则，将无法创建窗口。
+	INITCOMMONCONTROLSEX InitCtrls;
+	InitCtrls.dwSize = sizeof(InitCtrls);
+	// 将它设置为包括所有要在应用程序中使用的
+	// 公共控件类。
+	InitCtrls.dwICC = ICC_WIN95_CLASSES;
+	InitCommonControlsEx(&InitCtrls);
+
+	CWinApp::InitInstance();
+
+
+	AfxEnableControlContainer();
+
+	// 创建 shell 管理器，以防对话框包含
+	// 任何 shell 树视图控件或 shell 列表视图控件。
+	CShellManager *pShellManager = new CShellManager;
+
+	// 激活“Windows Native”视觉管理器，以便在 MFC 控件中启用主题
+	CMFCVisualManager::SetDefaultManager(RUNTIME_CLASS(CMFCVisualManagerWindows));
+
+	// 标准初始化
+	// 如果未使用这些功能并希望减小
+	// 最终可执行文件的大小，则应移除下列
+	// 不需要的特定初始化例程
+	// 更改用于存储设置的注册表项
+	// TODO: 应适当修改该字符串，
+	// 例如修改为公司或组织名
+	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
+
+	CCarve_Control_ServiceDlg dlg;
+	m_pMainWnd = &dlg;
+	INT_PTR nResponse = dlg.DoModal();
+	if (nResponse == IDOK)
+	{
+		// TODO: 在此放置处理何时用
+		//  “确定”来关闭对话框的代码
+	}
+	else if (nResponse == IDCANCEL)
+	{
+		// TODO: 在此放置处理何时用
+		//  “取消”来关闭对话框的代码
+	}
+	else if (nResponse == -1)
+	{
+		TRACE(traceAppMsg, 0, "警告: 对话框创建失败，应用程序将意外终止。\n");
+		TRACE(traceAppMsg, 0, "警告: 如果您在对话框上使用 MFC 控件，则无法 #define _AFX_NO_MFC_CONTROLS_IN_DIALOGS。\n");
+	}
+
+	// 删除上面创建的 shell 管理器。
+	if (pShellManager != NULL)
+	{
+		delete pShellManager;
+	}
+
+	// 由于对话框已关闭，所以将返回 FALSE 以便退出应用程序，
+	//  而不是启动应用程序的消息泵。
+	return FALSE;
 }
+

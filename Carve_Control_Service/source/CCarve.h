@@ -84,11 +84,5 @@ private:
 	bool m_bAcq_Res_Success; //申请资源是否成功
 	ECARVE_FACTORY_TYPE m_eFactory_type; //雕刻机厂商类型
 	string m_str_carve_type; //设备型号
-
-public:
-	string str_carve_task_no;	//任务编号
-	string str_carve_carve_id;	//任务编号雕刻机编号
-	string str_carve_file_path;	//nc文件对应的绝对路径
-	string str_carve_g_no;		//G代码编号
 };
 //函数原型定义
