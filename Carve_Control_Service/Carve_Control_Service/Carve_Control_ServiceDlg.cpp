@@ -75,17 +75,7 @@ BEGIN_MESSAGE_MAP(CCarve_Control_ServiceDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
-	ON_BN_CLICKED(IDC_BUTTON1, &CCarve_Control_ServiceDlg::OnBnClickedButton1)
-	ON_BN_CLICKED(IDC_BUTTON2, &CCarve_Control_ServiceDlg::OnBnClickedButton2)
-	ON_BN_CLICKED(IDC_BUTTON3, &CCarve_Control_ServiceDlg::OnBnClickedButton3)
-	ON_BN_CLICKED(IDC_BUTTON4, &CCarve_Control_ServiceDlg::OnBnClickedButton4)
-	ON_BN_CLICKED(IDC_UPLOADFILE, &CCarve_Control_ServiceDlg::OnBnClickedUploadfile)
-	ON_BN_CLICKED(IDC_BUTTON6, &CCarve_Control_ServiceDlg::OnBnClickedButton6)
-	ON_BN_CLICKED(IDC_BUTTON7, &CCarve_Control_ServiceDlg::OnBnClickedButton7)
-	ON_BN_CLICKED(IDC_BUTTON8, &CCarve_Control_ServiceDlg::OnBnClickedButton8)
-	ON_BN_CLICKED(IDC_BUTTON_cancel_stop_fast, &CCarve_Control_ServiceDlg::OnBnClickedButtoncancelstopfast)
 	ON_WM_CLOSE()
-	ON_BN_CLICKED(IDC_get_line_num, &CCarve_Control_ServiceDlg::OnBnClickedgetlinenum)
 END_MESSAGE_MAP()
 
 
@@ -151,14 +141,6 @@ BOOL CCarve_Control_ServiceDlg::OnInitDialog()
     ret = singleton_default<CSingleton_Server>::instance().start(
 		str_local_ip, str_port, nThread_num, str_err_reason);
 	businlog_error_return(!ret, ("%s | fail to start Server, reason:%s", __FUNCTION__, str_err_reason.c_str()), FALSE);
-	//test begin
-	Json::Value json_params;
-	json_params[CCarve::ms_str_ip_key] = str_ip;
-	json_params[CCarve::ms_str_carve_type_key] = "type test";
-	json_params[CCarve::ms_str_carve_id_key] = "Id test";
-	json_params[CCarve::ms_str_factory_type_key] = "BaoYuan";
-	carve_ptr = boost::make_shared<CCarve>(json_params);
-	//test end
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -210,6 +192,7 @@ HCURSOR CCarve_Control_ServiceDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
+/*
 // test begin
 //返回值 0：success; 非0：错误码
 int test_connect()
@@ -309,156 +292,7 @@ int test_get_line_num(int& nLine_num)
 	return 0;
 }
 //test end
-void CCarve_Control_ServiceDlg::OnBnClickedButton1()
-{
-	// TODO: 在此添加控件通知处理程序代码
-	int ret = test_connect();
-	if (ret)
-	{
-		MessageBox(_T("connect failed"));
-	}
-	else
-	{
-		MessageBox(_T("connect successfully"));
-	}
-}
-
-
-void CCarve_Control_ServiceDlg::OnBnClickedButton2()
-{
-	// TODO: 在此添加控件通知处理程序代码
-	int ret = test_disconnect();
-	if (ret)
-	{
-		MessageBox(_T("disconnect failed"));
-	}
-	else
-	{
-		MessageBox(_T("disconnect successfully"));
-	}
-}
-
-
-void CCarve_Control_ServiceDlg::OnBnClickedButton3()
-{
-	// TODO: 在此添加控件通知处理程序代码
-	int ret = test_pause();
-	if (ret)
-	{
-		MessageBox(_T("pause failed"));
-	}
-	else
-	{
-		MessageBox(_T("pause successfully"));
-	}
-}
-
-
-void CCarve_Control_ServiceDlg::OnBnClickedButton4()
-{
-	// TODO: 在此添加控件通知处理程序代码
-	int ret = test_start();
-	if (ret)
-	{
-		MessageBox(_T("start failed"));
-	}
-	else
-	{
-		MessageBox(_T("start successfully"));
-	}
-}
-
-
-void CCarve_Control_ServiceDlg::OnBnClickedButton5()
-{
-	// TODO: 在此添加控件通知处理程序代码
-	int ret = test_upload();
-	if (ret)
-	{
-		MessageBox(_T("upload failed"));
-	}
-	else
-	{
-		MessageBox(_T("upload successfully"));
-	}
-}
-
-
-void CCarve_Control_ServiceDlg::OnBnClickedUploadfile()
-{
-	// TODO: 在此添加控件通知处理程序代码
-	int ret = test_upload();
-	if (ret)
-	{
-		MessageBox(_T("upload file failed"));
-	}
-	else
-	{
-		MessageBox(_T("upload file successfully"));
-	}
-
-}
-
-
-void CCarve_Control_ServiceDlg::OnBnClickedButton6()
-{
-	// TODO: 在此添加控件通知处理程序代码
-	string str_carve_status_description;
-	int ret = test_query_status(str_carve_status_description);
-	if (ret)
-	{
-		MessageBox(_T("query carve status  failed"));
-	}
-	else
-	{
-		MessageBox(_T("query carve status successfully, carve status description:") + CString(str_carve_status_description.c_str()));
-	}
-}
-
-
-void CCarve_Control_ServiceDlg::OnBnClickedButton7()
-{
-	// TODO: 在此添加控件通知处理程序代码
-	int ret = test_stop_fast();
-	if (ret)
-	{
-		MessageBox(_T("fast stop failed"));
-	}
-	else
-	{
-		MessageBox(_T("fast stop successfully"));
-	}
-}
-
-
-void CCarve_Control_ServiceDlg::OnBnClickedButton8()
-{
-	// TODO: 在此添加控件通知处理程序代码
-	int ret = test_delete_file();
-	if (ret)
-	{
-		MessageBox(_T("delete file failed"));
-	}
-	else
-	{
-		MessageBox(_T("delete file successfully"));
-	}
-}
-
-
-void CCarve_Control_ServiceDlg::OnBnClickedButtoncancelstopfast()
-{
-	// TODO: 在此添加控件通知处理程序代码
-	int ret = test_cancel_stop_fast();
-	if (ret)
-	{
-		MessageBox(_T("cancel fast stop failed"));
-	}
-	else
-	{
-		MessageBox(_T("cancel fast stop successfully"));
-	}
-}
+*/
 
 
 void CCarve_Control_ServiceDlg::OnClose()
@@ -469,20 +303,4 @@ void CCarve_Control_ServiceDlg::OnClose()
 	//完成一些退出操作
 	singleton_default<CSingleton_Server>::instance().stop();
 	CDialogEx::OnClose();
-}
-
-
-void CCarve_Control_ServiceDlg::OnBnClickedgetlinenum()
-{
-	// TODO: 在此添加控件通知处理程序代码
-	int nLine_num = -1;
-	int ret = test_get_line_num(nLine_num);
-	if (ret)
-	{
-		MessageBox(_T("get line num failed"));
-	}
-	else
-	{
-		MessageBox(_T("get line num successfully, num:") + CString(sp::itostr(nLine_num).c_str()));
-	}
 }
