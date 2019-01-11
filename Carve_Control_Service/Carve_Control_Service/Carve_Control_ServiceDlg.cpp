@@ -14,6 +14,7 @@
 #include "../source/http_server/singleton_server.h"
 #include <boost_common.h>
 #include <json/json.h>
+#include "../source/carve_manager.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -138,7 +139,9 @@ BOOL CCarve_Control_ServiceDlg::OnInitDialog()
 	string str_err_reason;
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->init(str_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to init CCarve_Common_Lib_Tool, reason:%s", __FUNCTION__, str_err_reason.c_str()), FALSE);
-
+	string str_err_reason_for_debug, str_err_reason_for_user;
+	ret = CCarve_Manager::instance()->start_poll_carve_status(str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(!ret, ("%s | start_poll_carve_status failed, reason:%s", __FUNCTION__, str_err_reason_for_debug.c_str()), false);
 	//启动网络模块：创建线程以监听端口
 	//TODO::后面放在其他地方并且设置好ip:port，目前放在这里并写死
 	string str_local_ip  = "192.168.101.21";
@@ -233,10 +236,6 @@ int test_connect()
 }
 int test_upload()
 {
-	string str_err_reason_for_debug, str_err_reason_for_user;
-	int ret = carve_ptr->upload_1_file(str_nc_file_path, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(0 == ret, ("%s | fail to upload file:%s, nConn:%d, reason:%s"
-		, __FUNCTION__, str_nc_file_path.c_str(), nConn_idx, str_err_reason_for_debug.c_str()), ret);
 	return 0;
 }
 int test_query_status(string& str_carve_status_description)
@@ -269,7 +268,7 @@ int test_disconnect()
 int test_start()
 {
 	string str_err_reason_for_debug, str_err_reason_for_user;
-	int ret = carve_ptr->start(str_nc_file_path, 1000, str_err_reason_for_debug, str_err_reason_for_user);
+	int ret = carve_ptr->start(1000, str_err_reason_for_debug, str_err_reason_for_user);
 	businlog_error_return(0 == ret, ("%s | fail to start, nc path:%s, ret:%d, reason:%s"
 		, __FUNCTION__, str_nc_file_path.c_str(), ret, str_err_reason_for_debug.c_str()), ret);
 	return 0;

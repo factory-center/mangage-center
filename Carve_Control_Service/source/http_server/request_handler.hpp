@@ -35,6 +35,8 @@ namespace http {
 			int on_connect(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason);
 			int on_query_one_carve_status(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason);
 			int on_query_one_carve_info(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason);
+			int on_start(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason);
+			int on_upload_file(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason);
 			/// The directory containing the files to be served.
 			std::string doc_root_;
 

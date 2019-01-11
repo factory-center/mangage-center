@@ -144,7 +144,7 @@ namespace http {
 				businlog_error("%s | get_http_body failed, ret:%d, msg:%s", __CLASS_FUNCTION__, ret, buf);
 				return ret;
 			}
-			businlog_crit("%s | http body:%s", __CLASS_FUNCTION__, str_json_body.c_str());
+			businlog_info("%s | http body:%s", __CLASS_FUNCTION__, str_json_body.c_str());
 			return MSP_SUCCESS;
 
 		}

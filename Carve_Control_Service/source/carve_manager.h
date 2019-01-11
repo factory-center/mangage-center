@@ -29,9 +29,9 @@ extern "C" {
 #include <string>
 #include <json/json.h>
 #include "carve_common_lib.h"
+#include "CCarve.h"
 using std::string;
 //宏定义
-class CCarve;
 //类型定义
 class CCarve_Manager
 {
@@ -39,13 +39,15 @@ public:
 	static CCarve_Manager* instance();
 	int connect_carve(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_carve_status(const Json::Value& json_params, ECARVE_STATUS_TYPE& eCarve_common_status, string& str_err_reason_for_debug, string& str_err_reason_for_user);
-    int get_carve_info(const Json::Value& json_params, SCarve_Info& carve_info, string& str_err_reason_for_debug, string& str_err_reason_for_user)
-	{
-
-	}
+    int get_carve_info(const Json::Value& json_params, SCarve_Info& carve_info, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int start_poll_carve_status(string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int stop_poll_carve_status(string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int start_engraving(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+    int upload_1_file(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 protected:
 	CCarve_Manager();
 	~CCarve_Manager();
+	void svc();
 private:
 	CCarve_Manager& operator=(const CCarve_Manager&);
 	CCarve_Manager(const CCarve_Manager&);
@@ -60,5 +62,7 @@ private:
 	static CCarve_Manager* ms_pInstance;
 	std::map<string, boost::shared_ptr<CCarve>> m_map_carveId_carvePtr; //键为设备编号，值为CCarve的智能指针
 	Thread_WR_Mutex m_rw_carveId_carvePtr;
+	boost::thread m_thread_poll_status;
+	bool m_bStop_poll_status; //状态轮询开关
 };
 //函数原型定义

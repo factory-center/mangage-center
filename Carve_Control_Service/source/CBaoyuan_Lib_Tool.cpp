@@ -31,6 +31,12 @@
 const int MAX_CONNECTIONS_NUM = 255;
 const int MIN_CONNECTIONS_NUM = 0;
 const int ADDR_CARVE_COMPLETED = 500; //雕刻结束状态地址，A500
+const int ADDR_R_ALL_TOTAL_TIME = 28064; //开始/暂停时间计数功能的地址，(bit0: 第 1 組, bit1:第 2 組…, bit31：第 32 組)
+const int ADDR_R_TOTAL_TIME_1th_MS = 28000; //第一组累计时间毫秒值对应地址，R28000
+const int ADDR_R_TOTAL_TIME_2th_MS = ADDR_R_TOTAL_TIME_1th_MS + 1; //第一组累计时间毫秒值对应地址
+const int ADDR_R_TOTAL_TIME_1th_HOUR = 28032;//第一组累计时间小时值对应地址， R28032
+const int ADDR_R_TOTAL_TIME_2th_HOUR = ADDR_R_TOTAL_TIME_1th_HOUR + 1;//第二组累计时间小时值对应地址
+const int BIT_INDEX_FOR_TOTAL_ENGRAVING_TIME = 0; //雕刻机总加工时间对应的索引
 CBaoyuan_Lib* CBaoyuan_Lib::instance()
 {
 	return ms_pInstance;
@@ -185,28 +191,50 @@ bool CBaoyuan_Lib::create_connection(const Json::Value& json_conn_value, string&
 	nRet_baoyuan = m_sc2_obj.LReadNR(nConn_idx, 17003, 1);
 	businlog_error_return_debug_and_user_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | fail to read, line:" << __LINE__
 		, str_err_reason_for_debug, "设置雕刻机命令失败", str_err_reason_for_user, false);
-	m_sc2_obj.LReadNR(nConn_idx, 17034, 1);
+	
+	nRet_baoyuan = m_sc2_obj.LReadNR(nConn_idx, 17034, 1);
 	businlog_error_return_debug_and_user_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | fail to read, line:" << __LINE__
 		, str_err_reason_for_debug, "设置雕刻机命令失败", str_err_reason_for_user, false);
-	m_sc2_obj.LReadNR(nConn_idx, 29000, 1);
+	
+	nRet_baoyuan = m_sc2_obj.LReadNR(nConn_idx, 29000, 1);
 	businlog_error_return_debug_and_user_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | fail to read, line:" << __LINE__
 		, str_err_reason_for_debug, "设置雕刻机命令失败", str_err_reason_for_user, false);
-	m_sc2_obj.LReadNR(nConn_idx, 29001, 1);
+	
+	nRet_baoyuan = m_sc2_obj.LReadNR(nConn_idx, 29001, 1);
 	businlog_error_return_debug_and_user_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | fail to read, line:" << __LINE__
 		, str_err_reason_for_debug, "设置雕刻机命令失败", str_err_reason_for_user, false);
-	m_sc2_obj.LReadNR(nConn_idx, 29002, 1);
+	
+	nRet_baoyuan = m_sc2_obj.LReadNR(nConn_idx, 29002, 1);
 	businlog_error_return_debug_and_user_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | fail to read, line:" << __LINE__
 		, str_err_reason_for_debug, "设置雕刻机命令失败", str_err_reason_for_user, false);
-	m_sc2_obj.LReadNR(nConn_idx, 29003, 1);
+	
+	nRet_baoyuan = m_sc2_obj.LReadNR(nConn_idx, 29003, 1);
 	businlog_error_return_debug_and_user_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | fail to read, line:" << __LINE__
 		, str_err_reason_for_debug, "设置雕刻机命令失败", str_err_reason_for_user, false);
-	m_sc2_obj.LReadNR(nConn_idx, 1040000, 1);
+	
+	nRet_baoyuan = m_sc2_obj.LReadNR(nConn_idx, 1040000, 1);
 	businlog_error_return_debug_and_user_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | fail to read, line:" << __LINE__
 		, str_err_reason_for_debug, "设置雕刻机命令失败", str_err_reason_for_user, false);
-	m_sc2_obj.LReadNR(nConn_idx, 3006072, 1);
+	
+	nRet_baoyuan = m_sc2_obj.LReadNR(nConn_idx, 3006072, 1);
 	businlog_error_return_debug_and_user_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | fail to read, line:" << __LINE__
 		, str_err_reason_for_debug, "设置雕刻机命令失败", str_err_reason_for_user, false);
-	m_sc2_obj.LReadNA(nConn_idx, ADDR_CARVE_COMPLETED, 1);
+	
+	//设置循环命令读取第一组时间对应的毫秒
+	nRet_baoyuan = m_sc2_obj.LReadNR(nConn_idx, ADDR_R_TOTAL_TIME_1th_MS, 1);
+	businlog_error_return_debug_and_user_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | fail to read, line:" << __LINE__
+		, str_err_reason_for_debug, "设置雕刻机命令失败", str_err_reason_for_user, false);
+	
+	//设置循环命令读取第一组时间对应的小时
+	nRet_baoyuan = m_sc2_obj.LReadNR(nConn_idx, ADDR_R_TOTAL_TIME_1th_HOUR, 1);
+	businlog_error_return_debug_and_user_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | fail to read, line:" << __LINE__
+		, str_err_reason_for_debug, "设置雕刻机命令失败", str_err_reason_for_user, false);
+
+	//设置循环命令读取雕刻是否完成
+	nRet_baoyuan = m_sc2_obj.LReadNA(nConn_idx, ADDR_CARVE_COMPLETED, 1);
+	businlog_error_return_debug_and_user_reason(nRet_baoyuan != 0, __CLASS_FUNCTION__ << " | fail to read, line:" << __LINE__
+		, str_err_reason_for_debug, "设置雕刻机命令失败", str_err_reason_for_user, false);
+
 	m_sc2_obj.LReadEnd(nConn_idx);
 	return true;
 }
@@ -537,6 +565,101 @@ bool CBaoyuan_Lib::get_current_line_num(const Json::Value& json_conn_value, int&
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 	//读取指定位置数据以获取当前文件的行号
 	return get_RValue(nConn_idx, 3006072, nCurrent_line_num, str_err_reason_for_debug, str_err_reason_for_user);
+}
+
+/************************************
+* Method:    start_count_total_engraving_time
+* Brief:  开始累加总雕刻时间 （启动雕刻成功后，立刻调用此接口以便于获取总雕刻时间）
+* Access:    public 
+* Returns:   bool
+* Qualifier:
+*Parameter: const Json::Value & json_conn_value -[in/out]  
+*Parameter: string & str_err_reason_for_debug -[in/out]  
+*Parameter: string & str_err_reason_for_user -[in/out]  
+************************************/
+bool CBaoyuan_Lib::start_count_total_engraving_time(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	//判定是否含有conn idx
+	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
+	//判定是否含有最大超时时间
+	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_max_wait_time_key
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
+
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+	unsigned short nMax_wait_time = json_conn_value[CCarve::ms_str_max_wait_time_key].asInt();
+	//启动计时功能
+	bool bSuccess = set_RBit(nConn_idx, ADDR_R_ALL_TOTAL_TIME, BIT_INDEX_FOR_TOTAL_ENGRAVING_TIME, 1, nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s"
+		, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+	return true;
+}
+
+/************************************
+* Method:    pause_count_total_engraving_time
+* Brief:  暂停统计雕刻时间（在雕刻完成后立即调用）
+* Access:    public 
+* Returns:   bool
+* Qualifier:
+*Parameter: const Json::Value & json_conn_value -[in/out]  
+*Parameter: string & str_err_reason_for_debug -[in/out]  
+*Parameter: string & str_err_reason_for_user -[in/out]  
+************************************/
+bool CBaoyuan_Lib::pause_count_total_engraving_time(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	//判定是否含有conn idx
+	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
+	//判定是否含有最大超时时间
+	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_max_wait_time_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_max_wait_time_key
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
+
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+	unsigned short nMax_wait_time = json_conn_value[CCarve::ms_str_max_wait_time_key].asInt();
+	//暂停计时功能
+	bool bSuccess = set_RBit(nConn_idx, ADDR_R_ALL_TOTAL_TIME, BIT_INDEX_FOR_TOTAL_ENGRAVING_TIME, 0, nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(bSuccess, ("%s | fail to set RBit, reason:%s"
+		, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+	return true;
+}
+
+/************************************
+* Method:    get_total_engraving_time
+* Brief:  从雕刻机中获取总的雕刻时间（事先必须调用启动计时）
+* Access:    public 
+* Returns:   bool
+* Qualifier:
+*Parameter: const Json::Value & json_conn_value -[in/out]  
+*Parameter: size_t & nTotal_engraving_time_minute -[in/out]  
+*Parameter: string & str_err_reason_for_debug -[in/out]  
+*Parameter: string & str_err_reason_for_user -[in/out]  
+************************************/
+bool CBaoyuan_Lib::get_total_engraving_time(const Json::Value& json_conn_value, size_t& nTotal_engraving_time_minute, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	businlog_tracer_perf(CBaoyuan_Lib::get_total_engraving_time);
+	//判定是否含有conn idx
+	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
+	//获取连接索引
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+	//读取雕刻时间对应的毫秒
+	int nTime_ms = 0;
+	bool bSuccess  = get_RValue(nConn_idx, 28000, nTime_ms, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(bSuccess, ("%s | fail to get RValue, reason:%s."
+		, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+	//读取雕刻时间对应的小时
+	int nTime_hour = 0;
+	bSuccess = get_RValue(nConn_idx, 28032, nTime_hour, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(bSuccess, ("%s | fail to get RValue, reason:%s."
+		, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+	//将毫秒和小时换算为分钟
+	nTotal_engraving_time_minute = int(nTime_ms * 1.0 / (1000 * 60) + nTime_hour * 60);
+	return true;
 }
 
 bool CBaoyuan_Lib::upload_1file(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user)

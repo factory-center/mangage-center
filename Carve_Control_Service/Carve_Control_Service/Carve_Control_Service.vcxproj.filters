@@ -137,12 +137,6 @@
     <ClCompile Include="..\source\log_base.cpp">
       <Filter>源文件\log</Filter>
     </ClCompile>
-    <ClCompile Include="Carve_Control_ServiceDlg.cpp">
-      <Filter>源文件\dlg</Filter>
-    </ClCompile>
-    <ClCompile Include="Carve_Control_Service.cpp">
-      <Filter>源文件\dlg</Filter>
-    </ClCompile>
     <ClCompile Include="..\source\CBaoyuan_Lib_Tool.cpp">
       <Filter>源文件\baoyuan</Filter>
     </ClCompile>
@@ -190,6 +184,12 @@
     </ClCompile>
     <ClCompile Include="..\source\carve_manager.cpp">
       <Filter>源文件\device</Filter>
+    </ClCompile>
+    <ClCompile Include="Carve_Control_Service.cpp">
+      <Filter>源文件\dlg</Filter>
+    </ClCompile>
+    <ClCompile Include="Carve_Control_ServiceDlg.cpp">
+      <Filter>源文件\dlg</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

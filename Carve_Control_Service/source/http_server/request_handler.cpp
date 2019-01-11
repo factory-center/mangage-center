@@ -135,11 +135,19 @@ namespace http
 			}
 			else if("query_one_machine_info" == str_cmd)
 			{
-				
+				ret = on_query_one_carve_info(root, json_result, str_err_reason);
 			}
 			else if("query_all_machine_info" == str_cmd)
 			{
 
+			}
+			else if ("download_gcode_OK" == str_cmd)
+			{
+				ret = on_upload_file(root, json_result, str_err_reason);
+			}
+			else if("start" == str_cmd)
+			{
+				ret = on_start(root, json_result, str_err_reason);
 			}
 			else
 			{
@@ -272,6 +280,56 @@ namespace http
 			json_result["worktime"] = carve_info.nTotal_engraving_time;
 			json_result["gNo"] = carve_info.str_gCode_no;
 			json_result["rowNo"] = carve_info.nCurrent_line_num;
+			if (json_root.isMember(CCarve::ms_str_carve_id_key))
+			{
+				json_result[CCarve::ms_str_carve_id_key] = json_root[CCarve::ms_str_carve_id_key];
+			}
+			else
+			{
+				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
+			}
+			str_err_reason =  str_err_reason_for_debug;
+			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
+			return MSP_SUCCESS;
+		}
+
+		int request_handler::on_start(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		{
+			int ret = 0;
+			std::string str_err_reason_for_debug;
+			std::string str_err_reason_for_user;
+			//启动雕刻机
+			ret = CCarve_Manager::instance()->start_engraving(json_root, str_err_reason_for_debug, str_err_reason_for_user);
+			//注意：无论成败，都构造结果
+			//构造结果
+			json_result["ret"] = ret;
+			json_result["errmsg"] = str_err_reason_for_debug;
+			json_result["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
+			if (json_root.isMember(CCarve::ms_str_carve_id_key))
+			{
+				json_result[CCarve::ms_str_carve_id_key] = json_root[CCarve::ms_str_carve_id_key];
+			}
+			else
+			{
+				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
+			}
+			str_err_reason =  str_err_reason_for_debug;
+			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
+			return MSP_SUCCESS;
+		}
+
+		int request_handler::on_upload_file(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		{
+			int ret = 0;
+			std::string str_err_reason_for_debug;
+			std::string str_err_reason_for_user;
+			//上传文件
+			ret = CCarve_Manager::instance()->upload_1_file(json_root, str_err_reason_for_debug, str_err_reason_for_user);
+			//注意：无论成败，都构造结果
+			//构造结果
+			json_result["ret"] = ret;
+			json_result["errmsg"] = str_err_reason_for_debug;
+			json_result["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
 			if (json_root.isMember(CCarve::ms_str_carve_id_key))
 			{
 				json_result[CCarve::ms_str_carve_id_key] = json_root[CCarve::ms_str_carve_id_key];

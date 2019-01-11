@@ -170,7 +170,7 @@ int CCarve::reset(unsigned short nMax_wait_time, string& str_err_reason_for_debu
 }
 
 
-int CCarve::start(const string& str_nc_file_path, unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+int CCarve::start(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	//TODO::额外操作
 	//使雕刻机开始雕刻
@@ -186,7 +186,7 @@ int CCarve::start(const string& str_nc_file_path, unsigned short nMax_wait_time,
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
-		json_conn_value[ms_str_file_path_key] =  str_nc_file_path;
+		json_conn_value[ms_str_file_path_key] =  m_str_file_path;
 		json_conn_value[ms_str_max_wait_time_key] =  nMax_wait_time;
 	}
 	else if(false)
@@ -237,22 +237,42 @@ int CCarve::pause(unsigned short nMax_wait_time, string& str_err_reason_for_debu
 	return MSP_SUCCESS;
 }
 
-int CCarve::upload_1_file(const string& str_file_path, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+int CCarve::upload_1_file(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	businlog_tracer_perf(CCarve::upload_1_file);
+	string str_key = CCarve::ms_str_file_path_key;
+	//判定参数合法性
+	businlog_error_return_debug_and_user_reason(json_params.isMember(str_key), __CLASS_FUNCTION__ << " | json:" 
+		<< json_params.toStyledString() << " without key:" <<  str_key, str_err_reason_for_debug
+		, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+
+	str_key = ms_str_task_no_key;
+	businlog_error_return_debug_and_user_reason(json_params.isMember(str_key), __CLASS_FUNCTION__ << " | json:" 
+		<< json_params.toStyledString() << " without key:" <<  str_key, str_err_reason_for_debug
+		, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+
+	str_key = ms_str_gCode_no_key;
+	businlog_error_return_debug_and_user_reason(json_params.isMember(str_key), __CLASS_FUNCTION__ << " | json:" 
+		<< json_params.toStyledString() << " without key:" <<  str_key, str_err_reason_for_debug
+		, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
 	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
 		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
-	
+	//获取参数
+	m_str_file_path = json_params[ms_str_file_path_key].asString();
+	m_str_task_no = json_params[ms_str_task_no_key].asString();
+	m_str_gCode_no = json_params[ms_str_gCode_no_key].asString();
 	//构造参数
 	Json::Value json_conn_value;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
+
 	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
-		json_conn_value[ms_str_file_path_key] = str_file_path;
+		json_conn_value[ms_str_file_path_key] = m_str_file_path;
 	}
 	else if(false)
 	{
@@ -267,7 +287,7 @@ int CCarve::upload_1_file(const string& str_file_path, string& str_err_reason_fo
 	//上传文件
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->upload_1file(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
 	businlog_error_return(bSuccess, ("%s | fail to upload file, carve ip:%s, file path:%s, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_file_path.c_str(), json_conn_value.toStyledString().c_str()
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), m_str_file_path.c_str(), json_conn_value.toStyledString().c_str()
 		, str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
 	return MSP_SUCCESS;
 }
@@ -543,7 +563,7 @@ int CCarve::get_total_engraving_time(int& nTotal_engraving_time, string& str_err
 
 int CCarve::get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
-	//由于相关接口已经上锁，故这里不用上锁
+	//由于如下接口已经上锁，故在此之前不要上锁
 	carve_info.eCarve_status;
 	string str_single_err_for_debug, str_single_err_for_user; //获取单个信息时的错误
 	//获取单个信息出错时，不返回。
@@ -566,11 +586,12 @@ int CCarve::get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, 
 		str_err_reason_for_user += "." + str_single_err_for_user;
 		bHas_error = true;
 	}
-	//todo::获取总的雕刻时间
-	//carve_info.str_gCode_no
+	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+	carve_info.nTotal_engraving_time = m_nTotal_engraving_time;
+	carve_info.str_gCode_no = m_str_gCode_no;
 	carve_info.str_id = m_str_id;
 	carve_info.str_machine_ip = m_str_ip;
-	//carve_info.str_task_no
+	carve_info.str_task_no = m_str_task_no;
 	if (bHas_error)
 	{
 		ret = MSP_ERROR_FAIL;
@@ -582,6 +603,22 @@ int CCarve::get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, 
 	return ret;
 }
 
+void CCarve::start_count_engraving_time()
+{
+	businlog_crit("%s",  __CLASS_FUNCTION__);
+	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+	m_time_last_start =  boost::posix_time::second_clock::universal_time();
+}
+
+int CCarve::pause_count_engraving_time(string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	businlog_crit("%s",  __CLASS_FUNCTION__);
+	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+	boost::posix_time::millisec_posix_time_system_config::time_duration_type time_elapse = boost::posix_time::second_clock::universal_time() - m_time_last_start;
+	m_nTotal_engraving_time += time_elapse.total_seconds() / 60;
+	return 0;
+}
+
 const string CCarve::ms_str_factory_type_key = "carveExFactory";
 
 const string CCarve::ms_str_carve_type_key = "carveType";
@@ -590,13 +627,18 @@ const string CCarve::ms_str_conn_idx_key = "conn_idx";
 
 const string CCarve::ms_str_ip_key = "ip";
 
-const string CCarve::ms_str_file_path_key = "file_path";
+const string CCarve::ms_str_file_path_key = "filepath";
 
 const string CCarve::ms_str_status_key = "status";
 
 const string CCarve::ms_str_max_wait_time_key = "max_wait_time";
 
 const string CCarve::ms_str_carve_id_key = "carveId";
+
+const string CCarve::ms_str_task_no_key = "taskNo";
+
+
+const string CCarve::ms_str_gCode_no_key = "gNo";
 
 CCarve::~CCarve()
 {
@@ -638,6 +680,7 @@ CCarve::CCarve(const Json::Value& json_params)
 	, m_bConnected(false)
 	, m_nConn_idx(-2)
 	, m_bAcq_Res_Success(false)
+	, m_nTotal_engraving_time(0)
 {
 	std::string str_err_reason;
 	if (!json_params.isMember(CCarve::ms_str_factory_type_key))

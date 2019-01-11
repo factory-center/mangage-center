@@ -26,7 +26,7 @@
 #else
 #define __CLASS_FUNCTION__ ((std::string("CCarve_Common_Lib_Tool::") + std::string(__FUNCTION__)).c_str()) 
 #endif
-
+//TODO::后面新增读取配置文件并且构建json参数
 bool CCarve_Common_Lib_Tool::init(string& str_kernel_err_reason)
 {
 	//初始化宝元库

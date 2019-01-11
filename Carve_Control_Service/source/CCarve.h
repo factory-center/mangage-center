@@ -35,7 +35,7 @@ struct SCarve_Info
 	string str_task_no; //任务编号
 	string str_machine_ip; //设备ip地址
 	ECARVE_STATUS_TYPE eCarve_status; //雕刻机状态
-	int nTotal_engraving_time; //雕刻机总的雕刻时间，单位分钟
+	size_t nTotal_engraving_time; //雕刻机总的雕刻时间，单位分钟
 	string str_gCode_no; //G代码编号
 	int nCurrent_line_num; //当前雕刻的G代码行号
 	string str_id; //设备编号
@@ -50,9 +50,9 @@ public:
 	int disconnect(string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int set_continue_status(unsigned char nStatus, unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int reset(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
-	int start(const string& str_nc_file_path, unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int start(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int pause(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
-	int upload_1_file(const string& str_file_path, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int upload_1_file(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int stop_fast(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int cancel_fast_stop(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
@@ -62,6 +62,10 @@ public:
 	int release_resource(string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_total_engraving_time(int& nTotal_engraving_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	//雕刻成功后调用
+	void start_count_engraving_time();
+	//雕刻完成后调用
+	int pause_count_engraving_time(string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	unsigned short Conn_idx() const { return m_nConn_idx; }
 	void Conn_idx(unsigned short val) { m_nConn_idx = val; }
 	static const string ms_str_factory_type_key; 
@@ -72,6 +76,8 @@ public:
 	static const string ms_str_status_key;
 	static const string ms_str_max_wait_time_key;
 	static const string ms_str_carve_id_key;
+	static const string ms_str_task_no_key;
+	static const string ms_str_gCode_no_key;
 	virtual ~CCarve();
 protected:
 	CCarve();
@@ -84,5 +90,10 @@ private:
 	bool m_bAcq_Res_Success; //申请资源是否成功
 	ECARVE_FACTORY_TYPE m_eFactory_type; //雕刻机厂商类型
 	string m_str_carve_type; //设备型号
+	string m_str_task_no; //任务编号
+	string m_str_gCode_no; //G代码编号
+	string m_str_file_path; //G代码路径
+	size_t m_nTotal_engraving_time; //总的雕刻时间，单位分钟
+	boost::posix_time::ptime m_time_last_start; //上次开始雕刻时间
 };
 //函数原型定义
