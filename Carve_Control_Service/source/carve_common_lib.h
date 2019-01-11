@@ -74,7 +74,9 @@ public:
 	bool cancel_fast_stop(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	bool delete_1file(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
     bool get_current_line_num(const Json::Value& json_conn_value, int& nCurrent_line_num, string& str_err_reason_for_debug, string& str_err_reason_for_user);
-    //资源相关
+	bool adjust_speed(const Json::Value& json_conn_value,string& str_err_reason_for_debug, string& str_err_reason_for_user);
+
+	//资源相关
 	bool acquire_resource(Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
     bool release_resource(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 protected:

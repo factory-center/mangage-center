@@ -603,6 +603,55 @@ int CCarve::get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, 
 	return ret;
 }
 
+int CCarve::adjust_speed(const Json::Value& json_params,string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
+		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
+	
+	//获取参数--速度
+	unsigned int n_speed_percent = json_params["speed_percent"].asInt();
+
+	//构造参数
+	Json::Value json_conn_value;
+	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
+	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
+
+	//设置最大等待时间
+	unsigned short nMax_wait_time = 1000;
+	string str_key = "max_wait_time";
+	if (json_params.isMember(str_key))
+	{//参数中含有最大等待时间
+		nMax_wait_time = json_params[str_key].asInt();
+	}
+
+	json_conn_value[CCarve::ms_str_max_wait_time_key] = nMax_wait_time;
+
+	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	{
+		//宝元库所需要的参数
+		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
+		json_conn_value["speed_percent"] = n_speed_percent;
+	}
+	else if(false)
+	{
+		//TODO::其他厂商
+	}
+	else
+	{
+		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
+			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+	}
+
+	//调整速度
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->adjust_speed(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(bSuccess, ("%s | fail to adjust_speed, carve ip:%s, speed percent:%d, json info:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), n_speed_percent, json_conn_value.toStyledString().c_str()
+		, str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	return MSP_SUCCESS;
+}
+
+
 void CCarve::start_count_engraving_time()
 {
 	businlog_crit("%s",  __CLASS_FUNCTION__);

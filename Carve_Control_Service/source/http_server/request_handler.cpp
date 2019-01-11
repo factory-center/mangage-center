@@ -149,6 +149,21 @@ namespace http
 			{
 				ret = on_start(root, json_result, str_err_reason);
 			}
+			else if("emergency_stop_one" == str_cmd)
+			{
+				//通知一台雕刻机急停
+				ret = on_emergency_stop_one(root, json_result, str_err_reason);
+			}
+			else if("emergency_stop_all" == str_cmd)
+			{
+				//通知全部雕刻机急停
+				ret = on_emergency_stop_all(root, json_result, str_err_reason);
+			}
+			else if("adjust_speed" == str_cmd)
+			{
+				//调整雕刻机运行速度
+				ret = on_adjust_speed(root, json_result, str_err_reason);
+			}
 			else
 			{
 				//命令值错误
@@ -342,6 +357,80 @@ namespace http
 			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
 			return MSP_SUCCESS;
 		}
+		int request_handler::on_emergency_stop_one(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		{
+			int ret = 0;
+			std::string str_err_reason_for_debug;
+			std::string str_err_reason_for_user;
+			//雕刻机急停
+			ret = CCarve_Manager::instance()->emergency_stop_one(json_root, str_err_reason_for_debug, str_err_reason_for_user);
+			//注意：无论成败，都构造结果
+			//构造结果
+			json_result["ret"] = ret;
+			json_result["errmsg"] = str_err_reason_for_debug;
+			json_result["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
+			if (json_root.isMember(CCarve::ms_str_carve_id_key))
+			{
+				json_result[CCarve::ms_str_carve_id_key] = json_root[CCarve::ms_str_carve_id_key];
+			}
+			else
+			{
+				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
+			}
+			str_err_reason =  str_err_reason_for_debug;
+			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
+			return MSP_SUCCESS;
+		}
+		int request_handler::on_emergency_stop_all(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		{
+			int ret = 0;
+			std::string str_err_reason_for_debug;
+			std::string str_err_reason_for_user;
+			//全部雕刻机急停
+			ret = CCarve_Manager::instance()->emergency_stop_all(json_root, str_err_reason_for_debug, str_err_reason_for_user);
+			//注意：无论成败，都构造结果
+			//构造结果
+			json_result["ret"] = ret;
+			json_result["errmsg"] = str_err_reason_for_debug;
+			json_result["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
+			if (json_root.isMember(CCarve::ms_str_carve_id_key))
+			{
+				json_result[CCarve::ms_str_carve_id_key] = json_root[CCarve::ms_str_carve_id_key];
+			}
+			else
+			{
+				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
+			}
+			str_err_reason =  str_err_reason_for_debug;
+			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
+			return MSP_SUCCESS;
+		}
+		int request_handler::on_adjust_speed(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		{
+			int ret = 0;
+			std::string str_err_reason_for_debug;
+			std::string str_err_reason_for_user;
+			//调整雕刻机运行速度
+			ret = CCarve_Manager::instance()->adjust_speed(json_root, str_err_reason_for_debug, str_err_reason_for_user);
+			//注意：无论成败，都构造结果
+			//构造结果
+			json_result["ret"] = ret;
+			json_result["errmsg"] = str_err_reason_for_debug;
+			json_result["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
+			if (json_root.isMember(CCarve::ms_str_carve_id_key))
+			{
+				json_result[CCarve::ms_str_carve_id_key] = json_root[CCarve::ms_str_carve_id_key];
+			}
+			else
+			{
+				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
+			}
+			str_err_reason =  str_err_reason_for_debug;
+			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
+			return MSP_SUCCESS;
+		}
+		
+
 
 	} // namespace server3
 } // namespace http
