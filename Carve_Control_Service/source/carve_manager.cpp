@@ -40,7 +40,7 @@ int CCarve_Manager::connect_carve(const Json::Value& json_params, string& str_er
 			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
 			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
 		const string& str_carve_id = json_params[CCarve::ms_str_carve_id_key].asString();
-		
+
 		boost::shared_ptr<CCarve> ptr_carve;
 		std::pair<TYPE_MAP_ITER, bool> pair_insert_result;
 		pair_insert_result.second = false;
@@ -173,6 +173,70 @@ int CCarve_Manager::get_carve_info(const Json::Value& json_params, SCarve_Info& 
 		int ret = ptr_carve->get_info(carve_info, str_err_reason_for_debug, str_err_reason_for_user);
 		businlog_error_return(!ret, ("%s | fail to get carve info, reason:%s."
 			, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+		return MSP_SUCCESS;
+	}
+	catch (std::exception& e)
+	{
+		str_err_reason_for_debug = string("Has exception:") + string(e.what());
+		str_err_reason_for_user = "服务异常";
+		businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+		return MSP_ERROR_EXCEPTION;
+	}
+}
+
+int CCarve_Manager::get_all_carves_info(const Json::Value& json_params, Json::Value& json_result, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	businlog_tracer_perf(CCarve_Manager::get_all_carves_info);
+	//TODO::当设备很多时，此接口会很耗时，后面需要确认并优化
+	try
+	{
+		//遍历容器，对获取所有雕刻机的信息
+		{
+			Thread_Read_Lock guard(m_rw_carveId_carvePtr);
+			//判定容器是否为空
+			businlog_error_return_debug_and_user_reason(false == m_map_carveId_carvePtr.empty()
+				, __CLASS_FUNCTION__ << " | there is no carve connected, please connect carve first."
+				, str_err_reason_for_debug, "没有设备被成功连接，请先连接设备", str_err_reason_for_user, MSP_ERROR_NOT_FOUND);
+			for (TYPE_MAP_ITER iter = m_map_carveId_carvePtr.begin(); iter != m_map_carveId_carvePtr.end(); ++iter)
+			{
+				if (!iter->second)
+				{//指针为空
+					businlog_error("%s | there is null in map.", __CLASS_FUNCTION__);
+					continue;
+				}
+				SCarve_Info single_carve_info;
+				string str_single_err_for_debug, str_single_err_for_user;
+				//查询设备信息
+				int ret = iter->second->get_info(single_carve_info, str_single_err_for_debug, str_single_err_for_user);
+				//无论结果如何，都报错并构造响应结果，而不返回
+				if (ret)
+				{
+					businlog_error("%s | fail to get carve info, carve id:%s, reason:%s."
+						, __CLASS_FUNCTION__, iter->second->get_id().c_str(), str_single_err_for_debug.c_str());
+				}
+				Json::Value json_single_resp;
+				//构造结果，
+				json_single_resp["ret"] = ret;
+				json_single_resp["errmsg"] = str_single_err_for_debug;
+				json_single_resp["errmsg_for_user"] = sp::toutf8(str_single_err_for_user);
+				json_single_resp[CCarve::ms_str_carve_id_key] = iter->second->get_id();
+				json_result["taskNo"] = single_carve_info.str_task_no;
+				json_result["machine_ip"] = single_carve_info.str_machine_ip;
+				json_result["currentStatus"] = single_carve_info.eCarve_status;
+				json_result["worktime"] = single_carve_info.nTotal_engraving_time;
+				json_result["gNo"] = single_carve_info.str_gCode_no;
+				json_result["rowNo"] = single_carve_info.nCurrent_line_num;
+				//将单个结果添加到结果数组中
+				json_result["All_machines"].append(json_single_resp);
+				//如果出错了，则将错误信息累加
+				if (ret)
+				{
+					str_err_reason_for_debug += "." + str_single_err_for_debug;
+					str_err_reason_for_user += "。" + str_single_err_for_user;
+				}
+			}
+		}
+		//整体调用成功，尽管可能存在单个失败
 		return MSP_SUCCESS;
 	}
 	catch (std::exception& e)
@@ -379,7 +443,11 @@ void CCarve_Manager::svc()
 					{
 						//如果为雕刻完成，则暂停累加雕刻时间
 						ret = iter->second->pause_count_engraving_time(str_err_reason_for_debug, str_err_reason_for_user);
-						//TODO::重置设备装备，因为雕刻完成后，就一直是雕刻完成状态
+						if (ret)
+						{
+							businlog_error("%s | fail to pause count engraving time, carve id:%s, reason:%s."
+								, __CLASS_FUNCTION__, iter->first.c_str(), str_err_reason_for_debug.c_str());
+						}
 					}
 				}//end for 遍历map
 			}
@@ -388,7 +456,7 @@ void CCarve_Manager::svc()
 	catch (boost::thread_interrupted& ) //被中断时，会抛出此异常
 	{
 	}
-	
+
 	businlog_warn("%s | ++++++++++++++++ finish to poll status of all carves+++++++++++++", __CLASS_FUNCTION__);
 }
 
