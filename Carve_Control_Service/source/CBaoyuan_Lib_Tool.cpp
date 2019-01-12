@@ -466,6 +466,8 @@ bool CBaoyuan_Lib::get_carve_status(const Json::Value& json_conn_value, int& nCa
 		if (1 == nValue)
 	    {//为雕刻完成态
 			nCarve_status =  5;
+			//将ADDR_CARVE_COMPLETED状态设置为0
+			m_sc2_obj.DWrite1A(nConn_idx, ADDR_CARVE_COMPLETED, 0);
 	    }
 	}
 	return true;
