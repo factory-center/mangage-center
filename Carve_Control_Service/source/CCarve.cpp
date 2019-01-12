@@ -234,6 +234,11 @@ int CCarve::pause(unsigned short nMax_wait_time, string& str_err_reason_for_debu
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->pause(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
 	businlog_error_return(bSuccess, ("%s | fail to pause carve, ip:%s, json info:%s, reason:%s"
 		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str(), str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+#ifdef SERVER_WITH_CONTROL_LOGIC
+	//累加时间，停止计时，从下次“开始雕刻”再重新计时 (必须配合控制逻辑，结果才正确，否则结果可能错误)
+	boost::posix_time::millisec_posix_time_system_config::time_duration_type time_elapse = boost::posix_time::second_clock::universal_time() - m_time_last_start;
+	m_nTotal_engraving_time += time_elapse.total_seconds() / 60.0 + 0.5; //按分钟算时四舍五入
+#endif
 	return MSP_SUCCESS;
 }
 
@@ -323,6 +328,9 @@ int CCarve::get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& s
 	businlog_error_return(bSuccess, ("%s | fail to get baoyuan carve status, json:%s, reason:%s"
 		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
 	//此时成功获取雕刻机状态
+#ifdef SERVER_WITH_CONTROL_LOGIC
+	m_eCarve_status = eCarve_common_status;
+#endif
 	
 	return MSP_SUCCESS;
 }
@@ -356,6 +364,11 @@ int CCarve::stop_fast(unsigned short nMax_wait_time, string& str_err_reason_for_
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->stop_fast(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
 	businlog_error_return(bSuccess, ("%s | fail to fast stop carve, ip:%s, json info:%s, reason:%s"
 		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str(), str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+#ifdef SERVER_WITH_CONTROL_LOGIC
+	//累加时间，停止计时，从下次“开始雕刻”再重新计时(必须配合控制逻辑，结果才正确，否则结果可能错误)
+	boost::posix_time::millisec_posix_time_system_config::time_duration_type time_elapse = boost::posix_time::second_clock::universal_time() - m_time_last_start;
+	m_nTotal_engraving_time += time_elapse.total_seconds() / 60.0 + 0.5; //按分钟算时四舍五入
+#endif
 	return MSP_SUCCESS;
 }
 
@@ -569,7 +582,16 @@ int CCarve::get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, 
 	//获取单个信息出错时，不返回。
 	bool bHas_error = false; //是否出错过
 	//获取雕刻机状态
-	int ret = get_carve_status(carve_info.eCarve_status, str_single_err_for_debug, str_single_err_for_user);
+	int ret = MSP_SUCCESS;
+#ifdef SERVER_WITH_CONTROL_LOGIC
+	{
+		//带有逻辑时，会有一个线程不断轮询所有雕刻机，以获取它们的状态。
+		//完成状态可能已经被轮询线程读取了，故从成员变量中读取，而不可从机器中来读取。
+		boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+		carve_info.eCarve_status = m_eCarve_status;
+	}
+#else 
+	ret = get_carve_status(carve_info.eCarve_status, str_single_err_for_debug, str_single_err_for_user);
 	if (ret)
 	{
 		businlog_error("%s | fail to get carve status, reason:%s", __CLASS_FUNCTION__, str_single_err_for_debug.c_str());
@@ -577,6 +599,8 @@ int CCarve::get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, 
 		str_err_reason_for_user += "." + str_single_err_for_user;
 		bHas_error = true;
 	}
+#endif
+
 	//获取当前文件行号
 	ret = get_current_line_num(carve_info.nCurrent_line_num, str_single_err_for_debug, str_single_err_for_user);
 	if (ret)
@@ -587,7 +611,19 @@ int CCarve::get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, 
 		bHas_error = true;
 	}
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
-	carve_info.nTotal_engraving_time = m_nTotal_engraving_time;
+#ifdef SERVER_WITH_CONTROL_LOGIC
+	//获取总雕刻时间
+	if (CARVE_STATUS_ENGRAVING == m_eCarve_status)
+	{//如果处于雕刻中
+		boost::posix_time::millisec_posix_time_system_config::time_duration_type time_elapse 
+			= boost::posix_time::second_clock::universal_time() - m_time_last_start;
+		carve_info.nTotal_engraving_time = m_nTotal_engraving_time + time_elapse.total_seconds() / 60.0 + 0.5;//按分钟算时四舍五入
+	}
+	else
+	{
+		carve_info.nTotal_engraving_time = m_nTotal_engraving_time;
+	}
+#endif
 	carve_info.str_gCode_no = m_str_gCode_no;
 	carve_info.str_id = m_str_id;
 	carve_info.str_machine_ip = m_str_ip;
@@ -654,17 +690,22 @@ int CCarve::adjust_speed(const Json::Value& json_params,string& str_err_reason_f
 
 void CCarve::start_count_engraving_time()
 {
+#ifdef SERVER_WITH_CONTROL_LOGIC
 	businlog_crit("%s",  __CLASS_FUNCTION__);
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
 	m_time_last_start =  boost::posix_time::second_clock::universal_time();
+#endif
 }
 
 int CCarve::pause_count_engraving_time(string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
+#ifdef SERVER_WITH_CONTROL_LOGIC
 	businlog_crit("%s",  __CLASS_FUNCTION__);
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
+	//累加时间，停止计时，从下次“开始雕刻”再重新计时(必须配合控制逻辑，结果才正确，否则结果可能错误)
 	boost::posix_time::millisec_posix_time_system_config::time_duration_type time_elapse = boost::posix_time::second_clock::universal_time() - m_time_last_start;
-	m_nTotal_engraving_time += time_elapse.total_seconds() / 60;
+	m_nTotal_engraving_time += time_elapse.total_seconds() / 60.0 + 0.5; //按分钟算时四舍五入
+#endif
 	return 0;
 }
 
@@ -688,6 +729,8 @@ const string CCarve::ms_str_task_no_key = "taskNo";
 
 
 const string CCarve::ms_str_gCode_no_key = "gNo";
+
+const string CCarve::ms_str_worktime_key = "worktime";
 
 CCarve::~CCarve()
 {
@@ -729,7 +772,9 @@ CCarve::CCarve(const Json::Value& json_params)
 	, m_bConnected(false)
 	, m_nConn_idx(-2)
 	, m_bAcq_Res_Success(false)
+#ifdef SERVER_WITH_CONTROL_LOGIC
 	, m_nTotal_engraving_time(0)
+#endif
 {
 	std::string str_err_reason;
 	if (!json_params.isMember(CCarve::ms_str_factory_type_key))
@@ -751,6 +796,15 @@ CCarve::CCarve(const Json::Value& json_params)
 	{
 		m_eFactory_type = CARVE_FACTORY_TYPE_BAOYUAN;
 	}
+#ifdef  SERVER_WITH_CONTROL_LOGIC
+	if (!json_params.isMember(ms_str_worktime_key))
+	{
+		str_err_reason = string("json:") + json_params.toStyledString() + string(" without key:") + CCarve::ms_str_worktime_key;
+		businlog_error("%s | err reason:%s", __FUNCTION__, str_err_reason.c_str());
+		throw std::exception(str_err_reason.c_str());
+	}
+	m_nTotal_engraving_time = json_params[ms_str_worktime_key].asInt();
+#endif
 }
 
 SCarve_Info::SCarve_Info() 

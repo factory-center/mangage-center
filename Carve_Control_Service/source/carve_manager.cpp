@@ -184,6 +184,17 @@ int CCarve_Manager::get_carve_info(const Json::Value& json_params, SCarve_Info& 
 	}
 }
 
+/************************************
+* Method:    get_all_carves_info
+* Brief:  获取所有雕刻机的信息
+* Access:    public 
+* Returns:   int 0:调用成功（可能有部分雕刻机出错）非0：调用失败
+* Qualifier:
+*Parameter: const Json::Value & json_params -[in]  
+*Parameter: Json::Value & json_result -[out]  所有雕刻机信息结果数组对应的json
+*Parameter: string & str_err_reason_for_debug -[out]  
+*Parameter: string & str_err_reason_for_user -[out]  
+************************************/
 int CCarve_Manager::get_all_carves_info(const Json::Value& json_params, Json::Value& json_result, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	businlog_tracer_perf(CCarve_Manager::get_all_carves_info);
@@ -220,12 +231,14 @@ int CCarve_Manager::get_all_carves_info(const Json::Value& json_params, Json::Va
 				json_single_resp["errmsg"] = str_single_err_for_debug;
 				json_single_resp["errmsg_for_user"] = sp::toutf8(str_single_err_for_user);
 				json_single_resp[CCarve::ms_str_carve_id_key] = iter->second->get_id();
-				json_result["taskNo"] = single_carve_info.str_task_no;
-				json_result["machine_ip"] = single_carve_info.str_machine_ip;
-				json_result["currentStatus"] = single_carve_info.eCarve_status;
-				json_result["worktime"] = single_carve_info.nTotal_engraving_time;
-				json_result["gNo"] = single_carve_info.str_gCode_no;
-				json_result["rowNo"] = single_carve_info.nCurrent_line_num;
+				json_single_resp["taskNo"] = single_carve_info.str_task_no;
+				json_single_resp["machine_ip"] = single_carve_info.str_machine_ip;
+				json_single_resp["currentStatus"] = single_carve_info.eCarve_status;
+#ifdef SERVER_WITH_CONTROL_LOGIC
+				json_single_resp["worktime"] = single_carve_info.nTotal_engraving_time;
+#endif
+				json_single_resp["gNo"] = single_carve_info.str_gCode_no;
+				json_single_resp["rowNo"] = single_carve_info.nCurrent_line_num;
 				//将单个结果添加到结果数组中
 				json_result["All_machines"].append(json_single_resp);
 				//如果出错了，则将错误信息累加
@@ -332,8 +345,10 @@ int CCarve_Manager::start_engraving(const Json::Value& json_params, string& str_
 		int ret = ptr_carve->start(nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
 		businlog_error_return(!ret, ("%s | fail to start carve, reason:%s."
 			, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+#ifdef SERVER_WITH_CONTROL_LOGIC
 		//开始雕刻成功后则设置开始雕刻时的时间
 		ptr_carve->start_count_engraving_time();
+#endif
 		return MSP_SUCCESS;
 	}
 	catch (std::exception& e)

@@ -129,7 +129,7 @@ namespace http
 			{
 				ret = on_query_one_carve_status(root, json_result, str_err_reason);
 			}
-			else if ("query_all_machine_status" == str_cmd)
+			else if ("query_all_machines_status" == str_cmd)
 			{
 				ret = MSP_ERROR_NOT_IMPLEMENT;
 			}
@@ -137,9 +137,9 @@ namespace http
 			{
 				ret = on_query_one_carve_info(root, json_result, str_err_reason);
 			}
-			else if("query_all_machine_info" == str_cmd)
+			else if("query_all_machines_info" == str_cmd)
 			{
-
+				ret = on_query_all_carves_info(json_result, json_result, str_err_reason);
 			}
 			else if ("download_gcode_OK" == str_cmd)
 			{
@@ -169,6 +169,11 @@ namespace http
 				//命令值错误
 				ret = MSP_ERROR_INVALID_PARA;
 				str_err_reason = str_key +  string(":") + str_cmd + string(" is invalid.");
+			}
+			//统一打印错误，避免遗漏打印错误
+			if (ret)
+			{
+				businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason.c_str());
 			}
 			rep = reply::construct_message(ret, json_result.toStyledString(), str_err_reason);
 		}
@@ -292,7 +297,9 @@ namespace http
 			json_result["taskNo"] = carve_info.str_task_no;
 			json_result["machine_ip"] = carve_info.str_machine_ip;
 			json_result["currentStatus"] = carve_info.eCarve_status;
+#ifdef SERVER_WITH_CONTROL_LOGIC
 			json_result["worktime"] = carve_info.nTotal_engraving_time;
+#endif
 			json_result["gNo"] = carve_info.str_gCode_no;
 			json_result["rowNo"] = carve_info.nCurrent_line_num;
 			if (json_root.isMember(CCarve::ms_str_carve_id_key))
@@ -429,7 +436,19 @@ namespace http
 			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
 			return MSP_SUCCESS;
 		}
-		
+
+		int request_handler::on_query_all_carves_info(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		{
+			int ret = 0;
+			std::string str_err_reason_for_debug;
+			std::string str_err_reason_for_user;
+			ret = CCarve_Manager::instance()->get_all_carves_info(json_root, json_result
+				, str_err_reason_for_debug, str_err_reason_for_user);
+			//判定调用是否成功
+			businlog_error_return(!ret, ("%s | fail to get all carves info, reason:%s, ret:%d."
+				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), str_err_reason_for_user.c_str()), ret);
+		}
+
 
 
 	} // namespace server3

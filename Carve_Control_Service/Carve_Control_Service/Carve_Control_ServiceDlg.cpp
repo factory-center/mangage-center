@@ -130,8 +130,10 @@ BOOL CCarve_Control_ServiceDlg::OnInitDialog()
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->init(str_err_reason);
 	businlog_error_return(bSuccess, ("%s | fail to init CCarve_Common_Lib_Tool, reason:%s", __FUNCTION__, str_err_reason.c_str()), FALSE);
 	string str_err_reason_for_debug, str_err_reason_for_user;
+#ifdef SERVER_WITH_CONTROL_LOGIC
 	ret = CCarve_Manager::instance()->start_poll_carve_status(str_err_reason_for_debug, str_err_reason_for_user);
 	businlog_error_return(!ret, ("%s | start_poll_carve_status failed, reason:%s", __FUNCTION__, str_err_reason_for_debug.c_str()), false);
+#endif
 	//启动网络模块：创建线程以监听端口
 	//TODO::后面放在其他地方并且设置好ip:port，目前放在这里并写死
 	string str_local_ip  = "192.168.101.21";

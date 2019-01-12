@@ -29,6 +29,7 @@ extern "C" {
 #include "boost_common.h"
 #include "carve_common_lib.h"
 //宏定义
+//#define  SERVER_WITH_CONTROL_LOGIC //此服务具备控制逻辑
 //雕刻机信息
 struct SCarve_Info
 {
@@ -79,6 +80,7 @@ public:
 	static const string ms_str_carve_id_key;
 	static const string ms_str_task_no_key;
 	static const string ms_str_gCode_no_key;
+	static const string ms_str_worktime_key;
 	virtual ~CCarve();
 protected:
 	CCarve();
@@ -94,7 +96,13 @@ private:
 	string m_str_task_no; //任务编号
 	string m_str_gCode_no; //G代码编号
 	string m_str_file_path; //G代码路径
-	size_t m_nTotal_engraving_time; //总的雕刻时间，单位分钟
+#ifdef SERVER_WITH_CONTROL_LOGIC
 	boost::posix_time::ptime m_time_last_start; //上次开始雕刻时间
+	size_t m_nTotal_engraving_time; //总的雕刻时间，单位分钟 （一定要结合控制逻辑，其结果才正确，
+	                                //比如连续两次暂停，则会导致时间错误。但是由于轮询时间间隔的存在
+                                    //	， 导致信息有个延迟）
+	ECARVE_STATUS_TYPE m_eCarve_status; //雕刻机状态
+#endif
+	
 };
 //函数原型定义
