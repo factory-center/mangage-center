@@ -60,6 +60,7 @@ public:
 	bool is_connected(int nConn_idx, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	bool is_connected(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	bool get_current_line_num(const Json::Value& json_conn_value, int& nCurrent_line_num, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	bool adjust_speed(const Json::Value& json_conn_value,string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	//总雕刻时间相关（下面三个接口，暂时不用） 
 	bool start_count_total_engraving_time(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	bool pause_count_total_engraving_time(const Json::Value& json_conn_value, string& str_err_reason_for_debug, string& str_err_reason_for_user);

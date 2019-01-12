@@ -62,6 +62,7 @@ public:
 	int release_resource(string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_total_engraving_time(int& nTotal_engraving_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int adjust_speed(const Json::Value& json_params,string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	//雕刻成功后调用
 	void start_count_engraving_time();
 	//雕刻完成后调用

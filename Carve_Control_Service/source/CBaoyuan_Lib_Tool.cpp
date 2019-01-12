@@ -820,6 +820,41 @@ bool CBaoyuan_Lib::delete_1file(const Json::Value& json_conn_value, string& str_
 	return true;
 }
 
+bool CBaoyuan_Lib::adjust_speed(const Json::Value& json_conn_value,string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	businlog_tracer_perf(CBaoyuan_Lib::adjust_speed);
+	//判定参数合法性
+	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(CCarve::ms_str_conn_idx_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << CCarve::ms_str_conn_idx_key
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
+
+	const string& str_key = "speed_percent";	
+	businlog_error_return_debug_and_user_reason(json_conn_value.isMember(str_key)
+		, __CLASS_FUNCTION__ << " | json:" << json_conn_value.toStyledString() << ", without key:" << str_key
+		, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
+
+	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
+
+	unsigned int n_speed_percent = json_conn_value[str_key].asInt();
+	unsigned short nMax_wait_time = json_conn_value[CCarve::ms_str_max_wait_time_key].asInt();
+
+	//nConn_idx值必須小於 scif_Init 函式初始化時，struct DLL_USE_SETTING 中 ConnectNum 所設定的連線數目。
+	businlog_error_return(is_valid_conn_idx(nConn_idx, str_err_reason_for_debug, str_err_reason_for_user)
+		, ("%s | err reason:%s", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+
+	//查询连接状态
+	bool bSuccess = is_connected(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(bSuccess, ("%s | Connection is over, json info:%s, reason:%s"
+		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_err_reason_for_debug.c_str()), false);
+
+	//设置速度
+	bSuccess = set_RValue(nConn_idx,17000, n_speed_percent*10000, nMax_wait_time * 3, str_err_reason_for_debug, str_err_reason_for_user);
+	return bSuccess;
+}
+	
+
+
+
 bool CBaoyuan_Lib::parse_carve_status_to_description(const int nCarve_status, string& str_carve_status_description, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	str_carve_status_description = "Carve ";
