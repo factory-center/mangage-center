@@ -173,7 +173,7 @@ namespace http
 			//Í³Ò»´òÓ¡´íÎó£¬±ÜÃâÒÅÂ©´òÓ¡´íÎó
 			if (ret)
 			{
-				businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason.c_str());
+				businlog_error("%s | err reason:%s, ret:%d", __CLASS_FUNCTION__, str_err_reason.c_str(), ret);
 			}
 			rep = reply::construct_message(ret, json_result.toStyledString(), str_err_reason);
 		}

@@ -39,13 +39,15 @@ int CCarve_Manager::connect_carve(const Json::Value& json_params, string& str_er
 		businlog_error_return_debug_and_user_reason(json_params.isMember(CCarve::ms_str_carve_id_key), __CLASS_FUNCTION__
 			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
 			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+
 		const string& str_carve_id = json_params[CCarve::ms_str_carve_id_key].asString();
 
 		boost::shared_ptr<CCarve> ptr_carve;
 		std::pair<TYPE_MAP_ITER, bool> pair_insert_result;
 		pair_insert_result.second = false;
-		unsigned short nMax_wait_time = 1000;
-		string str_key = "max_wait_time";
+		//自我调用时的参数
+		Json::Value json_local_params = json_params;
+
 		int ret = 0;
 
 		{
@@ -76,11 +78,8 @@ int CCarve_Manager::connect_carve(const Json::Value& json_params, string& str_er
 		}
 
 		//设置continue状态
-		if (json_params.isMember(str_key))
-		{//参数中含有最大等待时间
-			nMax_wait_time = json_params[str_key].asInt();
-		}
-		ret = ptr_carve->set_continue_status(0, nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+		json_local_params[CCarve::ms_str_status_key] = 0;
+		ret = ptr_carve->set_continue_status(json_local_params, str_err_reason_for_debug, str_err_reason_for_user);
 		if (ret)
 		{
 			businlog_error("%s | fail to set carve continue status, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
@@ -88,7 +87,7 @@ int CCarve_Manager::connect_carve(const Json::Value& json_params, string& str_er
 		}
 
 		//重置设备
-		ret = ptr_carve->reset(nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+		ret = ptr_carve->reset(json_local_params, str_err_reason_for_debug, str_err_reason_for_user);
 		if (ret)
 		{
 			businlog_error("%s | fail to reset carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
@@ -335,14 +334,8 @@ int CCarve_Manager::start_engraving(const Json::Value& json_params, string& str_
 			ptr_carve = iter->second;
 		}
 		//走到这里，说明找到了对应的雕刻机
-		unsigned short nMax_wait_time = 1000;
-		string str_key = "max_wait_time";
-		if (json_params.isMember(str_key))
-		{//参数中含有最大等待时间
-			nMax_wait_time = json_params[str_key].asInt();
-		}
 		//开始雕刻
-		int ret = ptr_carve->start(nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
+		int ret = ptr_carve->start(json_params, str_err_reason_for_debug, str_err_reason_for_user);
 		businlog_error_return(!ret, ("%s | fail to start carve, reason:%s."
 			, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
 #ifdef SERVER_WITH_CONTROL_LOGIC

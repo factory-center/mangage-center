@@ -102,22 +102,20 @@ int CCarve::disconnect(string& str_err_reason_for_debug, string& str_err_reason_
 	return MSP_SUCCESS;
 }
 
-int CCarve::set_continue_status(unsigned char nStatus, unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+int CCarve::set_continue_status(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
 	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
 		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
-
+	
 	//构造参数
-	Json::Value json_conn_value;
+	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
 	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
-		json_conn_value[ms_str_status_key] = nStatus;
-		json_conn_value[ms_str_max_wait_time_key] =  nMax_wait_time;
 	}
 	else if(false)
 	{
@@ -136,21 +134,20 @@ int CCarve::set_continue_status(unsigned char nStatus, unsigned short nMax_wait_
 	return MSP_SUCCESS;
 }
 
-int CCarve::reset(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+int CCarve::reset(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
 	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
 		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
 
 	//构造参数
-	Json::Value json_conn_value;
+	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
 	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
-		json_conn_value[ms_str_max_wait_time_key] =  nMax_wait_time;
 	}
 	else if(false)
 	{
@@ -170,7 +167,7 @@ int CCarve::reset(unsigned short nMax_wait_time, string& str_err_reason_for_debu
 }
 
 
-int CCarve::start(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+int CCarve::start(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	//TODO::额外操作
 	//使雕刻机开始雕刻
@@ -179,7 +176,7 @@ int CCarve::start(unsigned short nMax_wait_time, string& str_err_reason_for_debu
 		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
 
 	//构造参数
-	Json::Value json_conn_value;
+	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
 	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
@@ -187,7 +184,6 @@ int CCarve::start(unsigned short nMax_wait_time, string& str_err_reason_for_debu
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
 		json_conn_value[ms_str_file_path_key] =  m_str_file_path;
-		json_conn_value[ms_str_max_wait_time_key] =  nMax_wait_time;
 	}
 	else if(false)
 	{
@@ -205,21 +201,20 @@ int CCarve::start(unsigned short nMax_wait_time, string& str_err_reason_for_debu
 	return MSP_SUCCESS;
 }
 
-int CCarve::pause(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+int CCarve::pause(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
 	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
 		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
 
 	//构造参数
-	Json::Value json_conn_value;
+	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
 	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
-		json_conn_value[ms_str_max_wait_time_key] =  nMax_wait_time;
 	}
 	else if(false)
 	{
@@ -269,7 +264,7 @@ int CCarve::upload_1_file(const Json::Value& json_params, string& str_err_reason
 	m_str_task_no = json_params[ms_str_task_no_key].asString();
 	m_str_gCode_no = json_params[ms_str_gCode_no_key].asString();
 	//构造参数
-	Json::Value json_conn_value;
+	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
 
@@ -277,7 +272,6 @@ int CCarve::upload_1_file(const Json::Value& json_params, string& str_err_reason
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
-		json_conn_value[ms_str_file_path_key] = m_str_file_path;
 	}
 	else if(false)
 	{
@@ -405,7 +399,7 @@ int CCarve::cancel_fast_stop(unsigned short nMax_wait_time, string& str_err_reas
 	return MSP_SUCCESS;
 }
 
-int CCarve::delete_1_file(const string& str_file_path, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+int CCarve::delete_1_file(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	businlog_tracer_perf(CCarve::delete_1_file);
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
@@ -413,14 +407,13 @@ int CCarve::delete_1_file(const string& str_file_path, string& str_err_reason_fo
 		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
 
 	//构造参数
-	Json::Value json_conn_value;
+	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
 	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
-		json_conn_value[ms_str_file_path_key] = str_file_path;
 	}
 	else if(false)
 	{
@@ -434,8 +427,8 @@ int CCarve::delete_1_file(const string& str_file_path, string& str_err_reason_fo
 
 	//上传文件
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->delete_1file(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to delete file, carve ip:%s, file path:%s, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_file_path.c_str(), json_conn_value.toStyledString().c_str()
+	businlog_error_return(bSuccess, ("%s | fail to delete file, carve ip:%s, json info:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str()
 		, str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
 	return MSP_SUCCESS;
 }
