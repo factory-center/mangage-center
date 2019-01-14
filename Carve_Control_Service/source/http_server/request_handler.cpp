@@ -447,6 +447,7 @@ namespace http
 			//判定调用是否成功
 			businlog_error_return(!ret, ("%s | fail to get all carves info, reason:%s, ret:%d."
 				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), str_err_reason_for_user.c_str()), ret);
+			return ret;
 		}
 
 
