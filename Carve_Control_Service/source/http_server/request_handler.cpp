@@ -122,31 +122,44 @@ namespace http
 			const std::string str_cmd = root[str_key].asString();
 			//根据不同的命令来响应
 			if ("connect" == str_cmd)
-			{//连接雕刻机
+			{
+				//连接雕刻机
 				ret = on_connect(root, json_result, str_err_reason);
+			}
+			//根据不同的命令来响应
+			if ("disconnect" == str_cmd)
+			{
+				//连接雕刻机
+				ret = on_dis_connect(root, json_result, str_err_reason);
 			}
 			else if ("query_one_machine_status" == str_cmd)
 			{
+				//查询单个雕刻机状态
 				ret = on_query_one_carve_status(root, json_result, str_err_reason);
 			}
 			else if ("query_all_machines_status" == str_cmd)
 			{
+				//查询所有雕刻机状态
 				ret = MSP_ERROR_NOT_IMPLEMENT;
 			}
 			else if("query_one_machine_info" == str_cmd)
 			{
+				//查询单台雕刻机信息
 				ret = on_query_one_carve_info(root, json_result, str_err_reason);
 			}
 			else if("query_all_machines_info" == str_cmd)
 			{
+				//查询所有雕刻机信息
 				ret = on_query_all_carves_info(json_result, json_result, str_err_reason);
 			}
 			else if ("download_gcode_OK" == str_cmd)
 			{
+				//下载G代码
 				ret = on_upload_file(root, json_result, str_err_reason);
 			}
 			else if("start" == str_cmd)
 			{
+				//开始雕刻
 				ret = on_start(root, json_result, str_err_reason);
 			}
 			else if("emergency_stop_one" == str_cmd)
@@ -234,6 +247,43 @@ namespace http
 				std::string str_err_reason_for_user;
 				//连接雕刻机
 				ret = CCarve_Manager::instance()->connect_carve(json_single_params, str_err_reason_for_debug, str_err_reason_for_user);
+				Json::Value json_single_resp;
+				//构造结果
+				json_single_resp["ret"] = ret;
+				json_single_resp["errmsg"] = str_err_reason_for_debug;
+				json_single_resp["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
+				if (json_single_params.isMember(CCarve::ms_str_carve_id_key))
+				{
+					json_single_resp[CCarve::ms_str_carve_id_key] = json_single_params[CCarve::ms_str_carve_id_key];
+				}
+				else
+				{
+					json_single_resp[CCarve::ms_str_carve_id_key] = Json::Value();
+				}
+				//将单个结果添加到结果数组中
+				json_result["results"].append(json_single_resp);
+				str_err_reason += string(". ") + str_err_reason_for_debug;
+			}//end for
+			return MSP_SUCCESS;
+		}
+		int request_handler::on_dis_connect(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		{
+			string str_key = "carveInfo";
+			businlog_error_return_err_reason(json_root.isMember(str_key), __CLASS_FUNCTION__ << " | json:" << json_root.toStyledString() << ", without key:" << str_key
+				, str_err_reason, MSP_ERROR_INVALID_PARA);
+
+			const Json::Value& json_arr_carveInfo = json_root[str_key];
+			int ret = 0;
+
+			//遍历信息数组
+			for (int i = 0; i != json_arr_carveInfo.size(); ++i)
+			{
+				//获取单个雕刻机信息
+				const Json::Value& json_single_params = json_arr_carveInfo[i];
+				std::string str_err_reason_for_debug;
+				std::string str_err_reason_for_user;
+				//断开雕刻机
+				ret = CCarve_Manager::instance()->dis_connect_carve(json_single_params, str_err_reason_for_debug, str_err_reason_for_user);
 				Json::Value json_single_resp;
 				//构造结果
 				json_single_resp["ret"] = ret;
@@ -394,26 +444,14 @@ namespace http
 			std::string str_err_reason_for_debug;
 			std::string str_err_reason_for_user;
 			//全部雕刻机急停
-			ret = CCarve_Manager::instance()->emergency_stop_all(json_root, str_err_reason_for_debug, str_err_reason_for_user);
-			//注意：无论成败，都构造结果
-			//构造结果
-			json_result["ret"] = ret;
-			json_result["errmsg"] = str_err_reason_for_debug;
-			json_result["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
-			if (json_root.isMember(CCarve::ms_str_carve_id_key))
-			{
-				json_result[CCarve::ms_str_carve_id_key] = json_root[CCarve::ms_str_carve_id_key];
-			}
-			else
-			{
-				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
-			}
-			str_err_reason =  str_err_reason_for_debug;
-			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
-			return MSP_SUCCESS;
+			ret = CCarve_Manager::instance()->emergency_stop_all(json_result,str_err_reason_for_debug, str_err_reason_for_user);
+			//判定调用是否成功
+			businlog_error_return(!ret, ("%s | fail to emergency stop all, reason:%s, ret:%d."
+				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), str_err_reason_for_user.c_str()), ret);
 		}
 		int request_handler::on_adjust_speed(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
 		{
+			//TODO: 此功能暂停，接口待确认
 			int ret = 0;
 			std::string str_err_reason_for_debug;
 			std::string str_err_reason_for_user;

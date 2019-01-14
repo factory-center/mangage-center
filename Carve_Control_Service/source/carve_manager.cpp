@@ -113,6 +113,59 @@ Err_exit: //仅当对雕刻机操作出错了，则将雕刻机移除
 	}
 }
 
+int CCarve_Manager::dis_connect_carve(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	try
+	{
+		//从参数中获取设备编号
+		businlog_error_return_debug_and_user_reason(json_params.isMember(CCarve::ms_str_carve_id_key), __CLASS_FUNCTION__
+			<< " | json:" << json_params.toStyledString() << ", without key:" << CCarve::ms_str_carve_id_key
+			, str_err_reason_for_debug, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+		
+		const string& str_carve_id = json_params[CCarve::ms_str_carve_id_key].asString();
+
+		int ret = 0;
+
+		{
+			Thread_Write_Lock guard(m_rw_carveId_carvePtr);
+			TYPE_MAP_ITER iter = m_map_carveId_carvePtr.find(str_carve_id);
+			if(iter != m_map_carveId_carvePtr.end())
+			{
+				//设备存在，断开连接
+				//释放资源
+				ret = iter->second->release_resource(str_err_reason_for_debug,str_err_reason_for_user);
+				businlog_error_return(!ret, ("%s | fail to release resource, reason:%s."
+					, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+
+				//断开设备
+				ret = iter->second->disconnect(str_err_reason_for_debug, str_err_reason_for_user);
+				businlog_error_return(!ret, ("%s | fail to disconnect, reason:%s."
+					, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+
+				//从map中移除对应的断开设备
+				m_map_carveId_carvePtr.erase(str_carve_id);
+			}
+			else
+			{
+				//设备不存在，断开
+				str_err_reason_for_debug =  "the connect is no exist";
+				str_err_reason_for_user =  "设备连接不存在";
+				businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+				return MSP_ERROR_NO_DATA;
+			}
+		}
+		
+		return MSP_SUCCESS;
+	}
+	catch (std::exception& e)
+	{
+		str_err_reason_for_debug = string("Has exception:") + string(e.what());
+		str_err_reason_for_user = "服务端发生异常";
+		businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+		return MSP_ERROR_EXCEPTION;
+	}
+}
+
 int CCarve_Manager::get_carve_status(const Json::Value& json_params, ECARVE_STATUS_TYPE& eCarve_common_status, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	try
@@ -422,24 +475,56 @@ int CCarve_Manager::emergency_stop_one(const Json::Value& json_params, string& s
 		return MSP_ERROR_EXCEPTION;
 	}
 }
-int CCarve_Manager::emergency_stop_all(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+int CCarve_Manager::emergency_stop_all(Json::Value& json_result,string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	//全部雕刻机急停
 	try
 	{
 		int ret = 0;
+		bool nFlag = true;
 		//查询所有的已连接设备编号
-		boost::shared_ptr<CCarve> ptr_carve;
-	
-		std::map<string, boost::shared_ptr<CCarve>>::iterator iter; //键为设备编号，值为CCarve的智能指针
-		for (iter = m_map_carveId_carvePtr.begin();iter!=m_map_carveId_carvePtr.end();iter++)
+		Thread_Read_Lock guard(m_rw_carveId_carvePtr);
+		//判定容器是否为空
+		businlog_error_return_debug_and_user_reason(false == m_map_carveId_carvePtr.empty()
+			, __CLASS_FUNCTION__ << " | there is no carve connected, please connect carve first."
+			, str_err_reason_for_debug, "没有设备被成功连接，请先连接设备", str_err_reason_for_user, MSP_ERROR_NOT_FOUND);
+		for (TYPE_MAP_ITER iter = m_map_carveId_carvePtr.begin();iter!=m_map_carveId_carvePtr.end(); ++iter)
+		{	
+			//判定对象是否合法
+			if (!iter->second)
+			{
+				businlog_error("%s | ptr carve is NULL, carve id:%s" , __CLASS_FUNCTION__, iter->first.c_str());
+				continue;
+			}
+			//TODO: 最大等待时间临时暂定3秒
+			string str_single_err_for_debug; 
+			string str_single_err_for_user;
+			ret= iter->second-> stop_fast(3*1000, str_single_err_for_debug, str_single_err_for_user);
+			if (ret!=0)
+			{
+				nFlag = false;
+				businlog_error("%s | fail to get carve info, carve id:%s, reason:%s."
+					, __CLASS_FUNCTION__, iter->second->get_id().c_str(), str_single_err_for_debug.c_str());
+			}
+			Json::Value json_single_resp;
+			//构造结果
+			json_single_resp["ret"] = ret;
+			json_single_resp["errmsg"] = str_single_err_for_debug;
+			json_single_resp["errmsg_for_user"] = sp::toutf8(str_single_err_for_user);
+			json_single_resp[CCarve::ms_str_carve_id_key] = iter->second->get_id();
+
+			//将单个结果添加到结果数组中
+			json_result["results"].append(json_single_resp);
+			//如果出错了，则将错误信息累加
+			if (ret)
+			{
+				str_err_reason_for_debug += "." + str_single_err_for_debug;
+				str_err_reason_for_user += "。" + str_single_err_for_user;
+			}
+		}
+		if (nFlag == false)
 		{
-			ptr_carve = iter->second;
-			Thread_Read_Lock guard(m_rw_carveId_carvePtr);
-			//TODO: 最大等待时间临时暂定30秒
-			ret= ptr_carve-> stop_fast(30*1000, str_err_reason_for_debug, str_err_reason_for_user);
-			businlog_error_return(!ret, ("%s | fail to fast stop carve, reason:%s."
-				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+			return MSP_ERROR_FAIL;
 		}
 			
 		return MSP_SUCCESS;
@@ -532,8 +617,7 @@ void CCarve_Manager::svc()
 					//判定对象是否合法
 					if (!iter->second)
 					{
-						businlog_error("%s | ptr carve is NULL, carve id:%s"
-							, __CLASS_FUNCTION__, __CLASS_FUNCTION__, iter->first.c_str());
+						businlog_error("%s | ptr carve is NULL, carve id:%s" , __CLASS_FUNCTION__, iter->first.c_str());
 						continue;
 					}
 					//获取设备状态
