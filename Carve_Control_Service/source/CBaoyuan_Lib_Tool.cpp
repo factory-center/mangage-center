@@ -142,7 +142,7 @@ bool CBaoyuan_Lib::create_connection(const Json::Value& json_conn_value, string&
 
 	int nConn_idx = json_conn_value[CCarve::ms_str_conn_idx_key].asInt();
 	const string str_carve_ip = json_conn_value[CCarve::ms_str_ip_key].asString(); 
-	businlog_error_return_debug_and_user_reason(nConn_idx >= 0 && nConn_idx < m_sDLL_setting.ConnectNum
+	businlog_error_return_debug_and_user_reason(nConn_idx >= 0 && nConn_idx < (int)m_sDLL_setting.ConnectNum
 		, __CLASS_FUNCTION__ << " | Invalid Connection index:" << nConn_idx << ", must be [0," << m_sDLL_setting.ConnectNum - 1
 		<< "]", str_err_reason_for_debug, "连接索引非法，必须属于[0," << m_sDLL_setting.ConnectNum << ")", str_err_reason_for_user, false);
 
@@ -1253,7 +1253,7 @@ CBaoyuan_Lib::~CBaoyuan_Lib()
 bool CBaoyuan_Lib::is_valid_conn_idx(int nConn_idx, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	//nConn_idx值必須小於 scif_Init 函式初始化時，struct DLL_USE_SETTING 中 ConnectNum 所設定的連線數目。
-	businlog_error_return_debug_and_user_reason(nConn_idx >= -1 && nConn_idx < m_sDLL_setting.ConnectNum
+	businlog_error_return_debug_and_user_reason(nConn_idx >= -1 && nConn_idx < (int)m_sDLL_setting.ConnectNum
 		, __CLASS_FUNCTION__ << " | Invalid connection index:" << nConn_idx << ", must be [-1," 
 		<< (m_sDLL_setting.ConnectNum - 1) << "]", str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	return true;
@@ -1261,7 +1261,7 @@ bool CBaoyuan_Lib::is_valid_conn_idx(int nConn_idx, string& str_err_reason_for_d
 
 bool CBaoyuan_Lib::is_valid_addr(int nAddr, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
-	businlog_error_return_debug_and_user_reason(nAddr >= 0 && nAddr < m_sDLL_setting.MemSizeR, __CLASS_FUNCTION__ 
+	businlog_error_return_debug_and_user_reason(nAddr >= 0 && nAddr < (int)m_sDLL_setting.MemSizeR, __CLASS_FUNCTION__ 
 		<< " | invalid addr:" << nAddr << ", should be between 0 and MemSizeR:" << m_sDLL_setting.MemSizeR
         , str_err_reason_for_debug, "参数错误", str_err_reason_for_user, false);
 	return true;

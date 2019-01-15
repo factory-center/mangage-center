@@ -3616,11 +3616,13 @@ int Log_Cfg_T<CFG_HEAP, BASE>::read_config(const char* key, const char* cfg_file
 	do {	\
 		std::string tmp;	\
 		if ( cfg_heap.get_string_value(name, tmp) == 0 )	\
-			if ( tmp.length() > 0 ) {	\
+			if ( tmp.length() > 0 ) \
+	        {	\
 				if ( BASE_LOG::strcasecmp("true", tmp.c_str()) == 0 ) { val = true; break; }	\
 				if ( BASE_LOG::strcasecmp("false", tmp.c_str()) == 0 ) { val = false; break; }	\
 				int nv = strtol(tmp.c_str(), 0, 0);	if ( nv != 0 ) val = true; \
-			} while(0);
+			} \
+		} while(0);
 
 	// open cfg file
 	if ( key != 0 )
@@ -3662,9 +3664,9 @@ int Log_Cfg_T<CFG_HEAP, BASE>::read_config(const char* key, const char* cfg_file
 	LOGCFG_GETINT("charset",			cs);
 	LOGCFG_GETINT("perfthres",			pth);
 	LOGCFG_GETSTR("server",				log_server_);
-	LOGCFG_GETINT("cf_asyn",			cf_asyn_);
+	LOGCFG_GETBOOL("cf_asyn",			cf_asyn_);
 	LOGCFG_GETINT("cache_size",			cache_size_);
-	LOGCFG_GETINT("thr_vip",			thr_vip_);
+	LOGCFG_GETBOOL("thr_vip",			thr_vip_);
 
 	LOGCFG_GETINT_EX("level",			level_,			lv_set);
 	LOGCFG_GETINT_EX("style",			style_,			st_set);
