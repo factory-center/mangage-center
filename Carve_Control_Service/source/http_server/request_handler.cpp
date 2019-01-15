@@ -502,6 +502,10 @@ namespace http
 			ret = CCarve_Manager::instance()->get_all_carves_info(json_root, json_result
 				, str_err_reason_for_debug, str_err_reason_for_user);
 			//判定调用是否成功
+			if (ret)
+			{
+				str_err_reason = str_err_reason_for_debug;
+			}
 			businlog_error_return(!ret, ("%s | fail to get all carves info, reason:%s, ret:%d."
 				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), ret), ret);
 			return ret;
