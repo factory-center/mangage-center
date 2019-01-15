@@ -20,6 +20,8 @@
 #include "request.hpp"
 #include "request_handler.hpp"
 #include "request_parser.hpp"
+#include <utils/autobuf.h>
+#include "deal_http_msg.h"
 
 namespace http {
 	namespace server3 {
@@ -53,7 +55,8 @@ namespace http {
 			int get_http_body(const char* buf, size_t len, std::string& str_json_body, std::string& str_err_reason);
 			/// Handle completion of a write operation.
 			void handle_write(const boost::system::error_code& e);
-
+			//出错了，直接返回bad_request到服务端
+			void on_bad_request();
 			/// Strand to ensure the connection's handlers are not called concurrently.
 			boost::asio::io_service::strand strand_;
 
@@ -74,6 +77,10 @@ namespace http {
 
 			/// The reply to be sent back to the client.
 			reply reply_;
+//			sp::auto_buf<sp::DEFAULT_BUFFER_SIZE, char> m_buffer_http_message;//合并tcp数据包后的数据
+			std::string m_str_http_message;//合并tcp数据包后的数据
+			bool m_bIs_full_msg; //是否为一个完整的请求消息
+			deal_http_msg m_http_msg_tool_obj;
 		};
 
 		typedef boost::shared_ptr<connection> connection_ptr;

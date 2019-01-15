@@ -51,9 +51,7 @@ public:
 	std::string  get_http_body(unsigned long *val_len, int *ret = NULL);
 	std::string  get_http_version(unsigned long *val_len, int *ret = NULL);
 	int parse_msg(enum http_parser_type type, const void *msg, unsigned long msg_len,  bool& bIs_full_msg);	
-public:
 	int reset();
-	bool already_init_; //http parser是否已经初始化了
 	boost::shared_ptr<http_parserc> http_parser_;
 	std::string http_url_;
 	std::string http_version_;
@@ -83,6 +81,8 @@ public:
 		std::string attri_;
 		std::string val_;
 	};
+private:
+		bool already_init_; //http parser是否已经初始化了
 };
 
 #endif

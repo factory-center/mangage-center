@@ -28,7 +28,8 @@ namespace http {
 			request_handler& handler)
 			: strand_(io_service),
 			socket_(io_service),
-			request_handler_(handler)
+			request_handler_(handler),
+			m_bIs_full_msg(false)
 		{
 			buffer_.fill('\0');
 		}
@@ -40,6 +41,8 @@ namespace http {
 
 		void connection::start_asyn_operate()
 		{
+			//清空缓冲区
+			buffer_.fill('\0');
 			socket_.async_read_some(boost::asio::buffer(buffer_),
 				strand_.wrap(
 				boost::bind(&connection::handle_read, shared_from_this(),
@@ -48,7 +51,7 @@ namespace http {
 		}
 
 		void connection::handle_read(const boost::system::error_code& e,
-			std::size_t bytes_transferred)
+			std::size_t bytes_transferred) 
 		{
 			businlog_tracer_perf(connection::handle_read);
 			if (!e)
@@ -56,10 +59,22 @@ namespace http {
 				int ret = 0;
 				businlog_info("%s | line:%d, buffer:%s, buff size:%d, bytes_transferred:%d, buff len:%d"
 					, __FUNCTION__, __LINE__, buffer_.data(), buffer_.size(), bytes_transferred, strlen(buffer_.data()));
-
+				//TODO::数据过大则报错返回，因为栈空间有限，后面可以改为auto_buff
+				if (m_str_http_message.size() + bytes_transferred > MAX_MESSAGE_LEN)
+				{
+					businlog_error("%s | http message is larger than MAX_MESSAGE_LEN:%d."
+						, __CLASS_FUNCTION__, MAX_MESSAGE_LEN);
+					//发送bad_request到客户端
+					on_bad_request();
+					return;
+				}
+				//将数据追加到后面
+				m_str_http_message.append(buffer_.data(), bytes_transferred);
+				businlog_info("%s | buff is:%s.", __CLASS_FUNCTION__, buffer_.data());
+				businlog_info("%s | http_message is:%s.", __CLASS_FUNCTION__, m_str_http_message.data());
 				std::string str_json_body;
 				std::string str_err_reason;
-				ret = get_http_body(buffer_.data(), bytes_transferred, str_json_body, str_err_reason);
+				ret = get_http_body(m_str_http_message.data(), m_str_http_message.size(), str_json_body, str_err_reason);
 				if (0 == ret)
 				{
 					request_handler_.handle_request(request_, str_json_body, reply_);
@@ -69,14 +84,25 @@ namespace http {
 						boost::asio::placeholders::error)));
 				}
 				else if (ret)
-				{//出错了
-					reply_ = reply::stock_reply(reply::bad_request);
-					boost::asio::async_write(socket_, reply_.to_buffers(),
-						strand_.wrap(
-						boost::bind(&connection::handle_write, shared_from_this(),
-						boost::asio::placeholders::error)));
-					businlog_error("%s | bad request, client addr:%s."
-						, __CLASS_FUNCTION__, socket_.remote_endpoint().address().to_string().c_str());
+				{//解析http请求出错了
+					//如果是因为消息不完整，则继续获取。而不用报错
+					if (false == m_bIs_full_msg)
+					{
+						start_asyn_operate();
+					}
+					else 
+					{
+						//其他原因出错，则直接报错返回
+						businlog_error("%s | bad request, client addr:%s, reason:%s."
+							, __CLASS_FUNCTION__, socket_.remote_endpoint().address().to_string().c_str()
+							, str_err_reason.c_str());
+
+						reply_ = reply::stock_reply(reply::bad_request);
+						boost::asio::async_write(socket_, reply_.to_buffers(),
+							strand_.wrap(
+							boost::bind(&connection::handle_write, shared_from_this(),
+							boost::asio::placeholders::error)));
+					}
 				}
 
 			}
@@ -119,17 +145,17 @@ namespace http {
 		int connection::get_http_body(const char* buf, size_t len, std::string& str_json_body, std::string& str_err_reason)
 		{
 			businlog_tracer_perf(connection::get_http_body);
-			deal_http_msg http_msg_tool_obj;
-			http_msg_tool_obj.reset();
-			bool bIs_full_msg = false;
-			int ret = http_msg_tool_obj.parse_msg(HTTP_BOTH, buf, len, bIs_full_msg);
+			m_http_msg_tool_obj.reset();
+
+			//转换消息并获取是否为完整的http请求消息
+			int ret = m_http_msg_tool_obj.parse_msg(HTTP_BOTH, buf, len, m_bIs_full_msg);
 			if (ret)
 			{
 				businlog_error("%s | parse_msg failed, ret:%d, msg:%s", __CLASS_FUNCTION__, ret, buf);
 				str_err_reason = "The message is not valid http";
 				return ret;
 			}
-			if (false == bIs_full_msg)
+			if (false == m_bIs_full_msg)
 			{
 				str_err_reason = "The msg Server got is not full.";
 				businlog_error("%s | Msg is not full", __CLASS_FUNCTION__);
@@ -137,7 +163,7 @@ namespace http {
 			}
 			unsigned long body_len = 0;
 			//获取消息体
-			str_json_body = http_msg_tool_obj.get_http_body(&body_len, &ret);
+			str_json_body = m_http_msg_tool_obj.get_http_body(&body_len, &ret);
 			if (ret)
 			{
 				str_err_reason = "Invalid http body";
@@ -164,6 +190,17 @@ namespace http {
 						, __CLASS_FUNCTION__, str_remote_addr.c_str());
 				}
 			}
+		}
+
+		void connection::on_bad_request()
+		{
+			reply_ = reply::stock_reply(reply::bad_request);
+			boost::asio::async_write(socket_, reply_.to_buffers(),
+				strand_.wrap(
+				boost::bind(&connection::handle_write, shared_from_this(),
+				boost::asio::placeholders::error)));
+			businlog_error("%s | bad request, client addr:%s."
+				, __CLASS_FUNCTION__, socket_.remote_endpoint().address().to_string().c_str());
 		}
 
 	} // namespace server3

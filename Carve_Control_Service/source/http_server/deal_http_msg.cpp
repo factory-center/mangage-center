@@ -3,6 +3,8 @@
 #include "http_settings.h"
 #include <boost/make_shared.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
+#include "../busin_log.h"
+#include "utils/msp_errors.h"
 const char *default_http_response_ = "HTTP/1.1 200 OK\r\n";
 
 deal_http_msg::deal_http_msg() 
@@ -65,27 +67,34 @@ std::string deal_http_msg::get_http_version( unsigned long *val_len, int *ret /*
 
 int deal_http_msg::parse_msg(enum http_parser_type type, const void *msg, unsigned long msg_len, bool& bIs_full_msg )
 {
-	bIs_full_msg = false;
-	if(!already_init_){
+	if(!already_init_)
+	{
 		http_parser_init(http_parser_.get(), type);
 		already_init_ = true;
 	}
 	http_parser_->reserved = this;
 
-	size_t parsed = 0;
+	size_t nSize_parsed = 0;
 	if (msg_len)
 	{
 		currently_parsing_eof_ = (msg_len == 0);
 		//http_parser_settings *settings = (http_parser_settings *)&settings_;
-		parsed = http_parser_execute(http_parser_.get(), &settings, (const char*)msg, msg_len);
-
-		if (parsed != msg_len)
-		{
-			return 10301;
-		}
+		nSize_parsed = http_parser_execute(http_parser_.get(), &settings, (const char*)msg, msg_len);
 		if (message_complete_)
 		{
 			bIs_full_msg = true;
+		}
+
+		//在消息为完整的情况下，再判定转换长度与消息原来长度是否一致。如果消息不完整，则不必判定
+		if (bIs_full_msg == true && nSize_parsed != msg_len)
+		{
+			businlog_error("%s | now Message is full, but fail to parser http message, parsed len:%d is not equal msg len:%d."
+				, __FUNCTION__, nSize_parsed, msg_len);
+			return MSP_ERROR_MSG_PARSE_ERROR;
+		}
+		if (!bIs_full_msg)
+		{//消息不完整，则给出提示信息
+			businlog_info("%s | http message is not full.", __FUNCTION__);
 		}
 	}
 	return 0;

@@ -262,7 +262,10 @@ namespace http
 				}
 				//将单个结果添加到结果数组中
 				json_result["results"].append(json_single_resp);
-				str_err_reason += string(". ") + str_err_reason_for_debug;
+				if (ret)
+				{//有单个设备出错，则累加错误信息
+					str_err_reason += string(". ") + str_err_reason_for_debug;
+				}
 			}//end for
 			return MSP_SUCCESS;
 		}
