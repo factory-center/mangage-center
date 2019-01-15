@@ -100,7 +100,7 @@ namespace http
 			Json::Value root;
 			int ret = 0;
 			std::string str_err_reason;
-			Json::Value json_result;
+			Json::Value json_result; //json格式的响应结果
 			if (!reader.parse(str_json_body, root))
 			{//非法json体
 				ret = MSP_ERROR_INVALID_DATA;
@@ -329,7 +329,10 @@ namespace http
 			{
 				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
 			}
-			str_err_reason =  str_err_reason_for_debug;
+			if (ret)
+			{//出错了
+				str_err_reason =  str_err_reason_for_debug;
+			}
 			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
 			return MSP_SUCCESS;
 		}
@@ -363,7 +366,11 @@ namespace http
 			{
 				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
 			}
-			str_err_reason =  str_err_reason_for_debug;
+			if (ret)
+			{
+				str_err_reason =  str_err_reason_for_debug;
+			}
+
 			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
 			return MSP_SUCCESS;
 		}
@@ -388,7 +395,10 @@ namespace http
 			{
 				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
 			}
-			str_err_reason =  str_err_reason_for_debug;
+			if (ret)
+			{
+				str_err_reason =  str_err_reason_for_debug;
+			}
 			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
 			return MSP_SUCCESS;
 		}
@@ -413,7 +423,10 @@ namespace http
 			{
 				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
 			}
-			str_err_reason =  str_err_reason_for_debug;
+			if (ret)
+			{
+				str_err_reason =  str_err_reason_for_debug;
+			}
 			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
 			return MSP_SUCCESS;
 		}
@@ -450,7 +463,7 @@ namespace http
 			ret = CCarve_Manager::instance()->emergency_stop_all(json_result,str_err_reason_for_debug, str_err_reason_for_user);
 			//判定调用是否成功
 			businlog_error_return(!ret, ("%s | fail to emergency stop all, reason:%s, ret:%d."
-				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), str_err_reason_for_user.c_str()), ret);
+				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), ret), ret);
 		}
 		int request_handler::on_adjust_speed(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
 		{
@@ -473,7 +486,10 @@ namespace http
 			{
 				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
 			}
-			str_err_reason =  str_err_reason_for_debug;
+			if (ret)
+			{
+				str_err_reason =  str_err_reason_for_debug;
+			}
 			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
 			return MSP_SUCCESS;
 		}
@@ -487,7 +503,7 @@ namespace http
 				, str_err_reason_for_debug, str_err_reason_for_user);
 			//判定调用是否成功
 			businlog_error_return(!ret, ("%s | fail to get all carves info, reason:%s, ret:%d."
-				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), str_err_reason_for_user.c_str()), ret);
+				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), ret), ret);
 			return ret;
 		}
 
