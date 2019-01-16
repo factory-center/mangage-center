@@ -33,7 +33,7 @@ namespace http {
 			void handle_request(const request& req, const std::string& str_json_body, reply& rep);
 		private:
 			int on_connect(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason);
-			int on_dis_connect(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason);
+			int on_disconnect(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason);
 			int on_query_one_carve_status(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason);
 			int on_query_one_carve_info(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason);
 			int on_query_all_carves_info(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason);
@@ -42,6 +42,8 @@ namespace http {
 			int on_emergency_stop_one(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason);
 			int on_emergency_stop_all(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason);
 			int on_adjust_speed(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason);
+			
+
 			
 			/// The directory containing the files to be served.
 			std::string doc_root_;

@@ -55,7 +55,7 @@ public:
 	int pause(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int upload_1_file(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& str_err_reason_for_debug, string& str_err_reason_for_user);
-	int stop_fast(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int stop_fast(const Json::Value& json_params,string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int cancel_fast_stop(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int delete_1_file(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_current_line_num(int& nCurrent_line_num, string& str_err_reason_for_debug, string& str_err_reason_for_user);

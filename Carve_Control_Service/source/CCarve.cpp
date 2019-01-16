@@ -329,12 +329,17 @@ int CCarve::get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& s
 	return MSP_SUCCESS;
 }
 
-int CCarve::stop_fast(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+int CCarve::stop_fast(const Json::Value& json_params,string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
 	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
 		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
 
+	//从参数中获取命令执行最大等待时长
+	businlog_error_return_debug_and_user_reason(json_params.isMember("max_wait_time"), __CLASS_FUNCTION__
+		<< " | json:" << json_params.toStyledString() << ", without key:" << "max_wait_time"
+		, str_err_reason_for_debug, "命令执行最大等待时间参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+	
 	//构造参数
 	Json::Value json_conn_value;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
@@ -343,7 +348,7 @@ int CCarve::stop_fast(unsigned short nMax_wait_time, string& str_err_reason_for_
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
-		json_conn_value[ms_str_max_wait_time_key] =  nMax_wait_time;
+		json_conn_value[ms_str_max_wait_time_key] =  json_params["max_wait_time"];
 	}
 	else if(false)
 	{

@@ -126,11 +126,10 @@ namespace http
 				//连接雕刻机
 				ret = on_connect(root, json_result, str_err_reason);
 			}
-			//根据不同的命令来响应
-			if ("disconnect" == str_cmd)
+			else if ("disconnect" == str_cmd)
 			{
-				//连接雕刻机
-				ret = on_dis_connect(root, json_result, str_err_reason);
+				//断开雕刻机
+				ret = on_disconnect(root, json_result, str_err_reason);
 			}
 			else if ("query_one_machine_status" == str_cmd)
 			{
@@ -269,7 +268,7 @@ namespace http
 			}//end for
 			return MSP_SUCCESS;
 		}
-		int request_handler::on_dis_connect(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		int request_handler::on_disconnect(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
 		{
 			string str_key = "carveInfo";
 			businlog_error_return_err_reason(json_root.isMember(str_key), __CLASS_FUNCTION__ << " | json:" << json_root.toStyledString() << ", without key:" << str_key
@@ -281,12 +280,12 @@ namespace http
 			//遍历信息数组
 			for (int i = 0; i != json_arr_carveInfo.size(); ++i)
 			{
-				//获取单个雕刻机信息
+				//获取单个雕刻机设备编号
 				const Json::Value& json_single_params = json_arr_carveInfo[i];
 				std::string str_err_reason_for_debug;
 				std::string str_err_reason_for_user;
 				//断开雕刻机
-				ret = CCarve_Manager::instance()->dis_connect_carve(json_single_params, str_err_reason_for_debug, str_err_reason_for_user);
+				ret = CCarve_Manager::instance()->disconnect_carve(json_single_params, str_err_reason_for_debug, str_err_reason_for_user);
 				Json::Value json_single_resp;
 				//构造结果
 				json_single_resp["ret"] = ret;
@@ -450,7 +449,10 @@ namespace http
 			{
 				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
 			}
-			str_err_reason =  str_err_reason_for_debug;
+			if (ret)
+			{//出错了
+				str_err_reason =  str_err_reason_for_debug;
+			}
 			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
 			return MSP_SUCCESS;
 		}
@@ -460,10 +462,16 @@ namespace http
 			std::string str_err_reason_for_debug;
 			std::string str_err_reason_for_user;
 			//全部雕刻机急停
-			ret = CCarve_Manager::instance()->emergency_stop_all(json_result,str_err_reason_for_debug, str_err_reason_for_user);
+			ret = CCarve_Manager::instance()->emergency_stop_all(json_root,json_result,str_err_reason_for_debug, str_err_reason_for_user);
+			if (ret)
+			{//出错了
+				str_err_reason =  str_err_reason_for_debug;
+			}
 			//判定调用是否成功
 			businlog_error_return(!ret, ("%s | fail to emergency stop all, reason:%s, ret:%d."
 				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), ret), ret);
+			//注意：返回MSP_SUCCESS表示成功执行
+			return MSP_SUCCESS;
 		}
 		int request_handler::on_adjust_speed(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
 		{

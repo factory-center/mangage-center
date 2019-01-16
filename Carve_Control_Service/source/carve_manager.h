@@ -38,7 +38,7 @@ class CCarve_Manager
 public:
 	static CCarve_Manager* instance();
 	int connect_carve(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
-	int dis_connect_carve(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int disconnect_carve(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_carve_status(const Json::Value& json_params, ECARVE_STATUS_TYPE& eCarve_common_status, string& str_err_reason_for_debug, string& str_err_reason_for_user);
     int get_carve_info(const Json::Value& json_params, SCarve_Info& carve_info, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_all_carves_info(const Json::Value& json_params, Json::Value& json_result
@@ -48,7 +48,7 @@ public:
 	int start_engraving(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
     int upload_1_file(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int emergency_stop_one(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
-	int emergency_stop_all(Json::Value& json_result,string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int emergency_stop_all(const Json::Value& json_params,Json::Value& json_result,string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int adjust_speed(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	
 protected:
