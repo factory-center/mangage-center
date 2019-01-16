@@ -335,20 +335,14 @@ int CCarve::stop_fast(const Json::Value& json_params,string& str_err_reason_for_
 	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
 		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
 
-	//从参数中获取命令执行最大等待时长
-	businlog_error_return_debug_and_user_reason(json_params.isMember("max_wait_time"), __CLASS_FUNCTION__
-		<< " | json:" << json_params.toStyledString() << ", without key:" << "max_wait_time"
-		, str_err_reason_for_debug, "命令执行最大等待时间参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
-	
 	//构造参数
-	Json::Value json_conn_value;
+	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
 	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
-		json_conn_value[ms_str_max_wait_time_key] =  json_params["max_wait_time"];
 	}
 	else if(false)
 	{
@@ -371,22 +365,21 @@ int CCarve::stop_fast(const Json::Value& json_params,string& str_err_reason_for_
 	return MSP_SUCCESS;
 }
 
-int CCarve::cancel_fast_stop(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+int CCarve::cancel_fast_stop(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	businlog_tracer_perf(CCarve::cancel_fast_stop);
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
 	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
 		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
-
+	
 	//构造参数
-	Json::Value json_conn_value;
+	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
 	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
-		json_conn_value[ms_str_max_wait_time_key] =  nMax_wait_time;
 	}
 	else if(false)
 	{
@@ -430,11 +423,19 @@ int CCarve::delete_1_file(const Json::Value& json_params, string& str_err_reason
 			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
 	}
 
-	//上传文件
+	//删除文件
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->delete_1file(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
 	businlog_error_return(bSuccess, ("%s | fail to delete file, carve ip:%s, json info:%s, reason:%s"
 		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str()
 		, str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+
+	//文件删除成处理
+	//TODO: ----------------待确认
+	//参数恢复初始
+	m_str_file_path = "";
+	m_str_task_no = "";
+	m_str_gCode_no = "";
+
 	return MSP_SUCCESS;
 }
 
@@ -538,39 +539,6 @@ int CCarve::release_resource(string& str_err_reason_for_debug, string& str_err_r
 	return MSP_SUCCESS;
 }
 
-int CCarve::get_total_engraving_time(int& nTotal_engraving_time, string& str_err_reason_for_debug, string& str_err_reason_for_user)
-{
-	businlog_tracer_perf(CCarve::get_current_line_num);
-	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
-	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
-		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
-
-	//构造参数
-	Json::Value json_conn_value;
-	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
-	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
-	{
-		//宝元库所需要的参数
-		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
-	}
-	else if(false)
-	{
-		//TODO::其他厂商
-	}
-	else
-	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
-	}
-
-	//获取总的雕刻时间
-	bool bSuccess = false/*CCarve_Common_Lib_Tool::instance()->get_current_line_num(json_conn_value, nCurrent_line_num, str_err_reason_for_debug, str_err_reason_for_user)*/;
-	businlog_error_return(bSuccess, ("%s | fail to get total engraving time, carve ip:%s, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str()
-		, str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
-	return MSP_SUCCESS;
-}
 
 int CCarve::get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
@@ -724,7 +692,6 @@ const string CCarve::ms_str_max_wait_time_key = "max_wait_time";
 const string CCarve::ms_str_carve_id_key = "carveId";
 
 const string CCarve::ms_str_task_no_key = "taskNo";
-
 
 const string CCarve::ms_str_gCode_no_key = "gNo";
 

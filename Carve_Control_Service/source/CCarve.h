@@ -56,12 +56,11 @@ public:
 	int upload_1_file(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int stop_fast(const Json::Value& json_params,string& str_err_reason_for_debug, string& str_err_reason_for_user);
-	int cancel_fast_stop(unsigned short nMax_wait_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int cancel_fast_stop(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int delete_1_file(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_current_line_num(int& nCurrent_line_num, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int acquire_resource(string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int release_resource(string& str_err_reason_for_debug, string& str_err_reason_for_user);
-	int get_total_engraving_time(int& nTotal_engraving_time, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int adjust_speed(const Json::Value& json_params,string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	//雕刻成功后调用

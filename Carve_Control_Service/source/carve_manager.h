@@ -50,7 +50,10 @@ public:
 	int emergency_stop_one(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int emergency_stop_all(const Json::Value& json_params,Json::Value& json_result,string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int adjust_speed(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
-	
+	int cancel_emergency_stop_one(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int cancel_emergency_stop_all(const Json::Value& json_params,Json::Value& json_result,string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int delete_1_file(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+
 protected:
 	CCarve_Manager();
 	~CCarve_Manager();

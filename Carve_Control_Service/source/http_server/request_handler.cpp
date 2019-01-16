@@ -171,6 +171,21 @@ namespace http
 				//通知全部雕刻机急停
 				ret = on_emergency_stop_all(root, json_result, str_err_reason);
 			}
+			else if("cancel_emergency_stop_one" == str_cmd)
+			{
+				//取消一台雕刻机急停
+				ret = on_cancel_emergency_stop_one(root, json_result, str_err_reason);
+			}
+			else if("cancel_emergency_stop_all" == str_cmd)
+			{
+				//取消全部雕刻机急停
+				ret = on_cancel_emergency_stop_all(root, json_result, str_err_reason);
+			}
+			else if("delete_gcode_OK" == str_cmd)
+			{
+				//删除G代码
+				ret = on_delete_file(root, json_result, str_err_reason);
+			}
 			else if("adjust_speed" == str_cmd)
 			{
 				//调整雕刻机运行速度
@@ -301,7 +316,10 @@ namespace http
 				}
 				//将单个结果添加到结果数组中
 				json_result["results"].append(json_single_resp);
-				str_err_reason += string(". ") + str_err_reason_for_debug;
+				if (ret)
+				{
+					str_err_reason += string(". ") + str_err_reason_for_debug;
+				}
 			}//end for
 			return MSP_SUCCESS;
 		}
@@ -429,6 +447,35 @@ namespace http
 			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
 			return MSP_SUCCESS;
 		}
+		
+		int request_handler::on_delete_file(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		{
+			int ret = 0;
+			std::string str_err_reason_for_debug;
+			std::string str_err_reason_for_user;
+			//上传文件
+			ret = CCarve_Manager::instance()->delete_1_file(json_root, str_err_reason_for_debug, str_err_reason_for_user);
+			//注意：无论成败，都构造结果
+			//构造结果
+			json_result["ret"] = ret;
+			json_result["errmsg"] = str_err_reason_for_debug;
+			json_result["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
+			if (json_root.isMember(CCarve::ms_str_carve_id_key))
+			{
+				json_result[CCarve::ms_str_carve_id_key] = json_root[CCarve::ms_str_carve_id_key];
+			}
+			else
+			{
+				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
+			}
+			if (ret)
+			{
+				str_err_reason =  str_err_reason_for_debug;
+			}
+			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
+			return MSP_SUCCESS;
+		}
+
 		int request_handler::on_emergency_stop_one(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
 		{
 			int ret = 0;
@@ -473,6 +520,52 @@ namespace http
 			//注意：返回MSP_SUCCESS表示成功执行
 			return MSP_SUCCESS;
 		}
+		int request_handler::on_cancel_emergency_stop_one(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		{
+			int ret = 0;
+			std::string str_err_reason_for_debug;
+			std::string str_err_reason_for_user;
+			//取消雕刻机急停
+			ret = CCarve_Manager::instance()->cancel_emergency_stop_one(json_root, str_err_reason_for_debug, str_err_reason_for_user);
+			//注意：无论成败，都构造结果
+			//构造结果
+			json_result["ret"] = ret;
+			json_result["errmsg"] = str_err_reason_for_debug;
+			json_result["errmsg_for_user"] = sp::toutf8(str_err_reason_for_user);
+			if (json_root.isMember(CCarve::ms_str_carve_id_key))
+			{
+				json_result[CCarve::ms_str_carve_id_key] = json_root[CCarve::ms_str_carve_id_key];
+			}
+			else
+			{
+				json_result[CCarve::ms_str_carve_id_key] = Json::Value();
+			}
+			if (ret)
+			{//出错了
+				str_err_reason =  str_err_reason_for_debug;
+			}
+			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
+			return MSP_SUCCESS;
+		}
+
+		int request_handler::on_cancel_emergency_stop_all(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		{
+			int ret = 0;
+			std::string str_err_reason_for_debug;
+			std::string str_err_reason_for_user;
+			//全部雕刻机急停
+			ret = CCarve_Manager::instance()->cancel_emergency_stop_all(json_root,json_result,str_err_reason_for_debug, str_err_reason_for_user);
+			if (ret)
+			{//出错了
+				str_err_reason =  str_err_reason_for_debug;
+			}
+			//判定调用是否成功
+			businlog_error_return(!ret, ("%s | fail to emergency stop all, reason:%s, ret:%d."
+				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), ret), ret);
+			//注意：返回MSP_SUCCESS表示成功执行
+			return MSP_SUCCESS;
+		}
+
 		int request_handler::on_adjust_speed(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
 		{
 			//TODO: 此功能暂停，接口待确认
