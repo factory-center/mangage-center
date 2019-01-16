@@ -84,14 +84,14 @@ int deal_http_msg::parse_msg(enum http_parser_type type, const void *msg, unsign
 		{
 			bIs_full_msg = true;
 		}
-
+		//注意：由于如果为不完整的消息，上层会继续读取数据，故这里将下面代码屏蔽
 		//在消息为完整的情况下，再判定转换长度与消息原来长度是否一致。如果消息不完整，则不必判定
-		if (bIs_full_msg == true && nSize_parsed != msg_len)
-		{
-			businlog_error("%s | now Message is full, but fail to parser http message, parsed len:%d is not equal msg len:%d."
-				, __FUNCTION__, nSize_parsed, msg_len);
-			return MSP_ERROR_MSG_PARSE_ERROR;
-		}
+// 		if (bIs_full_msg == true && nSize_parsed != msg_len)
+// 		{
+// 			businlog_error("%s | now Message is full, but fail to parser http message, parsed len:%d is not equal msg len:%d."
+// 				, __FUNCTION__, nSize_parsed, msg_len);
+// 			return MSP_ERROR_MSG_PARSE_ERROR;
+// 		}
 		if (!bIs_full_msg)
 		{//消息不完整，则给出提示信息
 			businlog_info("%s | http message is not full.", __FUNCTION__);
