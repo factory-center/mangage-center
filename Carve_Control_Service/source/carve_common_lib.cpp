@@ -40,7 +40,7 @@ bool CCarve_Common_Lib_Tool::init(string& str_kernel_err_reason)
 	return true; 
 }
 
-bool CCarve_Common_Lib_Tool::is_baoyuan(int nfactory_type, const string& str_str_carve_type_key)
+bool CCarve_Common_Lib_Tool::is_baoyuan(int nfactory_type, const string& str_carve_type_key)
 {
 	businlog_error_return(nfactory_type >CARVE_FACTORY_TYPE_MIN && nfactory_type < CARVE_FACTORY_TYPE_MAX
 		, ("%s | factory type is invalid:%d", __CLASS_FUNCTION__, nfactory_type), false);

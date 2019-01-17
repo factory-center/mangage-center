@@ -42,7 +42,7 @@ int CCarve::connect(string& str_err_reason_for_debug, string& str_err_reason_for
 	Json::Value json_conn_value;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_ip_key] = m_str_ip;
@@ -57,15 +57,11 @@ int CCarve::connect(string& str_err_reason_for_debug, string& str_err_reason_for
 		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
 			<< m_eFactory_type, str_err_reason_for_debug, "厂商类型错误", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
 	}
-//    bool bSuccess = CBaoyuan_Lib::instance()->create_connection(m_nConn_idx, m_str_ip, str_kernel_err_reason);
+
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->connect(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
 	businlog_error_return(bSuccess, ("%s | fail to connect carve, param in json:%s, reason:%s"
 		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
 	m_bConnected = true;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
-	{
-		m_nConn_idx = json_conn_value[ms_str_conn_idx_key].asInt();
-	}
 	return MSP_SUCCESS;
 }
 
@@ -79,7 +75,7 @@ int CCarve::disconnect(string& str_err_reason_for_debug, string& str_err_reason_
 	Json::Value json_conn_value;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -112,7 +108,7 @@ int CCarve::set_continue_status(const Json::Value& json_params, string& str_err_
 	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -144,7 +140,7 @@ int CCarve::reset(const Json::Value& json_params, string& str_err_reason_for_deb
 	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -179,7 +175,7 @@ int CCarve::start(const Json::Value& json_params, string& str_err_reason_for_deb
 	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -211,7 +207,7 @@ int CCarve::pause(const Json::Value& json_params, string& str_err_reason_for_deb
 	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -268,7 +264,7 @@ int CCarve::upload_1_file(const Json::Value& json_params, string& str_err_reason
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
 
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -304,7 +300,7 @@ int CCarve::get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& s
 	Json::Value json_conn_value;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -339,7 +335,7 @@ int CCarve::stop_fast(const Json::Value& json_params,string& str_err_reason_for_
 	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -376,7 +372,7 @@ int CCarve::cancel_fast_stop(const Json::Value& json_params, string& str_err_rea
 	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -408,7 +404,7 @@ int CCarve::delete_1_file(const Json::Value& json_params, string& str_err_reason
 	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -450,7 +446,7 @@ int CCarve::get_current_line_num(int& nCurrent_line_num, string& str_err_reason_
 	Json::Value json_conn_value;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
@@ -482,7 +478,7 @@ int CCarve::acquire_resource(string& str_err_reason_for_debug, string& str_err_r
 	Json::Value json_conn_value;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 	}
@@ -501,7 +497,10 @@ int CCarve::acquire_resource(string& str_err_reason_for_debug, string& str_err_r
 	businlog_error_return(bSuccess, ("%s | fail to acquire resource, carve ip:%s, json info:%s, reason:%s"
 		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str()
 		, str_err_reason_for_debug.c_str()), MSP_ERROR_RES_LOAD);
-	m_nConn_idx = json_conn_value[ms_str_conn_idx_key].asInt();
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
+	{
+		m_nConn_idx = json_conn_value[ms_str_conn_idx_key].asInt();
+	}
 	m_bAcq_Res_Success = true;
 	return MSP_SUCCESS;
 }
@@ -515,7 +514,7 @@ int CCarve::release_resource(string& str_err_reason_for_debug, string& str_err_r
 	Json::Value json_conn_value;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] =  m_nConn_idx;
@@ -629,7 +628,7 @@ int CCarve::adjust_speed(const Json::Value& json_params,string& str_err_reason_f
 
 	json_conn_value[CCarve::ms_str_max_wait_time_key] = nMax_wait_time;
 
-	if (CARVE_FACTORY_TYPE_BAOYUAN == m_eFactory_type)
+	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
