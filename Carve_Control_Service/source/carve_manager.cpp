@@ -61,8 +61,8 @@ int CCarve_Manager::connect_carve(const Json::Value& json_params, string& str_er
 			ptr_carve = boost::make_shared<CCarve>(json_params);
 			//申请资源，如果失败则直接返回
 			ret = ptr_carve->acquire_resource(str_err_reason_for_debug, str_err_reason_for_user);
-			businlog_error_return(!ret, ("%s | fail to acquire resource, reason:%s."
-				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+			businlog_error_return(!ret, ("%s | fail to acquire resource, carve id:%s, reason:%s."
+				, __CLASS_FUNCTION__, str_carve_id.c_str(), str_err_reason_for_debug.c_str()), ret);
 			pair_insert_result = m_map_carveId_carvePtr.insert(std::make_pair(str_carve_id, ptr_carve));
 			//判定插入结果，如果失败，则说明键已经存在了.（map插入失败，是不会覆盖原来的value）
 			businlog_error_return_debug_and_user_reason(pair_insert_result.second, __CLASS_FUNCTION__ << " | fail to insert, carve id:" << str_carve_id << " alread exist."
@@ -73,7 +73,7 @@ int CCarve_Manager::connect_carve(const Json::Value& json_params, string& str_er
 		ret = ptr_carve->connect(str_err_reason_for_debug, str_err_reason_for_user);
 		if (ret)
 		{
-			businlog_error("%s | fail to connect carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			businlog_error("%s | fail to connect carve, carve id:%s, reason:%s.", __CLASS_FUNCTION__, str_carve_id.c_str(), str_err_reason_for_debug.c_str());
 			goto Err_exit;
 		}
 
@@ -82,7 +82,7 @@ int CCarve_Manager::connect_carve(const Json::Value& json_params, string& str_er
 		ret = ptr_carve->set_continue_status(json_local_params, str_err_reason_for_debug, str_err_reason_for_user);
 		if (ret)
 		{
-			businlog_error("%s | fail to set carve continue status, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			businlog_error("%s | fail to set carve continue status, carve id:%s, reason:%s.", __CLASS_FUNCTION__, str_carve_id.c_str(), str_err_reason_for_debug.c_str());
 			goto Err_exit;
 		}
 
@@ -90,7 +90,7 @@ int CCarve_Manager::connect_carve(const Json::Value& json_params, string& str_er
 		ret = ptr_carve->reset(json_local_params, str_err_reason_for_debug, str_err_reason_for_user);
 		if (ret)
 		{
-			businlog_error("%s | fail to reset carve, reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+			businlog_error("%s | fail to reset carve, carve id:%s, reason:%s.", __CLASS_FUNCTION__, str_carve_id.c_str(), str_err_reason_for_debug.c_str());
 			goto Err_exit;
 		}
 		return MSP_SUCCESS;
@@ -137,13 +137,13 @@ int CCarve_Manager::disconnect_carve(const Json::Value& json_params, string& str
 
 			//断开设备
 			ret = iter->second->disconnect(str_err_reason_for_debug, str_err_reason_for_user);
-			businlog_error_return(!ret, ("%s | fail to disconnect, reason:%s."
-				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+			businlog_error_return(!ret, ("%s | fail to disconnect, carve id:%s, reason:%s."
+				, __CLASS_FUNCTION__, str_carve_id.c_str(), str_err_reason_for_debug.c_str()), ret);
 
 			//释放资源
 			ret = iter->second->release_resource(str_err_reason_for_debug,str_err_reason_for_user);
-			businlog_error_return(!ret, ("%s | fail to release resource, reason:%s."
-				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+			businlog_error_return(!ret, ("%s | fail to release resource, carve id:%s, reason:%s."
+				, __CLASS_FUNCTION__, str_carve_id.c_str(), str_err_reason_for_debug.c_str()), ret);
 
 			//从map中移除对应的断开设备
 			m_map_carveId_carvePtr.erase(iter);
@@ -182,8 +182,8 @@ int CCarve_Manager::get_carve_status(const Json::Value& json_params, ECARVE_STAT
 		//走到这里，说明找到了对应的雕刻机
 		//查询雕刻机状态
 		int ret = ptr_carve->get_carve_status(eCarve_common_status, str_err_reason_for_debug, str_err_reason_for_user);
-		businlog_error_return(!ret, ("%s | fail to get carve status, reason:%s."
-			, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+		businlog_error_return(!ret, ("%s | fail to get carve status, carve id:%s, reason:%s."
+			, __CLASS_FUNCTION__, str_carve_id.c_str(), str_err_reason_for_debug.c_str()), ret);
 		return MSP_SUCCESS;
 	}
 	catch (std::exception& e)
@@ -217,8 +217,8 @@ int CCarve_Manager::get_carve_info(const Json::Value& json_params, SCarve_Info& 
 		//走到这里，说明找到了对应的雕刻机
 		//查询设备信息
 		int ret = ptr_carve->get_info(carve_info, str_err_reason_for_debug, str_err_reason_for_user);
-		businlog_error_return(!ret, ("%s | fail to get carve info, reason:%s."
-			, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+		businlog_error_return(!ret, ("%s | fail to get carve info, carve id:%s, reason:%s."
+			, __CLASS_FUNCTION__, str_carve_id.c_str(), str_err_reason_for_debug.c_str()), ret);
 		return MSP_SUCCESS;
 	}
 	catch (std::exception& e)
@@ -383,8 +383,8 @@ int CCarve_Manager::start_engraving(const Json::Value& json_params, string& str_
 		//走到这里，说明找到了对应的雕刻机
 		//开始雕刻
 		int ret = ptr_carve->start(json_params, str_err_reason_for_debug, str_err_reason_for_user);
-		businlog_error_return(!ret, ("%s | fail to start carve, reason:%s."
-			, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+		businlog_error_return(!ret, ("%s | fail to start carve, carve id:%s, reason:%s."
+			, __CLASS_FUNCTION__, str_carve_id.c_str(), str_err_reason_for_debug.c_str()), ret);
 #ifdef SERVER_WITH_CONTROL_LOGIC
 		//开始雕刻成功后则设置开始雕刻时的时间
 		ptr_carve->start_count_engraving_time();
@@ -422,8 +422,8 @@ int CCarve_Manager::upload_1_file(const Json::Value& json_params, string& str_er
 		//走到这里，说明找到了对应的雕刻机
 		//下在G代码文件
 		int ret = ptr_carve->upload_1_file(json_params, str_err_reason_for_debug, str_err_reason_for_user);
-		businlog_error_return(!ret, ("%s | fail to start carve, reason:%s."
-			, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+		businlog_error_return(!ret, ("%s | fail to start carve, carve id:%s, reason:%s."
+			, __CLASS_FUNCTION__, str_carve_id.c_str(), str_err_reason_for_debug.c_str()), ret);
 		return MSP_SUCCESS;
 	}
 	catch (std::exception& e)
@@ -457,8 +457,8 @@ int CCarve_Manager::delete_1_file(const Json::Value& json_params, string& str_er
 		//走到这里，说明找到了对应的雕刻机
 		//删除G代码文件
 		int ret = ptr_carve->delete_1_file(json_params, str_err_reason_for_debug, str_err_reason_for_user);
-		businlog_error_return(!ret, ("%s | fail to start carve, reason:%s."
-			, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+		businlog_error_return(!ret, ("%s | fail to delete file, carve id:%s, reason:%s."
+			, __CLASS_FUNCTION__, str_carve_id.c_str(), str_err_reason_for_debug.c_str()), ret);
 		return MSP_SUCCESS;
 	}
 	catch (std::exception& e)
@@ -492,8 +492,8 @@ int CCarve_Manager::emergency_stop_one(const Json::Value& json_params, string& s
 		}
 		//走到这里，说明找到了对应的雕刻机
 		int ret = ptr_carve-> stop_fast(json_params, str_err_reason_for_debug, str_err_reason_for_user);
-		businlog_error_return(!ret, ("%s | fail to fast stop carve, reason:%s."
-			, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+		businlog_error_return(!ret, ("%s | fail to fast stop carve, carve id:%s, reason:%s."
+			, __CLASS_FUNCTION__, str_carve_id.c_str(), str_err_reason_for_debug.c_str()), ret);
 		return MSP_SUCCESS;
 	}
 	catch (std::exception& e)
@@ -563,7 +563,7 @@ int CCarve_Manager::emergency_stop_all(const Json::Value& json_params,Json::Valu
 }
 int CCarve_Manager::cancel_emergency_stop_one(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
-	//雕刻机急停
+	//取消单个雕刻机急停
 	try
 	{
 		//从参数中获取设备编号
@@ -583,8 +583,8 @@ int CCarve_Manager::cancel_emergency_stop_one(const Json::Value& json_params, st
 		}
 		//走到这里，说明找到了对应的雕刻机
 		int ret = ptr_carve-> cancel_fast_stop(json_params, str_err_reason_for_debug, str_err_reason_for_user);
-		businlog_error_return(!ret, ("%s | fail to fast stop carve, reason:%s."
-			, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+		businlog_error_return(!ret, ("%s | fail to cancel fast stop carve, carve id:%s, reason:%s."
+			, __CLASS_FUNCTION__, ptr_carve->get_id().c_str(), str_err_reason_for_debug.c_str()), ret);
 		return MSP_SUCCESS;
 	}
 	catch (std::exception& e)
@@ -597,7 +597,7 @@ int CCarve_Manager::cancel_emergency_stop_one(const Json::Value& json_params, st
 }
 int CCarve_Manager::cancel_emergency_stop_all(const Json::Value& json_params,Json::Value& json_result,string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
-	//全部雕刻机急停
+	//取消全部雕刻机急停
 	try
 	{
 		{
@@ -618,9 +618,9 @@ int CCarve_Manager::cancel_emergency_stop_all(const Json::Value& json_params,Jso
 				string str_single_err_for_debug; 
 				string str_single_err_for_user;
 				int ret= iter->second->cancel_fast_stop(json_params, str_single_err_for_debug, str_single_err_for_user);
-				if (ret!=0)
+				if (ret != 0)
 				{
-					businlog_error("%s | fail to emergency stop, carve id:%s, reason:%s."
+					businlog_error("%s | fail to cancel fast stop, carve id:%s, reason:%s."
 						, __CLASS_FUNCTION__, iter->second->get_id().c_str(), str_single_err_for_debug.c_str());
 				}
 				Json::Value json_single_resp;
@@ -675,8 +675,8 @@ int CCarve_Manager::adjust_speed(const Json::Value& json_params, string& str_err
 		}
 		//走到这里，说明找到了对应的雕刻机
 		int ret = ptr_carve-> adjust_speed(json_params, str_err_reason_for_debug, str_err_reason_for_user);
-		businlog_error_return(!ret, ("%s | fail to fast stop carve, reason:%s."
-			, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), ret);
+		businlog_error_return(!ret, ("%s | fail to fast stop carve, carve id:%s, reason:%s."
+			, __CLASS_FUNCTION__, str_carve_id.c_str(), str_err_reason_for_debug.c_str()), ret);
 		return MSP_SUCCESS;
 	}
 	catch (std::exception& e)

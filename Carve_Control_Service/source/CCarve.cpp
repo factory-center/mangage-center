@@ -425,7 +425,7 @@ int CCarve::delete_1_file(const Json::Value& json_params, string& str_err_reason
 		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str()
 		, str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
 
-	//文件删除成处理
+	//文件删除成功
 	//TODO: ----------------待确认
 	//参数恢复初始
 	m_str_file_path = "";
