@@ -5,6 +5,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Carve_Control_Service", "Ca
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib_json", "source\lib_json\lib_json.vcxproj", "{B84F7231-16CE-41D8-8C08-7B523FF4225B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Daemon", "Daemon\Daemon.vcxproj", "{D661C4A6-D093-43CF-9367-C76A81E2882C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -39,6 +41,15 @@ Global
 		{B84F7231-16CE-41D8-8C08-7B523FF4225B}.Release|Win32.Build.0 = Release|Win32
 		{B84F7231-16CE-41D8-8C08-7B523FF4225B}.Release|x64.ActiveCfg = Release|x64
 		{B84F7231-16CE-41D8-8C08-7B523FF4225B}.Release|x64.Build.0 = Release|x64
+		{D661C4A6-D093-43CF-9367-C76A81E2882C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D661C4A6-D093-43CF-9367-C76A81E2882C}.Debug|Win32.Build.0 = Debug|Win32
+		{D661C4A6-D093-43CF-9367-C76A81E2882C}.Debug|x64.ActiveCfg = Debug|Win32
+		{D661C4A6-D093-43CF-9367-C76A81E2882C}.Release_Od|Win32.ActiveCfg = Release|Win32
+		{D661C4A6-D093-43CF-9367-C76A81E2882C}.Release_Od|Win32.Build.0 = Release|Win32
+		{D661C4A6-D093-43CF-9367-C76A81E2882C}.Release_Od|x64.ActiveCfg = Release|Win32
+		{D661C4A6-D093-43CF-9367-C76A81E2882C}.Release|Win32.ActiveCfg = Release|Win32
+		{D661C4A6-D093-43CF-9367-C76A81E2882C}.Release|Win32.Build.0 = Release|Win32
+		{D661C4A6-D093-43CF-9367-C76A81E2882C}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
