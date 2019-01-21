@@ -611,28 +611,17 @@ int CCarve::adjust_speed(const Json::Value& json_params,string& str_err_reason_f
 		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
 	
 	//获取参数--速度
-	unsigned int n_speed_percent = json_params["speed_percent"].asInt();
+	//unsigned int n_speed_percent = json_params["speed_percent"].asInt();
 
 	//构造参数
-	Json::Value json_conn_value;
+	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
 	json_conn_value[ms_str_carve_type_key] = m_str_carve_type;
-
-	//设置最大等待时间
-	unsigned short nMax_wait_time = 1000;
-	string str_key = "max_wait_time";
-	if (json_params.isMember(str_key))
-	{//参数中含有最大等待时间
-		nMax_wait_time = json_params[str_key].asInt();
-	}
-
-	json_conn_value[CCarve::ms_str_max_wait_time_key] = nMax_wait_time;
 
 	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		//宝元库所需要的参数
 		json_conn_value[ms_str_conn_idx_key] = m_nConn_idx;
-		json_conn_value["speed_percent"] = n_speed_percent;
 	}
 	else if(false)
 	{
@@ -646,8 +635,8 @@ int CCarve::adjust_speed(const Json::Value& json_params,string& str_err_reason_f
 
 	//调整速度
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->adjust_speed(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to adjust_speed, carve ip:%s, speed percent:%d, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), n_speed_percent, json_conn_value.toStyledString().c_str()
+	businlog_error_return(bSuccess, ("%s | fail to adjust_speed, carve ip:%s, json info:%s, reason:%s"
+		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str()
 		, str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
 	return MSP_SUCCESS;
 }

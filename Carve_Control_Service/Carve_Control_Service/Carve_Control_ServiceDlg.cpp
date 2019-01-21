@@ -15,6 +15,14 @@
 #include <boost_common.h>
 #include <json/json.h>
 #include "../source/carve_manager.h"
+
+//test begin
+#include <boost/property_tree/ptree.hpp>  
+#include <boost/property_tree/ini_parser.hpp>
+//test end
+
+
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -136,9 +144,35 @@ BOOL CCarve_Control_ServiceDlg::OnInitDialog()
 #endif
 	//启动网络模块：创建线程以监听端口
 	//TODO::后面放在其他地方并且设置好ip:port，目前放在这里并写死
-	string str_local_ip  = "192.168.101.21";
-	string str_port = "2350";
+	
+	//test begin    测试配置文件读取
+	string str_local_ip;	//本机ip
+	string str_port;		//本机端口
+
+	boost::property_tree::ptree m_config_operate;
+	string str_config_file = "config/SoftConfig.ini";
+	try
+	{
+		read_ini(str_config_file, m_config_operate);
+		str_local_ip = m_config_operate.get_child("network").get<string>("ip", "");
+		str_port = m_config_operate.get_child("network").get<string>("port", "");
+	}
+	catch (std::exception e)
+	{
+		businlog_error("%s | open config file:%s error", __FUNCTION__, str_config_file.c_str());
+		return false;
+	}
+	//test end    测试配置文件读取
+
+
+	//string str_local_ip  = "192.168.101.77";
+	//string str_port = "8899";
 	size_t nThread_num = 5;
+	if (str_local_ip.empty() == true || str_port.empty() == true)
+	{
+		businlog_error("%s | Configuration file: configuration Defect", __FUNCTION__, str_config_file.c_str());
+		return false;
+	}
 
     ret = singleton_default<CSingleton_Server>::instance().start(
 		str_local_ip, str_port, nThread_num, str_err_reason);

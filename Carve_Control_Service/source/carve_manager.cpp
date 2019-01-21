@@ -399,7 +399,63 @@ int CCarve_Manager::start_engraving(const Json::Value& json_params, string& str_
 		return MSP_ERROR_EXCEPTION;
 	}
 }
+int CCarve_Manager::start_all_engraving(const Json::Value& json_params, Json::Value& json_result,string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	//开始所有雕刻机雕刻
+	try
+	{
+		{
+			//查询所有的已连接设备编号
+			Thread_Read_Lock guard(m_rw_carveId_carvePtr);
+			//判定容器是否为空
+			businlog_error_return_debug_and_user_reason(false == m_map_carveId_carvePtr.empty()
+				, __CLASS_FUNCTION__ << " | there is no carve connected, please connect carve first."
+				, str_err_reason_for_debug, "没有设备被成功连接，请先连接设备", str_err_reason_for_user, MSP_ERROR_NOT_FOUND);
+			for (TYPE_MAP_ITER iter = m_map_carveId_carvePtr.begin();iter!=m_map_carveId_carvePtr.end(); ++iter)
+			{	
+				//判定对象是否合法
+				if (!iter->second)
+				{
+					businlog_error("%s | ptr carve is NULL, carve id:%s" , __CLASS_FUNCTION__, iter->first.c_str());
+					continue;
+				}
+				string str_single_err_for_debug; 
+				string str_single_err_for_user;
+				int ret= iter->second->start(json_params, str_single_err_for_debug, str_single_err_for_user);
+				if (ret!=0)
+				{
+					businlog_error("%s | fail to emergency stop, carve id:%s, reason:%s."
+						, __CLASS_FUNCTION__, iter->second->get_id().c_str(), str_single_err_for_debug.c_str());
+				}
+				Json::Value json_single_resp;
+				//构造结果
+				json_single_resp["ret"] = ret;
+				json_single_resp["errmsg"] = str_single_err_for_debug;
+				json_single_resp["errmsg_for_user"] = sp::toutf8(str_single_err_for_user);
+				json_single_resp[CCarve::ms_str_carve_id_key] = iter->second->get_id();
 
+				//将单个结果添加到结果数组中
+				json_result["results"].append(json_single_resp);
+				//如果出错了，则将错误信息累加
+				if (ret)
+				{
+					str_err_reason_for_debug += "." + str_single_err_for_debug;
+					str_err_reason_for_user += "。" + str_single_err_for_user;
+				}
+			}
+		}
+
+		//函数调用完成,返回成功，单个失败由上层json "results" 节点判断
+		return MSP_SUCCESS;
+	}
+	catch (std::exception& e)
+	{
+		str_err_reason_for_debug = string("Has exception:") + string(e.what());
+		str_err_reason_for_user = "服务异常";
+		businlog_error("%s | err reason:%s.", __CLASS_FUNCTION__, str_err_reason_for_debug.c_str());
+		return MSP_ERROR_EXCEPTION;
+	}
+}
 int CCarve_Manager::upload_1_file(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	try
@@ -674,7 +730,7 @@ int CCarve_Manager::adjust_speed(const Json::Value& json_params, string& str_err
 			ptr_carve = iter->second;
 		}
 		//走到这里，说明找到了对应的雕刻机
-		int ret = ptr_carve-> adjust_speed(json_params, str_err_reason_for_debug, str_err_reason_for_user);
+		int ret = ptr_carve->adjust_speed(json_params, str_err_reason_for_debug, str_err_reason_for_user);
 		businlog_error_return(!ret, ("%s | fail to fast stop carve, carve id:%s, reason:%s."
 			, __CLASS_FUNCTION__, str_carve_id.c_str(), str_err_reason_for_debug.c_str()), ret);
 		return MSP_SUCCESS;

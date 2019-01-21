@@ -153,13 +153,18 @@ namespace http
 			}
 			else if ("download_gcode_OK" == str_cmd)
 			{
-				//下载G代码
+				//下载G代码文件
 				ret = on_upload_file(root, json_result, str_err_reason);
 			}
 			else if("start" == str_cmd)
 			{
-				//开始雕刻
+				//开始单台设备雕刻
 				ret = on_start(root, json_result, str_err_reason);
+			}
+			else if("start_all" == str_cmd)
+			{
+				//开始全部设备雕刻
+				ret = on_start_all(root, json_result, str_err_reason);
 			}
 			else if("emergency_stop_one" == str_cmd)
 			{
@@ -259,8 +264,22 @@ namespace http
 				const Json::Value& json_single_params = json_arr_carveInfo[i];
 				std::string str_err_reason_for_debug;
 				std::string str_err_reason_for_user;
+				
 				//连接雕刻机
-				ret = CCarve_Manager::instance()->connect_carve(json_single_params, str_err_reason_for_debug, str_err_reason_for_user);
+				//未防止单次调用偶尔会失败的情况，循环3次均失败则认为失败
+				for (int nloop_Num =0; nloop_Num<3; ++nloop_Num)
+				{
+					str_err_reason_for_debug = "";
+					str_err_reason_for_user = "";
+					ret = CCarve_Manager::instance()->connect_carve(json_single_params, str_err_reason_for_debug, str_err_reason_for_user);
+					if ( MSP_SUCCESS == ret || 2 == nloop_Num )
+					{
+						break;
+					}
+					boost::this_thread::sleep(boost::posix_time::millisec(300));
+				}
+
+				//ret = CCarve_Manager::instance()->connect_carve(json_single_params, str_err_reason_for_debug, str_err_reason_for_user);
 				Json::Value json_single_resp;
 				//构造结果
 				json_single_resp["ret"] = ret;
@@ -419,6 +438,23 @@ namespace http
 			//注意：返回MSP_SUCCESS表示成功执行，至于执行结果另说
 			return MSP_SUCCESS;
 		}
+		int request_handler::on_start_all(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
+		{
+			int ret = 0;
+			std::string str_err_reason_for_debug;
+			std::string str_err_reason_for_user;
+			//开始全部雕刻
+			ret = CCarve_Manager::instance()->start_all_engraving(json_root,json_result,str_err_reason_for_debug, str_err_reason_for_user);
+			if (ret)
+			{//出错了
+				str_err_reason =  str_err_reason_for_debug;
+			}
+			//判定调用是否成功
+			businlog_error_return(!ret, ("%s | fail to emergency stop all, reason:%s, ret:%d."
+				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), ret), ret);
+			//注意：返回MSP_SUCCESS表示成功执行
+			return MSP_SUCCESS;
+		}
 
 		int request_handler::on_upload_file(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
 		{
@@ -453,8 +489,20 @@ namespace http
 			int ret = 0;
 			std::string str_err_reason_for_debug;
 			std::string str_err_reason_for_user;
-			//上传文件
-			ret = CCarve_Manager::instance()->delete_1_file(json_root, str_err_reason_for_debug, str_err_reason_for_user);
+			//删除文件  
+			//未防止单次调用偶尔会失败的情况，循环3次均失败则认为失败
+			for (int nloop_Num =0; nloop_Num<3; ++nloop_Num)
+			{
+				str_err_reason_for_debug = "";
+				str_err_reason_for_user = "";
+				ret = CCarve_Manager::instance()->delete_1_file(json_root, str_err_reason_for_debug, str_err_reason_for_user);
+				if ( MSP_SUCCESS == ret || 2 == nloop_Num )
+				{
+					break;
+				}
+				boost::this_thread::sleep(boost::posix_time::millisec(300));
+			}
+			
 			//注意：无论成败，都构造结果
 			//构造结果
 			json_result["ret"] = ret;

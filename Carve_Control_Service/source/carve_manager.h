@@ -46,6 +46,7 @@ public:
 	int start_poll_carve_status(string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int stop_poll_carve_status(string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int start_engraving(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int start_all_engraving(const Json::Value& json_params, Json::Value& json_result,string& str_err_reason_for_debug, string& str_err_reason_for_user);
     int upload_1_file(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int emergency_stop_one(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int emergency_stop_all(const Json::Value& json_params,Json::Value& json_result,string& str_err_reason_for_debug, string& str_err_reason_for_user);
