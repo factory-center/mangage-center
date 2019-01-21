@@ -282,7 +282,7 @@ namespace http
 					str_err_reason_for_debug = "";
 					str_err_reason_for_user = "";
 					ret = CCarve_Manager::instance()->connect_carve(json_single_params, str_err_reason_for_debug, str_err_reason_for_user);
-					if ( MSP_SUCCESS == ret || 2 == nloop_Num )
+					if ( MSP_SUCCESS == ret)
 					{
 						break;
 					}
@@ -459,9 +459,6 @@ namespace http
 			{//出错了
 				str_err_reason =  str_err_reason_for_debug;
 			}
-			//判定调用是否成功
-			businlog_error_return(!ret, ("%s | fail to emergency stop all, reason:%s, ret:%d."
-				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), ret), ret);
 			//注意：返回MSP_SUCCESS表示成功执行
 			return MSP_SUCCESS;
 		}
@@ -501,12 +498,12 @@ namespace http
 			std::string str_err_reason_for_user;
 			//删除文件  
 			//未防止单次调用偶尔会失败的情况，循环3次均失败则认为失败
-			for (int nloop_Num =0; nloop_Num<3; ++nloop_Num)
+			for (int nloop_Num = 0; nloop_Num < 3; ++nloop_Num)
 			{
 				str_err_reason_for_debug = "";
 				str_err_reason_for_user = "";
 				ret = CCarve_Manager::instance()->delete_1_file(json_root, str_err_reason_for_debug, str_err_reason_for_user);
-				if ( MSP_SUCCESS == ret || 2 == nloop_Num )
+				if ( MSP_SUCCESS == ret)
 				{
 					break;
 				}
@@ -663,9 +660,6 @@ namespace http
 			{//出错了
 				str_err_reason =  str_err_reason_for_debug;
 			}
-			//判定调用是否成功
-			businlog_error_return(!ret, ("%s | fail to emergency stop all, reason:%s, ret:%d."
-				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), ret), ret);
 			//注意：返回MSP_SUCCESS表示成功执行
 			return MSP_SUCCESS;
 		}
