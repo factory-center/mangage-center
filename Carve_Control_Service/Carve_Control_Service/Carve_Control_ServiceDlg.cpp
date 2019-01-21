@@ -26,13 +26,7 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
-//test begin
-//连接设备
-unsigned int nConn_idx = 0;
-const string str_ip = "192.168.101.212";
-boost::shared_ptr<CCarve> carve_ptr;
-const string str_nc_file_path = "F:\\GitHub\\mangage-center\\Carve_Control_Service\\Win32\\Debug\\1224.nc";
-//test end
+
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 
 class CAboutDlg : public CDialogEx
@@ -126,8 +120,9 @@ BOOL CCarve_Control_ServiceDlg::OnInitDialog()
 	string str_log_path = "../log/emcs.log";
 	businlog_cfg default_cfg(str_log_path.c_str(), "Network Engraving Machine Logging");
 	default_cfg.level(7);
+	string str_cfg_file_path = "./emcs.cfg";
 	//打开配置文件，如果失败，则使用默认日志配置
-	int ret = businlog_open(default_cfg, "emcs.cfg");
+	int ret = businlog_open(default_cfg, str_cfg_file_path.c_str());
 	if (ret)
 	{
 		businlog_error("%s | open log file:%s error, ret:%d", __FUNCTION__, str_log_path.c_str(), ret);
@@ -143,34 +138,31 @@ BOOL CCarve_Control_ServiceDlg::OnInitDialog()
 	businlog_error_return(!ret, ("%s | start_poll_carve_status failed, reason:%s", __FUNCTION__, str_err_reason_for_debug.c_str()), false);
 #endif
 	//启动网络模块：创建线程以监听端口
-	//TODO::后面放在其他地方并且设置好ip:port，目前放在这里并写死
+	//从配置文件中读取本地ip和port
 	
 	//test begin    测试配置文件读取
 	string str_local_ip;	//本机ip
 	string str_port;		//本机端口
 
-	boost::property_tree::ptree m_config_operate;
-	string str_config_file = "config/SoftConfig.ini";
+	boost::property_tree::ptree pt_config, pt_section;
 	try
 	{
-		read_ini(str_config_file, m_config_operate);
-		str_local_ip = m_config_operate.get_child("network").get<string>("ip", "");
-		str_port = m_config_operate.get_child("network").get<string>("port", "");
+		read_ini(str_cfg_file_path, pt_config);
+		string str_section_name = "network";
+		pt_section = pt_config.get_child(str_section_name); //失败时会抛出异常
+		str_local_ip = pt_section.get<string>("ip");
+		str_port = pt_section.get<string>("port");
 	}
-	catch (std::exception e)
+	catch (std::exception& e)
 	{
-		businlog_error("%s | open config file:%s error", __FUNCTION__, str_config_file.c_str());
+		businlog_error("%s | open config file:%s error, err reason:%s", __FUNCTION__, str_cfg_file_path.c_str(), e.what());
 		return false;
 	}
 	//test end    测试配置文件读取
-
-
-	//string str_local_ip  = "192.168.101.77";
-	//string str_port = "8899";
 	size_t nThread_num = 5;
 	if (str_local_ip.empty() == true || str_port.empty() == true)
 	{
-		businlog_error("%s | Configuration file: configuration Defect", __FUNCTION__, str_config_file.c_str());
+		businlog_error("%s | Configuration file: configuration Defect", __FUNCTION__, str_cfg_file_path.c_str());
 		return false;
 	}
 
