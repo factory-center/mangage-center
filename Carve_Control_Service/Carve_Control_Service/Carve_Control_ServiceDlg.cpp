@@ -139,11 +139,9 @@ BOOL CCarve_Control_ServiceDlg::OnInitDialog()
 #endif
 	//启动网络模块：创建线程以监听端口
 	//从配置文件中读取本地ip和port
-	
-	//test begin    测试配置文件读取
 	string str_local_ip;	//本机ip
 	string str_port;		//本机端口
-
+	size_t nThread_num = 5;
 	boost::property_tree::ptree pt_config, pt_section;
 	try
 	{
@@ -152,19 +150,24 @@ BOOL CCarve_Control_ServiceDlg::OnInitDialog()
 		pt_section = pt_config.get_child(str_section_name); //失败时会抛出异常
 		str_local_ip = pt_section.get<string>("ip");
 		str_port = pt_section.get<string>("port");
+		nThread_num = pt_section.get<int>("receiver_num", 5);
 	}
 	catch (std::exception& e)
 	{
 		businlog_error("%s | open config file:%s error, err reason:%s", __FUNCTION__, str_cfg_file_path.c_str(), e.what());
 		return false;
 	}
-	//test end    测试配置文件读取
-	size_t nThread_num = 5;
-	if (str_local_ip.empty() == true || str_port.empty() == true)
+	if (str_local_ip.empty())
 	{
-		businlog_error("%s | Configuration file: configuration Defect", __FUNCTION__, str_cfg_file_path.c_str());
+		businlog_error("%s | fail to read ip from config file:%s.", __FUNCTION__, str_cfg_file_path.c_str());
 		return false;
 	}
+	if (str_port.empty())
+	{
+		businlog_error("%s | fail to read port from config file:%s.", __FUNCTION__, str_cfg_file_path.c_str());
+		return false;
+	}
+
 
     ret = singleton_default<CSingleton_Server>::instance().start(
 		str_local_ip, str_port, nThread_num, str_err_reason);

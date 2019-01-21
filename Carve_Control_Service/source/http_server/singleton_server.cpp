@@ -51,7 +51,7 @@ int CSingleton_Server::start(const std::string& str_ip, const std::string& str_p
 		m_thread_server = boost::thread(boost::bind(&http::server3::server::run, m_server_ptr));
 		//不关心退出状态，则可以线程分离
 		//	m_thread_server.detach();
-		businlog_crit("%s | Start Server successfully, ip:%s, port:%s", __CLASS_FUNCTION__, str_ip.c_str(), str_port.c_str());
+		businlog_crit("%s | Start Server successfully, ip:%s, port:%s, receivers:%d", __CLASS_FUNCTION__, str_ip.c_str(), str_port.c_str(), nThreads_num);
 		return MSP_SUCCESS;
 	}
 	catch (std::exception& e)
