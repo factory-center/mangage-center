@@ -5,12 +5,33 @@
 #include <fstream>
 #include <strsafe.h>
 #include "../source/busin_log.h"
+#include <utils/Resource_Manager.h>
 using namespace std;
-// Display the error message and exit the process
-void ErrorExit(LPTSTR lpszFunction) 
+//将LPCTSTR转换为string
+int lpct2str(LPCTSTR lpsz, size_t nSrc_size, string& str_dst)
+{
+	//分配目标缓存
+	char *pDst_buffer = NULL;
+	CNewBuffMngr<char> buffer_mng(pDst_buffer, nSrc_size);
+
+	//转换
+	int nRet = WideCharToMultiByte(CP_OEMCP, 0, lpsz, -1, pDst_buffer, nSrc_size, NULL, FALSE);
+
+	if(nRet <= 0)
+	{
+		cout << "转换字符串失败,错误码:" << nRet << endl;
+		businlog_error("%s | fail to WideCharToMultiByte, ret:%d.", __FUNCTION__, nRet);
+		return -1;
+	}
+	//转换成功
+	str_dst = string(pDst_buffer);
+	return 0;
+}
+// Record/Display the error message and exit the process
+void record_err_and_exit(LPTSTR lpszFunction) 
 { 
 	// Retrieve the system error message for the last-error code
-
+    string str_err_reason;
 	LPVOID lpMsgBuf;
 	LPVOID lpDisplayBuf;
 	DWORD dw = GetLastError(); 
@@ -33,9 +54,16 @@ void ErrorExit(LPTSTR lpszFunction)
 		LocalSize(lpDisplayBuf) / sizeof(TCHAR),
 		TEXT("%s failed with error %d: %s"), 
 		lpszFunction, dw, lpMsgBuf); 
-	MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK); //以对话框形式显示
-	//TODO::目前没有成功将错误日志写入文件
-	businlog_error("%s | err reason:%s", __FUNCTION__, (LPCTSTR)lpDisplayBuf);
+//	MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK); //以对话框形式显示
+
+	int ret  = lpct2str((LPCTSTR)lpDisplayBuf, LocalSize(lpDisplayBuf) / sizeof(TCHAR), str_err_reason);
+	if (ret)
+	{
+		businlog_error("%s | fail to parse LPCTSTR to String, ret:%d", __FUNCTION__, ret);
+	}
+	//将错误日志写入文件
+	businlog_error("%s | err reason:%s", __FUNCTION__, str_err_reason.c_str());
+	cout << __FUNCTION__ << " | err reason:" << str_err_reason << endl;
 	LocalFree(lpMsgBuf);
 	LocalFree(lpDisplayBuf);
 	businlog_warn("%s | 退出程序", __FUNCTION__);
@@ -69,6 +97,7 @@ int _tmain(int argc, TCHAR *argv[])
 			//该功能不会使用搜索路径。此参数必须包含文件扩展名; 没有默认的扩展名
 			LPTSTR lp_app_name =  L"./Carve_Control_Service.exe";
 			//命令行字符串(不能为此参数不能是只读内存的指针：例如const变量或文字字符串)
+			//如果命令行参数是常量字符串，则该函数可能会导致访问冲突
 			//TODO::后面可以从argv中来获取命令行
 			// 创建子进程，判断是否执行成功 
 			if(!CreateProcess(
@@ -84,7 +113,7 @@ int _tmain(int argc, TCHAR *argv[])
 				, &pi)) 
 			{
 				cout << "创建目标进程失败" << std::endl;
-				ErrorExit(TEXT("CreateProcess"));
+				record_err_and_exit(TEXT("CreateProcess"));
 				return -1; 
 			} 
 			//进程执行成功，打印进程信息 
