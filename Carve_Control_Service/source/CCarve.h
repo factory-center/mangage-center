@@ -37,6 +37,7 @@ struct SCarve_Info
 	string str_machine_ip; //设备ip地址
 	ECARVE_STATUS_TYPE eCarve_status; //雕刻机状态
 	size_t nTotal_engraving_time; //雕刻机总的雕刻时间，单位分钟
+	size_t nSingle_engraving_time; //雕刻机单次加工时间，单位分钟
 	string str_gCode_no; //G代码编号
 	int nCurrent_line_num; //当前雕刻的G代码行号
 	string str_id; //设备编号
@@ -63,6 +64,7 @@ public:
 	int release_resource(string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int adjust_speed(const Json::Value& json_params,string& str_err_reason_for_debug, string& str_err_reason_for_user);
+	int  get_engraving_time(const Json::Value& json_params, size_t& nTotal_engraving_time_minute, size_t& nSingle_engraving_time_minute, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	//雕刻成功后调用
 	void start_count_engraving_time();
 	//雕刻完成后调用

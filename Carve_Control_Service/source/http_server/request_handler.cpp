@@ -399,9 +399,7 @@ namespace http
 			json_result["taskNo"] = carve_info.str_task_no;
 			json_result["machine_ip"] = carve_info.str_machine_ip;
 			json_result["currentStatus"] = carve_info.eCarve_status;
-#ifdef SERVER_WITH_CONTROL_LOGIC
 			json_result["worktime"] = carve_info.nTotal_engraving_time;
-#endif
 			json_result["gNo"] = carve_info.str_gCode_no;
 			json_result["rowNo"] = carve_info.nCurrent_line_num;
 			if (json_root.isMember(CCarve::ms_str_carve_id_key))

@@ -318,6 +318,26 @@ bool CCarve_Common_Lib_Tool::adjust_speed(const Json::Value& json_conn_value, st
 	return false;
 }
 
+bool CCarve_Common_Lib_Tool::get_engraving_time(const Json::Value& json_conn_value, size_t& nTotal_engraving_time_minute, size_t& nSingle_engraving_time_minute, string& str_err_reason_for_debug, string& str_err_reason_for_user)
+{
+	//获取雕刻机厂商和设备型号信息
+	int nfactory_type = CARVE_FACTORY_TYPE_MAX;
+	string str_carve_type_key;
+	bool bSuccess = get_carve_factory_and_type(json_conn_value, nfactory_type, str_carve_type_key, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(bSuccess, ("%s | fail to get carve factory and type, reason:%s"
+		, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str()), false);
+
+	if (is_baoyuan(nfactory_type, str_carve_type_key))
+	{//是宝元
+		return CBaoyuan_Lib::instance()->get_engraving_time(json_conn_value, nTotal_engraving_time_minute, nSingle_engraving_time_minute, str_err_reason_for_debug, str_err_reason_for_user);
+	}
+	else
+	{
+		//TODO::判定是否为其他的库
+	}
+	return false;
+}
+
 /************************************
 * Method:    acquire_resource
 * Brief:  申请资源，并放入josn中
