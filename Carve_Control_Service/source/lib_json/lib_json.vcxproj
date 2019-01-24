@@ -36,6 +36,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Od|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -183,8 +184,15 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)json_lib.lib</OutputFile>
+      <OutputFile>$(OutDir)lib_json.lib</OutputFile>
     </Lib>
+    <CustomBuildStep>
+      <Command>copy "$(TargetDir)$(TargetName).lib" "$(SolutionDir)\lib32\json"</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>%Outputs</Outputs>
+      <Inputs>%(Inputs)</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Od|Win32'">
     <ClCompile>
