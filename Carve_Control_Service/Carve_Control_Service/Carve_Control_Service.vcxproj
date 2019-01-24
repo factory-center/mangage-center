@@ -116,9 +116,7 @@
     </ResourceCompile>
     <CustomBuildStep>
       <Command>copy "$(ProjectDir)\..\conf\emcs.cfg" "$(SolutionDir)$(Platform)\$(Configuration)\"
-copy "$(ProjectDir)\..\lib32\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configuration)\"
-copy "$(ProjectDir)\..\lib32\boost\*" "$(SolutionDir)$(Platform)\$(Configuration)\"
-copy "$(ProjectDir)\..\lib32\json\*" "$(SolutionDir)$(Platform)\$(Configuration)\"</Command>
+copy "$(ProjectDir)\..\lib32\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configuration)\"</Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>%Output</Outputs>
@@ -149,9 +147,7 @@ copy "$(ProjectDir)\..\lib32\json\*" "$(SolutionDir)$(Platform)\$(Configuration)
     </ResourceCompile>
     <CustomBuildStep>
       <Command>copy "$(ProjectDir)\..\conf\emcs.cfg" "$(SolutionDir)$(Platform)\$(Configuration)\"
-copy "$(ProjectDir)\..\lib64\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configuration)\"
-copy "$(ProjectDir)\..\lib64\boost\*" "$(SolutionDir)$(Platform)\$(Configuration)\"
-copy "$(ProjectDir)\..\lib64\json\*" "$(SolutionDir)$(Platform)\$(Configuration)\"</Command>
+copy "$(ProjectDir)\..\lib64\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configuration)\"</Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>%Output</Outputs>
