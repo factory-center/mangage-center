@@ -281,7 +281,7 @@ int CCarve_Manager::get_all_carves_info(const Json::Value& json_params, Json::Va
 				json_single_resp["machine_ip"] = single_carve_info.str_machine_ip;
 				json_single_resp["currentStatus"] = single_carve_info.eCarve_status;
 				json_single_resp["worktime"] = (int)single_carve_info.nTotal_engraving_time;
-				json_single_resp["gNo"] = single_carve_info.str_gCode_no;
+				json_single_resp["gno"] = single_carve_info.str_gCode_no;
 				json_single_resp["rowNo"] = single_carve_info.nCurrent_line_num;
 				//将单个结果添加到结果数组中
 				json_result["All_machines"].append(json_single_resp);

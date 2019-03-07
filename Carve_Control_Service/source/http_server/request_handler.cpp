@@ -400,7 +400,7 @@ namespace http
 			json_result["machine_ip"] = carve_info.str_machine_ip;
 			json_result["currentStatus"] = carve_info.eCarve_status;
 			json_result["worktime"] = (int)carve_info.nTotal_engraving_time;
-			json_result["gNo"] = carve_info.str_gCode_no;
+			json_result["gno"] = carve_info.str_gCode_no;
 			json_result["rowNo"] = carve_info.nCurrent_line_num;
 			if (json_root.isMember(CCarve::ms_str_carve_id_key))
 			{

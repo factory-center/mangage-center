@@ -726,7 +726,7 @@ const string CCarve::ms_str_carve_id_key = "carveId";
 
 const string CCarve::ms_str_task_no_key = "taskNo";
 
-const string CCarve::ms_str_gCode_no_key = "gNo";
+const string CCarve::ms_str_gCode_no_key = "gno";
 
 const string CCarve::ms_str_worktime_key = "worktime";
 
