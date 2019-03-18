@@ -112,7 +112,13 @@ BOOL CCarve_Control_ServiceDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
-	ShowWindow(SW_MAXIMIZE);
+	//ShowWindow(SW_MAXIMIZE);
+	ShowWindow(SW_HIDE);
+	WINDOWPLACEMENT wp;
+	wp.length=sizeof(WINDOWPLACEMENT);
+	wp.flags = WPF_RESTORETOMAXIMIZED;
+	wp.showCmd = SW_HIDE;
+	SetWindowPlacement(&wp);
 
 	// TODO: 在此添加额外的初始化代码
 	//TODO::临时这么写的，初始化失败，进程应该报错退出的
