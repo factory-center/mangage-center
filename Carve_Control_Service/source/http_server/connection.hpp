@@ -53,6 +53,7 @@ namespace http {
 				std::size_t bytes_transferred);
 			//从请求中获取http body
 			int get_http_body(const char* buf, size_t len, std::string& str_json_body, std::string& str_err_reason);
+			int get_http_body(const std::string& str_medley_http_message, std::string& str_json_body, std::string& str_err_reason);
 			/// Handle completion of a write operation.
 			void handle_write(const boost::system::error_code& e);
 			//出错了，直接返回bad_request到服务端
