@@ -4,7 +4,8 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/container/detail/singleton.hpp>
-using  namespace boost::container::container_detail;
+using  namespace boost::container::dtl;
+
 typedef boost::mutex                   Uni_Mutex;
 typedef boost::shared_mutex            Thread_WR_Mutex;
 typedef boost::unique_lock<Thread_WR_Mutex>   Thread_Write_Lock;

@@ -1,0 +1,203 @@
+
+// Carve_Control_ServiceDlg.cpp : 实现文件
+//
+
+//#include "afxdialogex.h"
+#ifdef win32
+	#include <SDKDDKVer.h>
+#endif
+
+#include "source/busin_log.h"
+#include "source/CCarve.h"
+#include "utils/msp_errors.h"
+#include "source/carve_common_lib.h"
+#include "source/http_server/server.hpp"
+#include "source/http_server/singleton_server.h"
+#include <boost_common.h>
+#include <json/json.h>
+#include "source/carve_manager.h"
+#include <boost/property_tree/ptree.hpp>  
+#include <boost/property_tree/ini_parser.hpp>
+
+//#pragma comment( linker, "/subsystem:windows /entry:mainCRTStartup" )
+
+
+
+// CCarve_Control_ServiceDlg 消息处理程序
+
+int main()
+{
+
+	// TODO: 在此添加额外的初始化代码
+	//TODO::临时这么写的，初始化失败，进程应该报错退出的
+	//默认日志配置，具体参见类型Log_Cfg_T
+	string str_log_path = "../log/emcs.log";
+	businlog_cfg default_cfg(str_log_path.c_str(), "Network Engraving Machine Logging");
+	default_cfg.level(7);
+	string str_cfg_file_path = "./emcs.cfg";
+	//打开配置文件，如果失败，则使用默认日志配置
+	int ret = businlog_open(default_cfg, str_cfg_file_path.c_str());
+	if (ret)
+	{
+		businlog_error("%s | open log file:%s error, ret:%d", __FUNCTION__, str_log_path.c_str(), ret);
+		return false;
+	}
+	//初始化库
+	string str_err_reason;
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->init(str_err_reason);
+	businlog_error_return(bSuccess, ("%s | fail to init CCarve_Common_Lib_Tool, reason:%s", __FUNCTION__, str_err_reason.c_str()), false);
+	string str_err_reason_for_debug, str_err_reason_for_user;
+#ifdef SERVER_WITH_CONTROL_LOGIC
+	ret = CCarve_Manager::instance()->start_poll_carve_status(str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(!ret, ("%s | start_poll_carve_status failed, reason:%s", __FUNCTION__, str_err_reason_for_debug.c_str()), false);
+#endif
+	//启动网络模块：创建线程以监听端口
+	//从配置文件中读取本地ip和port
+	string str_local_ip;	//本机ip
+	string str_port;		//本机端口
+	size_t nThread_num = 5;
+	boost::property_tree::ptree pt_config, pt_section;
+	try
+	{
+		read_ini(str_cfg_file_path, pt_config);
+		string str_section_name = "network";
+		pt_section = pt_config.get_child(str_section_name); //失败时会抛出异常
+		str_local_ip = pt_section.get<string>("ip");
+		str_port = pt_section.get<string>("port");
+		nThread_num = pt_section.get<int>("receiver_num", 5);
+	}
+	catch (std::exception& e)
+	{
+		businlog_error("%s | open config file:%s error, err reason:%s", __FUNCTION__, str_cfg_file_path.c_str(), e.what());
+		return false;
+	}
+	if (str_local_ip.empty())
+	{
+		businlog_error("%s | fail to read ip from config file:%s.", __FUNCTION__, str_cfg_file_path.c_str());
+		return false;
+	}
+	if (str_port.empty())
+	{
+		businlog_error("%s | fail to read port from config file:%s.", __FUNCTION__, str_cfg_file_path.c_str());
+		return false;
+	}
+
+	businlog_info("%s | start:ip[%s],port[%s]", __FUNCTION__, str_local_ip.c_str(), str_port.c_str());
+	ret = singleton_default<CSingleton_Server>::instance().start(
+		str_local_ip, str_port, nThread_num, str_err_reason);
+
+	businlog_error_return(!ret, ("%s | fail to start Server, reason:%s", __FUNCTION__, str_err_reason.c_str()), false);
+
+	while (1)
+	{
+		sleep(10);
+		businlog_error("%s","carve control service sleep 10s");
+	}
+
+	return true;  // 除非将焦点设置到控件，否则返回 true
+}
+
+
+
+/*
+// test begin
+//返回值 0：success; 非0：错误码
+int test_connect()
+{
+	string str_err_reason_for_debug;
+	string str_err_reason_for_user;
+	int ret = 0;
+	ret = carve_ptr->acquire_resource(str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(0 == ret, ("%s | fail to acquire resource, ip:%s, reason:%s"
+		, __FUNCTION__, str_ip.c_str(), str_err_reason_for_debug.c_str()), ret);
+	ret = carve_ptr->connect(str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(0 == ret, ("%s | fail to connect ip:%s, reason:%s"
+		, __FUNCTION__, str_ip.c_str(), str_err_reason_for_debug.c_str()), ret);
+	//更新设备为继续状态
+	ret = carve_ptr->set_continue_status(0, 1000, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(0 == ret, ("%s | fail to  set_continue_status, ip:%s, reason:%s"
+		, __FUNCTION__, str_ip.c_str(), str_err_reason_for_debug.c_str()), ret);
+	//重置设备
+	carve_ptr->reset(1000, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(0 == ret, ("%s | fail to  reset_carve, ip:%s, reason:%s"
+		, __FUNCTION__, str_ip.c_str(), str_err_reason_for_debug.c_str()), ret);
+
+	return 0;
+}
+int test_upload()
+{
+	return 0;
+}
+int test_query_status(string& str_carve_status_description)
+{
+	string str_err_reason_for_debug;
+	string str_err_reason_for_user;
+	ECARVE_STATUS_TYPE eCarve_status = CARVE_STATUS_OFFLINE;
+	int ret = carve_ptr->get_carve_status(eCarve_status, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(0 == ret, ("%s | fail to get carve status, nConn:%d, reason:%s"
+		, __FUNCTION__, nConn_idx, str_err_reason_for_debug.c_str()), ret);
+	//获取状态码对应的描述信息
+	bool bSuccess = CCarve_Common_Lib_Tool::instance()->get_carve_status_description(eCarve_status, str_carve_status_description, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(bSuccess, ("%s | fail to get carve status description", __FUNCTION__), -1);
+	return 0;
+}
+int test_disconnect()
+{
+	string str_err_reason_for_debug, str_err_reason_for_user;
+	//断开设备
+	int ret = carve_ptr->disconnect(str_err_reason_for_debug, str_err_reason_for_user);
+	//注意：可能导致资源未释放就返回了
+	businlog_error_return(0 == ret, ("%s | fail to disconnect, nConn:%d, reason:%s"
+		, __FUNCTION__, nConn_idx, str_err_reason_for_debug.c_str()), ret);
+	ret = carve_ptr->release_resource(str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(0 == ret, ("%s | fail to release resource, nConn:%d, reason:%s"
+		, __FUNCTION__, nConn_idx, str_err_reason_for_debug.c_str()), ret);
+	return 0;
+}
+
+int test_start()
+{
+	string str_err_reason_for_debug, str_err_reason_for_user;
+	int ret = carve_ptr->start(1000, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(0 == ret, ("%s | fail to start, nc path:%s, ret:%d, reason:%s"
+		, __FUNCTION__, str_nc_file_path.c_str(), ret, str_err_reason_for_debug.c_str()), ret);
+	return 0;
+}
+int test_pause()
+{
+	string str_err_reason_for_debug, str_err_reason_for_user;
+	//暂停雕刻
+	return carve_ptr->pause(1000, str_err_reason_for_debug, str_err_reason_for_user);
+}
+int test_stop_fast()
+{
+	string str_err_reason_for_debug, str_err_reason_for_user;
+	//急停
+	return carve_ptr->stop_fast(1000, str_err_reason_for_debug, str_err_reason_for_user);
+}
+
+int test_cancel_stop_fast()
+{
+	string str_err_reason_for_debug, str_err_reason_for_user;
+	//取消急停
+	return carve_ptr->cancel_fast_stop(1000, str_err_reason_for_debug, str_err_reason_for_user);
+}
+int test_delete_file()
+{
+	string str_err_reason_for_debug, str_err_reason_for_user;
+	int ret = carve_ptr->delete_1_file(str_nc_file_path, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(0 == ret, ("%s | fail to delete file:%s, nConn:%d, reason:%s"
+		, __FUNCTION__, str_nc_file_path.c_str(), nConn_idx, str_err_reason_for_debug.c_str()), ret);
+	return 0;
+}
+int test_get_line_num(int& nLine_num)
+{
+	string str_err_reason_for_debug, str_err_reason_for_user;
+	int ret = carve_ptr->get_current_line_num(nLine_num, str_err_reason_for_debug, str_err_reason_for_user);
+	businlog_error_return(0 == ret, ("%s | fail to get line num:%s, nConn:%d, reason:%s"
+		, __FUNCTION__, str_nc_file_path.c_str(), nConn_idx, str_err_reason_for_debug.c_str()), ret);
+	return 0;
+}
+//test end
+*/
+

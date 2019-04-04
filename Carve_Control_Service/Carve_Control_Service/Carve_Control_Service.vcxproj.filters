@@ -66,21 +66,6 @@
     <ClInclude Include="..\source\CBaoyuan_Lib_Tool.h">
       <Filter>头文件\Baoyuan</Filter>
     </ClInclude>
-    <ClInclude Include="Carve_Control_Service.h">
-      <Filter>头文件\dlg</Filter>
-    </ClInclude>
-    <ClInclude Include="Carve_Control_ServiceDlg.h">
-      <Filter>头文件\dlg</Filter>
-    </ClInclude>
-    <ClInclude Include="Resource.h">
-      <Filter>头文件\dlg</Filter>
-    </ClInclude>
-    <ClInclude Include="stdafx.h">
-      <Filter>头文件\dlg</Filter>
-    </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>头文件\dlg</Filter>
-    </ClInclude>
     <ClInclude Include="..\source\CCarve.h">
       <Filter>头文件\device</Filter>
     </ClInclude>
@@ -143,9 +128,6 @@
     <ClCompile Include="..\source\CCarve.cpp">
       <Filter>源文件\device</Filter>
     </ClCompile>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>源文件\dlg</Filter>
-    </ClCompile>
     <ClCompile Include="..\source\carve_common_lib.cpp">
       <Filter>头文件\carve_common_lib</Filter>
     </ClCompile>
@@ -185,26 +167,8 @@
     <ClCompile Include="..\source\carve_manager.cpp">
       <Filter>源文件\device</Filter>
     </ClCompile>
-    <ClCompile Include="Carve_Control_Service.cpp">
-      <Filter>源文件\dlg</Filter>
-    </ClCompile>
     <ClCompile Include="Carve_Control_ServiceDlg.cpp">
       <Filter>源文件\dlg</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="Carve_Control_Service.rc">
-      <Filter>资源文件</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="res\Carve_Control_Service.rc2">
-      <Filter>资源文件</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="res\Carve_Control_Service.ico">
-      <Filter>资源文件</Filter>
-    </Image>
   </ItemGroup>
 </Project>
