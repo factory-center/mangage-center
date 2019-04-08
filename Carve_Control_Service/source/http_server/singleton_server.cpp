@@ -94,3 +94,9 @@ const std::string CSingleton_Server::get_port() const
 		return std::string();
 	}
 }
+
+void CSingleton_Server::thread_join()
+{
+	businlog_info("%s | thread join", __FUNCTION__);
+	m_thread_server.join();
+}

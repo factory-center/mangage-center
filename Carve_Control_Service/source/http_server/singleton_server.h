@@ -50,6 +50,8 @@ public:
 	void stop();
 	const std::string get_ip() const;
 	const std::string get_port() const;
+	void thread_join();
+
 protected:
 private:
 	boost::thread m_thread_server;
