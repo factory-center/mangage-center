@@ -220,9 +220,6 @@ copy "$(ProjectDir)\..\lib32\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configurati
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\include\baoyuan\scif2.h" />
     <ClInclude Include="..\include\baoyuan\scif2_define.h" />
     <ClInclude Include="..\include\boost_common.h" />
@@ -248,6 +245,7 @@ copy "$(ProjectDir)\..\lib32\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configurati
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\source\carve_common_lib.cpp" />
+    <ClCompile Include="..\source\Carve_Control_ServiceDlg.cpp" />
     <ClCompile Include="..\source\carve_manager.cpp" />
     <ClCompile Include="..\source\CBaoyuan_Lib_Tool.cpp" />
     <ClCompile Include="..\source\CCarve.cpp" />
@@ -263,7 +261,6 @@ copy "$(ProjectDir)\..\lib32\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configurati
     <ClCompile Include="..\source\http_server\server.cpp" />
     <ClCompile Include="..\source\http_server\singleton_server.cpp" />
     <ClCompile Include="..\source\log_base.cpp" />
-    <ClCompile Include="Carve_Control_ServiceDlg.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
