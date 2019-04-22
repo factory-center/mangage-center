@@ -18,7 +18,7 @@
 #include "singleton_server.h"
 #include "server.hpp"
 #include <boost/thread.hpp>
-#include "../busin_log.h"
+#include "../source/CSpdLog.h"
 #include "utils/msp_errors.h"
 #ifdef _WINDOWS
 #define __CLASS_FUNCTION__ ((std::string(__FUNCTION__)).c_str()) 
@@ -45,19 +45,24 @@ int CSingleton_Server::start(const std::string& str_ip, const std::string& str_p
 		// Initialise the server.
 		m_server_ptr.reset(new http::server3::server(str_ip, str_port, "./doc", nThreads_num));
 		int ret = m_server_ptr->init(str_err_reason);
-		businlog_error_return(!ret, ("%s | fail to init server, ip:%s, port:%s, thread num:%d, reason:%s"
-			, __CLASS_FUNCTION__, str_ip.c_str(), str_port.c_str(), nThreads_num, str_err_reason.c_str()), ret);
+		if (ret)
+		{
+			LError("fail to init server, ip:{}, port:{}, thread num:{}, reason:{}", str_ip, str_port, nThreads_num, str_err_reason);
+			return ret;
+		}
+
+
 		//创建一个线程
 		m_thread_server = boost::thread(boost::bind(&http::server3::server::run, m_server_ptr));
 		//不关心退出状态，则可以线程分离
 		//	m_thread_server.detach();
-		businlog_crit("%s | Start Server successfully, ip:%s, port:%s, receivers:%d", __CLASS_FUNCTION__, str_ip.c_str(), str_port.c_str(), nThreads_num);
+		LCritical("Start Server successfully, ip:{}, port:{}, receivers:{}", str_ip.c_str(), str_port.c_str(), nThreads_num);
 		return MSP_SUCCESS;
 	}
 	catch (std::exception& e)
 	{
 		str_err_reason = "Has exception:" + std::string(e.what());
-		businlog_error("%s | has exception:%s", __CLASS_FUNCTION__, e.what());
+		LError("has exception:{}", e.what());
 		return MSP_ERROR_EXCEPTION;
 	}
 }
@@ -97,6 +102,6 @@ const std::string CSingleton_Server::get_port() const
 
 void CSingleton_Server::thread_join()
 {
-	businlog_info("%s | thread join", __FUNCTION__);
+	LInfo("thread join");
 	m_thread_server.join();
 }

@@ -13,7 +13,7 @@
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <vector>
-#include "../busin_log.h"
+#include "../source/CSpdLog.h"
 #include "utils/msp_errors.h"
 #include <boost/asio/socket_base.hpp>
 #ifdef _WINDOWS
@@ -65,14 +65,14 @@ namespace http {
 			}
 			catch (boost::thread_interrupted& )//捕获线程中断异常，此异常为空异常的
 			{
-				businlog_warn("%s | thread interrupted", __CLASS_FUNCTION__);
+				LWarn("thread interrupted");
 			}
 
 		}
 
 		void server::start_accept()
 		{
-			businlog_tracer_perf(server::start_accept);
+			LTrace("server::start_accept");
 			new_connection_.reset(new connection(io_service_, request_handler_));
 			acceptor_.async_accept(new_connection_->socket(),
 				boost::bind(&server::handle_accept, shared_from_this(),
@@ -81,21 +81,21 @@ namespace http {
 
 		void server::handle_accept(const boost::system::error_code& e)
 		{
-			businlog_tracer_perf(server::handle_accept);
+			LTrace("server::handle_accept");
 			if (!e)
 			{//未出错
 				new_connection_->start_asyn_operate();
 			}
 			else
 			{//出错了
-				businlog_error("%s | has error, reason:%s, err code:%d", __CLASS_FUNCTION__, e.message().c_str(), e.value());
+				LError("has error, reason:{}, err code:{}", e.message().c_str(), e.value());
 			}
 			start_accept();
 		}
 
 		void server::handle_stop()
 		{
-			businlog_tracer_perf(server::handle_stop);
+			LTrace("server::handle_stop");
 			io_service_.stop();
 		}
 
@@ -109,7 +109,7 @@ namespace http {
 		************************************/
 		int server::init(std::string& str_err_reason)
 		{
-			businlog_tracer_perf(server::init);
+			LTrace("server::init");
 			try
 			{
 				// Register to handle the signals that indicate when the server should exit.
@@ -127,29 +127,44 @@ namespace http {
 				boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(query);
 				boost::system::error_code err;
 				acceptor_.open(endpoint.protocol(), err);
-				businlog_error_return_err_reason(!err, __CLASS_FUNCTION__ <<" | fail to open, local ip:" << m_str_local_ip
-					<< ", port:" << m_str_port << ", reason:" << err.message(), str_err_reason, err.value());
+				if (err)
+				{
+					LError("fail to open, local ip:{}, port:{}, reason:{}", m_str_local_ip, m_str_port, err.message());
+					str_err_reason = "fail to open, local ip:" + m_str_local_ip + ", port:" + m_str_port + ",reason:" + err.message();
+					return err.value();
+				}
+
 				acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
 				acceptor_.bind(endpoint, err);
-				businlog_error_return_err_reason(!err, __CLASS_FUNCTION__ << " | fail to bind, local ip:" << m_str_local_ip
-					<< ", port:" << m_str_port << ", reason:" << err.message(), str_err_reason, err.value());
+				if (err)
+				{
+					LError("fail to bind, local ip:{}, port:{}, reason:{}", m_str_local_ip, m_str_port, err.message());
+					str_err_reason = "fail to open, local ip:" + m_str_local_ip + ", port:" + m_str_port + ",reason:" + err.message();
+					return err.value();
+				}
+
 				acceptor_.listen(boost::asio::socket_base::max_connections, err);
-				businlog_error_return_err_reason(!err, __CLASS_FUNCTION__ << " | fail to listen, local ip:" << m_str_local_ip
-					<< ", port:" << m_str_port << ", reason:" << err.message(), str_err_reason, err.value());
+				if (err)
+				{
+					LError("fail to listen, local ip:{}, port:{}, reason:{}", m_str_local_ip, m_str_port, err.message());
+					str_err_reason = "fail to open, local ip:" + m_str_local_ip + ", port:" + m_str_port + ",reason:" + err.message();
+					return err.value();
+				}
+
 				start_accept();
 				return MSP_SUCCESS;
 			}
 			catch (std::exception& e)
 			{
 				str_err_reason = std::string(e.what());
-				businlog_error("%s | Has exception:%s", __CLASS_FUNCTION__, str_err_reason.c_str());
+				LError("Has exception:{}", str_err_reason.c_str());
 				return MSP_ERROR_EXCEPTION;
 			}
 		}
 
 		server::~server()
 		{//by minglu
-			businlog_tracer(server::~server);
+			LTrace("server::~server");
 //			stop();
 			if (acceptor_.is_open())
 			{

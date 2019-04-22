@@ -3,7 +3,7 @@
 #include "http_settings.h"
 #include <boost/make_shared.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
-#include "../busin_log.h"
+#include "../source/CSpdLog.h"
 #include "utils/msp_errors.h"
 const char *default_http_response_ = "HTTP/1.1 200 OK\r\n";
 
@@ -94,7 +94,7 @@ int deal_http_msg::parse_msg(enum http_parser_type type, const void *msg, unsign
 // 		}
 		if (!bIs_full_msg)
 		{//消息不完整，则给出提示信息
-			businlog_info("%s | http message is not full.", __FUNCTION__);
+			LInfo("http message is not full.");
 		}
 	}
 	return 0;

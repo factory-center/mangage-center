@@ -22,14 +22,11 @@
     <Filter Include="boost_define">
       <UniqueIdentifier>{25635d43-0fb7-44bc-b869-a5c863a5be72}</UniqueIdentifier>
     </Filter>
+    <Filter Include="resources">
+      <UniqueIdentifier>{30994f59-bef9-4e94-baed-12714704197e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\source\busin_log.h">
-      <Filter>log</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\log_base.h">
-      <Filter>log</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\baoyuan\scif2.h">
       <Filter>Baoyuan</Filter>
     </ClInclude>
@@ -90,6 +87,12 @@
     <ClInclude Include="..\include\boost_common.h">
       <Filter>boost_define</Filter>
     </ClInclude>
+    <ClInclude Include="..\source\CSpdLog.h">
+      <Filter>log</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>resources</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\source\carve_common_lib.cpp">
@@ -106,9 +109,6 @@
     </ClCompile>
     <ClCompile Include="..\source\CDevice.cpp">
       <Filter>device</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\log_base.cpp">
-      <Filter>log</Filter>
     </ClCompile>
     <ClCompile Include="..\source\http_server\connection.cpp">
       <Filter>http_server</Filter>
@@ -140,8 +140,13 @@
     <ClCompile Include="..\source\http_server\singleton_server.cpp">
       <Filter>http_server</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\Carve_Control_ServiceDlg.cpp">
+    <ClCompile Include="..\source\Carve_Control_Service.cpp">
       <Filter>main</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Carve_Control_Service.rc">
+      <Filter>resources</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

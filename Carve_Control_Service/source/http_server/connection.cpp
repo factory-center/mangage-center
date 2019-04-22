@@ -13,7 +13,7 @@
 #include <boost/bind.hpp>
 #include "request_handler.hpp"
 #include "deal_http_msg.h"
-#include "../busin_log.h"
+#include "../source/CSpdLog.h"
 #include "utils/msp_errors.h"
 #ifdef _WINDOWS
 #define __CLASS_FUNCTION__ ((std::string(__FUNCTION__)).c_str()) 
@@ -53,25 +53,24 @@ namespace http {
 		void connection::handle_read(const boost::system::error_code& e,
 			std::size_t bytes_transferred) 
 		{
-			businlog_tracer_perf(connection::handle_read);
+			LTrace("connection::handle_read");
 			if (!e)
 			{//未出错
 				int ret = 0;
-				businlog_info("%s | line:%d, buffer:%s, buff size:%d, bytes_transferred:%d, buff len:%d"
-					, __FUNCTION__, __LINE__, buffer_.data(), buffer_.size(), bytes_transferred, strlen(buffer_.data()));
+				LInfo("buffer:{}, buff size:{}, bytes_transferred:{}, buff len:{}"
+					, buffer_.data(), buffer_.size(), bytes_transferred, strlen(buffer_.data()));
 				//TODO::数据过大则报错返回，因为栈空间有限，后面可以改为auto_buff
 				if (m_str_http_message.size() + bytes_transferred > MAX_MESSAGE_LEN)
 				{
-					businlog_error("%s | http message is larger than MAX_MESSAGE_LEN:%d."
-						, __CLASS_FUNCTION__, MAX_MESSAGE_LEN);
+					LError("http message is larger than MAX_MESSAGE_LEN:{}", MAX_MESSAGE_LEN);
 					//发送bad_request到客户端
 					on_bad_request();
 					return;
 				}
 				//将数据追加到后面
 				m_str_http_message.append(buffer_.data(), bytes_transferred);
-				businlog_info("%s | buff is:%s.", __CLASS_FUNCTION__, buffer_.data());
-				businlog_info("%s | http_message is:%s.", __CLASS_FUNCTION__, m_str_http_message.data());
+				LInfo("buff is:{}", buffer_.data());
+				LInfo("http_message is:{}", m_str_http_message.data());
 				std::string str_json_body;
 				std::string str_err_reason;
 				ret = get_http_body(m_str_http_message.data(), m_str_http_message.size(), str_json_body, str_err_reason);
@@ -94,9 +93,7 @@ namespace http {
 					else 
 					{
 						//其他原因出错，则直接报错返回
-						businlog_error("%s | bad request, client addr:%s, reason:%s."
-							, __CLASS_FUNCTION__, socket_.remote_endpoint().address().to_string().c_str()
-							, str_err_reason.c_str());
+						LError("bad request, client addr:{}, reason:{}", socket_.remote_endpoint().address().to_string().c_str(), str_err_reason.c_str());
 
 						reply_ = reply::stock_reply(reply::bad_request);
 						boost::asio::async_write(socket_, reply_.to_buffers(),
@@ -118,14 +115,14 @@ namespace http {
 				   //因为此时肯定读取结束
 				}
 				
-				businlog_error("%s | Has error, err code:%d, err reason:%s, client addr:%s."
-					, __CLASS_FUNCTION__, e.value(), e.message().c_str(), socket_.remote_endpoint().address().to_string().c_str());
+				LError("Has error, err code:{}, err reason:{}, client addr:{}",
+					e.value(), e.message().c_str(), socket_.remote_endpoint().address().to_string().c_str());
 			}
 		}
 
 		void connection::handle_write(const boost::system::error_code& e)
 		{
-			businlog_tracer_perf(connection::handle_write);
+			LTrace("connection::handle_write");
 			if (!e)
 			{
 				// Initiate graceful connection closure.
@@ -133,12 +130,12 @@ namespace http {
 				socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
 				if (ignored_ec)
 				{//此处尽管出错了，但是可能为正确的
-					businlog_info("%s | fail to shutdown socket, err core:%d, err reason:%s, client addr:%s."
-						, __CLASS_FUNCTION__, ignored_ec.value(), ignored_ec.message().c_str(), socket_.remote_endpoint().address().to_string().c_str());
+					LInfo("fail to shutdown socket, err core:{}, err reason:{}, client addr:{}."
+						, ignored_ec.value(), ignored_ec.message().c_str(), socket_.remote_endpoint().address().to_string().c_str());
 					if (ignored_ec.value() != 10022)
 					{//其他错误，即真的出错了
-						businlog_error("%s | fail to shutdown socket, err core:%d, err reason:%s, client addr:%s."
-							, __CLASS_FUNCTION__, ignored_ec.value(), ignored_ec.message().c_str(), socket_.remote_endpoint().address().to_string().c_str());
+						LError("fail to shutdown socket, err core:{}, err reason:{}, client addr:{}",
+							ignored_ec.value(), ignored_ec.message().c_str(), socket_.remote_endpoint().address().to_string().c_str());
 					}
 					else
 					{
@@ -147,8 +144,7 @@ namespace http {
 				}
 				else
 				{//未出错反而是不正确的。可能为客户端未主动关闭链接
-					businlog_error("%s | The client did not actively close the link. This may make the Server have an new TIME_WAIT."
-						, __CLASS_FUNCTION__);
+					LError("SThe client did not actively close the link. This may make the Server have an new TIME_WAIT.");
 				}
 			}
 			else
@@ -157,28 +153,28 @@ namespace http {
 				// references to the connection object will disappear and the object will be
 				// destroyed automatically after this handler returns. The connection class's
 				// destructor closes the socket.
-				businlog_error("%s | has error, err code:%d, err reason:%s, client addr:%s."
-					, __CLASS_FUNCTION__, e.value(), e.message().c_str(), socket_.remote_endpoint().address().to_string().c_str());
+				LError("has error, err code:{}, err reason:{}, client addr:{}."
+					,e.value(), e.message().c_str(), socket_.remote_endpoint().address().to_string().c_str());
 			}
 		}
 
 		int connection::get_http_body(const char* buf, size_t len, std::string& str_json_body, std::string& str_err_reason)
 		{
-			businlog_tracer_perf(connection::get_http_body);
+			LTrace("connection::get_http_body");
 			m_http_msg_tool_obj.reset();
 
 			//转换消息并获取是否为完整的http请求消息
 			int ret = m_http_msg_tool_obj.parse_msg(HTTP_BOTH, buf, len, m_bIs_full_msg);
 			if (ret)
 			{
-				businlog_error("%s | parse_msg failed, ret:%d, msg:%s", __CLASS_FUNCTION__, ret, buf);
+				LError("parse_msg failed, ret:{}, msg:{}", ret, buf);
 				str_err_reason = "The message is not valid http";
 				return ret;
 			}
 			if (false == m_bIs_full_msg)
 			{
 				str_err_reason = "The msg Server got is not full.";
-				businlog_error("%s | Msg is not full, message:%s", __CLASS_FUNCTION__, buf);
+				LError("Msg is not full, message:{}", buf);
 				return MSP_ERROR_INVALID_DATA;
 			}
 			unsigned long body_len = 0;
@@ -188,10 +184,10 @@ namespace http {
 			if (ret)
 			{
 				str_err_reason = "Invalid http body";
-				businlog_error("%s | get_http_body failed, ret:%d, msg:%s", __CLASS_FUNCTION__, ret, buf);
+				LError("get_http_body failed, ret:{}, msg:{}", ret, buf);
 				return ret;
 			}
-			businlog_info("%s | http body:%s", __CLASS_FUNCTION__, str_json_body.c_str());
+			LInfo("http body:{}", str_json_body.c_str());
 			return MSP_SUCCESS;
 
 		}
@@ -203,7 +199,7 @@ namespace http {
 			int nHeader_end_idx = str_medley_http_message.find("\r\n\r\n");
 			if (nHeader_end_idx < 0)
 			{
-				businlog_error("%s | Can not find end of http head.", __FUNCTION__);
+				LError("Can not find end of http head.");
 				return MSP_ERROR_INVALID_DATA;
 			}
 			str_json_body = str_medley_http_message.substr(nHeader_end_idx + 4);
@@ -212,7 +208,7 @@ namespace http {
 
 		connection::~connection()
 		{//by minglu
-			businlog_tracer(connection::~connection);
+			LTrace("connection::~connection");
 			if (socket_.is_open())
 			{
 				boost::system::error_code ec;
@@ -221,8 +217,7 @@ namespace http {
 				{//出错
 					//获取一些信息
 					std::string str_remote_addr = socket_.remote_endpoint().address().to_string();
-					businlog_error("%s | fail to close socket, client addr:%s"
-						, __CLASS_FUNCTION__, str_remote_addr.c_str());
+					LError("fail to close socket, client addr:{}", str_remote_addr.c_str());
 				}
 			}
 		}
@@ -234,8 +229,7 @@ namespace http {
 				strand_.wrap(
 				boost::bind(&connection::handle_write, shared_from_this(),
 				boost::asio::placeholders::error)));
-			businlog_error("%s | bad request, client addr:%s."
-				, __CLASS_FUNCTION__, socket_.remote_endpoint().address().to_string().c_str());
+			LError("bad request, client addr:{}", socket_.remote_endpoint().address().to_string().c_str());
 		}
 
 	} // namespace server3

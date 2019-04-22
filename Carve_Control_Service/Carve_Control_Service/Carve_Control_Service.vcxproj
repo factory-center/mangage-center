@@ -30,7 +30,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
-    <UseOfMfc>Dynamic</UseOfMfc>
+    <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -72,11 +72,9 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>D:\local\boost_1_65_1;../include;$(IncludePath)</IncludePath>
-    <LibraryPath>../lib32/json;../lib32/baoyuan;../lib32/boost;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -101,11 +99,19 @@
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;__CLASS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>../include</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>scif2_vc.lib;sc2_vc.lib;lib_json.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>scif2_vc.lib;sc2_vc.lib;lib_json_32_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../lib32/boost;../lib32/json;../lib32/baoyuan</AdditionalLibraryDirectories>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -118,8 +124,8 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <CustomBuildStep>
-      <Command>copy "$(ProjectDir)\..\conf\emcs.cfg" "$(SolutionDir)$(Platform)\$(Configuration)\"
-copy "$(ProjectDir)\..\lib32\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configuration)\"</Command>
+      <Command>
+      </Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>%Output</Outputs>
@@ -165,7 +171,7 @@ copy "$(ProjectDir)\..\lib64\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configurati
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;__CLASS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>D:\local\boost_1_69_0_32;../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -173,7 +179,7 @@ copy "$(ProjectDir)\..\lib64\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configurati
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>../lib32/boost;../lib32/json;../lib32/baoyuan</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lib_json.lib;scif2_vc.lib;sc2_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lib_json_32_r.lib;scif2_vc.lib;sc2_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -186,8 +192,8 @@ copy "$(ProjectDir)\..\lib64\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configurati
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <CustomBuildStep>
-      <Command>copy "$(ProjectDir)\..\conf\emcs.cfg" "$(SolutionDir)$(Platform)\$(Configuration)\"
-copy "$(ProjectDir)\..\lib32\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configuration)\"</Command>
+      <Command>
+      </Command>
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>%Output</Outputs>
@@ -223,12 +229,12 @@ copy "$(ProjectDir)\..\lib32\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configurati
     <ClInclude Include="..\include\baoyuan\scif2.h" />
     <ClInclude Include="..\include\baoyuan\scif2_define.h" />
     <ClInclude Include="..\include\boost_common.h" />
-    <ClInclude Include="..\source\busin_log.h" />
     <ClInclude Include="..\source\carve_common_lib.h" />
     <ClInclude Include="..\source\carve_manager.h" />
     <ClInclude Include="..\source\CBaoyuan_Lib_Tool.h" />
     <ClInclude Include="..\source\CCarve.h" />
     <ClInclude Include="..\source\CDevice.h" />
+    <ClInclude Include="..\source\CSpdLog.h" />
     <ClInclude Include="..\source\http_server\connection.hpp" />
     <ClInclude Include="..\source\http_server\deal_http_msg.h" />
     <ClInclude Include="..\source\http_server\header.hpp" />
@@ -241,11 +247,11 @@ copy "$(ProjectDir)\..\lib32\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configurati
     <ClInclude Include="..\source\http_server\request_parser.hpp" />
     <ClInclude Include="..\source\http_server\server.hpp" />
     <ClInclude Include="..\source\http_server\singleton_server.h" />
-    <ClInclude Include="..\source\log_base.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\source\carve_common_lib.cpp" />
-    <ClCompile Include="..\source\Carve_Control_ServiceDlg.cpp" />
+    <ClCompile Include="..\source\Carve_Control_Service.cpp" />
     <ClCompile Include="..\source\carve_manager.cpp" />
     <ClCompile Include="..\source\CBaoyuan_Lib_Tool.cpp" />
     <ClCompile Include="..\source\CCarve.cpp" />
@@ -260,7 +266,9 @@ copy "$(ProjectDir)\..\lib32\baoyuan\*" "$(SolutionDir)$(Platform)\$(Configurati
     <ClCompile Include="..\source\http_server\request_parser.cpp" />
     <ClCompile Include="..\source\http_server\server.cpp" />
     <ClCompile Include="..\source\http_server\singleton_server.cpp" />
-    <ClCompile Include="..\source\log_base.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Carve_Control_Service.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -4,8 +4,11 @@
 #include <string>
 #include <fstream>
 #include <strsafe.h>
-#include "../source/busin_log.h"
+#include "../source/CSpdLog.h"
 #include <utils/Resource_Manager.h>
+#if (defined WIN32) || (defined WIN64)
+#pragma comment(linker, "/subsystem:windows /entry:mainCRTStartup")
+#endif
 using namespace std;
 //将LPCTSTR转换为string
 int lpct2str(LPCTSTR lpsz, size_t nSrc_size, string& str_dst)
@@ -20,7 +23,7 @@ int lpct2str(LPCTSTR lpsz, size_t nSrc_size, string& str_dst)
 	if(nRet <= 0)
 	{
 		cout << "转换字符串失败,错误码:" << nRet << endl;
-		businlog_error("%s | fail to WideCharToMultiByte, ret:%d.", __FUNCTION__, nRet);
+		LError("fail to WideCharToMultiByte, ret:{}", nRet);
 		return -1;
 	}
 	//转换成功
@@ -59,28 +62,19 @@ void record_err_and_exit(LPTSTR lpszFunction)
 	int ret  = lpct2str((LPCTSTR)lpDisplayBuf, LocalSize(lpDisplayBuf) / sizeof(TCHAR), str_err_reason);
 	if (ret)
 	{
-		businlog_error("%s | fail to parse LPCTSTR to String, ret:%d", __FUNCTION__, ret);
+		LError("fail to parse LPCTSTR to String, ret:{}", ret);
 	}
 	//将错误日志写入文件
-	businlog_error("%s | err reason:%s", __FUNCTION__, str_err_reason.c_str());
+	LError("err reason:{}", str_err_reason.c_str());
 	cout << __FUNCTION__ << " | err reason:" << str_err_reason << endl;
 	LocalFree(lpMsgBuf);
 	LocalFree(lpDisplayBuf);
-	businlog_warn("%s | 退出程序", __FUNCTION__);
+	LWarn("退出程序");
 	ExitProcess(dw); //退出程序
 }
 
-int _tmain(int argc, TCHAR *argv[]) 
+int main(int argc, TCHAR *argv[]) 
 { 
-	//守护进程的日志文件
-	string str_log_path = "../log/daemon.log";
-	//默认日志配置，具体参见类型Log_Cfg_T
- 	businlog_cfg default_cfg(str_log_path.c_str(), "Daemon Logging");
-	default_cfg.level(7);
-	//不需要配置文件，故将其设定为空
-	string str_cfg_file_path = "";
-	//打开配置文件，如果失败，则使用默认日志配置。故不需要判定其返回值
-	int ret = businlog_open(default_cfg, str_cfg_file_path.c_str());
 	//创建目标进程
 	try
 	{
@@ -120,27 +114,26 @@ int _tmain(int argc, TCHAR *argv[])
 			cout << "创建目标进程成功，进程信息：" << endl; 
 			cout << "\t进程ID:" << pi.dwProcessId << endl; 
 			cout << "\t线程ID:" << pi.dwThreadId << endl; 
-			businlog_crit("%s | 创建目标进程成功，进程信息如下:\n\t进程ID:%d\n\t线程ID:%d"
-				, __FUNCTION__, pi.dwProcessId, pi.dwProcessId);
+			LCritical("创建目标进程成功，进程信息如下:\n\t进程ID:{}\n\t线程ID:{}",pi.dwProcessId, pi.dwProcessId);
 			// 等待知道子进程退出... 
 			WaitForSingleObject( pi.hProcess, INFINITE);//检测进程是否停止 
 			//WaitForSingleObject()函数检查对象的状态，如果是未确定的则等待至超时 
 			//子进程退出 
 			cout << "目标进程已经退出..." << endl;
-			businlog_error("%s | 目标进程已经退出。", __FUNCTION__);
+			LError("目标进程已经退出。");
 			//关闭进程和句柄 
 			CloseHandle(pi.hProcess); 
 			CloseHandle(pi.hThread); 
 			//system("pause");//执行完毕后等待 
 		}while(true);//如果进程推出就再次执行方法 
 		cout << __FUNCTION__ << " | 程序退出" << endl;
-		businlog_warn("%s | 守护进程退出", __FUNCTION__);
+		LWarn("守护进程退出");
 		return 0; 
 	}
 	catch (std::exception& e)
 	{
 		cout << "发生异常，原因：" << e.what() << endl;
-		businlog_error("%s | 守护进程发生异常，错误原因：%s.", __FUNCTION__, e.what());
+		LError("守护进程发生异常，错误原因:{}", e.what());
 		return -1;
 	}
 }

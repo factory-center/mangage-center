@@ -17,8 +17,9 @@
 #include "reply.hpp"
 #include "request.hpp"
 #include <json/json.h>
-#include "../busin_log.h"
+#include "../source/CSpdLog.h"
 #include "utils/msp_errors.h"
+#include "utils/sutils.h"
 #include "../CCarve.h"
 #include "../carve_manager.h"
 #ifdef _WINDOWS
@@ -83,8 +84,11 @@ namespace http
 			// Fill out the reply to be sent to the client.
 			rep.status = reply::ok;
 			char buf[512];
-			while (is.read(buf, sizeof(buf)).gcount() > 0)
-				rep.content.append(buf, is.gcount());
+			while ((const unsigned int)is.read(buf, sizeof(buf)).gcount() > 0)
+			{
+				rep.content.append(buf, (const unsigned int)is.gcount());
+			}
+				
 			rep.headers.resize(2);
 			rep.headers[0].name = "Content-Length";
 			rep.headers[0].value = boost::lexical_cast<std::string>(rep.content.size());
@@ -106,7 +110,7 @@ namespace http
 				ret = MSP_ERROR_INVALID_DATA;
 				str_err_reason = std::string("The body in http is invalid json. body:") + str_json_body;
 				rep = reply::construct_message(ret, "", str_err_reason);
-				businlog_error("%s | body:%s, body is invalid json.", __CLASS_FUNCTION__, str_json_body.c_str());
+				LError("body:{}, body is invalid json.", str_json_body.c_str());
 				return;
 			}
 			std::string str_key = "command";
@@ -115,7 +119,7 @@ namespace http
 				ret = MSP_ERROR_INVALID_PARA;
 				str_err_reason = std::string("body:") + str_json_body + std::string(", json without key:") + str_key;
 				rep = reply::construct_message(ret, "", str_err_reason);
-				businlog_error("%s | body:%s without key:%s", __CLASS_FUNCTION__, str_json_body.c_str(), str_key.c_str());
+				LError("body:{} without key:{}", str_json_body.c_str(), str_key.c_str());
 				return;
 			}
 			// Fill out the reply to be sent to the client.
@@ -215,7 +219,7 @@ namespace http
 			//统一打印错误，避免遗漏打印错误
 			if (ret)
 			{
-				businlog_error("%s | err reason:%s, ret:%d", __CLASS_FUNCTION__, str_err_reason.c_str(), ret);
+				LError("err reason:{}, ret:{}", str_err_reason.c_str(), ret);
 			}
 			rep = reply::construct_message(ret, json_result.toStyledString(), str_err_reason);
 		}
@@ -261,8 +265,12 @@ namespace http
 		int request_handler::on_connect(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
 		{
 			string str_key = "carveInfo";
-			businlog_error_return_err_reason(json_root.isMember(str_key), __CLASS_FUNCTION__ << " | json:" << json_root.toStyledString() << ", without key:" << str_key
-				, str_err_reason, MSP_ERROR_INVALID_PARA);
+			if (!json_root.isMember(str_key))
+			{
+				LError("json:{}, without key:{}", json_root.toStyledString(), str_key);
+				str_err_reason = "json:" + json_root.toStyledString() + ",without key:" + str_key;
+				return MSP_ERROR_INVALID_PARA;
+			}
 
 			const Json::Value& json_arr_carveInfo = json_root[str_key];
 			int ret = 0;
@@ -315,8 +323,12 @@ namespace http
 		int request_handler::on_disconnect(const Json::Value& json_root, Json::Value& json_result, std::string& str_err_reason)
 		{
 			string str_key = "carveInfo";
-			businlog_error_return_err_reason(json_root.isMember(str_key), __CLASS_FUNCTION__ << " | json:" << json_root.toStyledString() << ", without key:" << str_key
-				, str_err_reason, MSP_ERROR_INVALID_PARA);
+			if (!json_root.isMember(str_key))
+			{
+				LError("json:{}, without key:{}", json_root.toStyledString(), str_key);
+				str_err_reason = "json:" + json_root.toStyledString() + ",without key:" + str_key;
+				return MSP_ERROR_INVALID_PARA;
+			}
 
 			const Json::Value& json_arr_carveInfo = json_root[str_key];
 			int ret = 0;
@@ -568,8 +580,11 @@ namespace http
 				str_err_reason =  str_err_reason_for_debug;
 			}
 			//判定调用是否成功
-			businlog_error_return(!ret, ("%s | fail to emergency stop all, reason:%s, ret:%d."
-				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), ret), ret);
+			if (ret)
+			{
+				LError("fail to emergency stop all, reason:{}, ret:{}", str_err_reason_for_debug, ret);
+				return ret;
+			}
 			//注意：返回MSP_SUCCESS表示成功执行
 			return MSP_SUCCESS;
 		}
@@ -613,8 +628,11 @@ namespace http
 				str_err_reason =  str_err_reason_for_debug;
 			}
 			//判定调用是否成功
-			businlog_error_return(!ret, ("%s | fail to emergency stop all, reason:%s, ret:%d."
-				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), ret), ret);
+			if (ret)
+			{
+				LError("fail to emergency stop all, reason:{}, ret:{}", str_err_reason_for_debug, ret);
+				return ret;
+			}
 			//注意：返回MSP_SUCCESS表示成功执行
 			return MSP_SUCCESS;
 		}
@@ -703,8 +721,11 @@ namespace http
 			{
 				str_err_reason = str_err_reason_for_debug;
 			}
-			businlog_error_return(!ret, ("%s | fail to get all carves info, reason:%s, ret:%d."
-				, __CLASS_FUNCTION__, str_err_reason_for_debug.c_str(), ret), ret);
+			if (ret)
+			{
+				LError("fail to get all carves info, reason:{}, ret:{}", str_err_reason_for_debug, ret);
+				return ret;
+			}
 			return ret;
 		}
 

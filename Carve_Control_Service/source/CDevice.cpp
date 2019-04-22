@@ -17,7 +17,7 @@
 *****************************************************************/
 #include "CDevice.h"
 #include "CCarve.h"
-#include "busin_log.h"
+#include "../source/CSpdLog.h"
 
 
 CDevice::CDevice(EDevice_Type eType, const Json::Value& json_params) 
@@ -27,13 +27,13 @@ CDevice::CDevice(EDevice_Type eType, const Json::Value& json_params)
 	if (!json_params.isMember(CCarve::ms_str_ip_key))
 	{
 		str_err_reason = string("json:") + json_params.toStyledString() + string(" without key:") + CCarve::ms_str_ip_key;
-		businlog_error("%s | err reason:%s", __FUNCTION__, str_err_reason.c_str());
+		LError("err reason:{}", str_err_reason.c_str());
 		throw std::exception(str_err_reason.c_str());
 	}
 	if (!json_params.isMember(CCarve::ms_str_carve_id_key))
 	{
 		str_err_reason = string("json:") + json_params.toStyledString() + string(" without key:") + CCarve::ms_str_carve_id_key;
-		businlog_error("%s | err reason:%s", __FUNCTION__, str_err_reason.c_str());
+		LError("err reason:{}", str_err_reason.c_str());
 		throw std::exception(str_err_reason.c_str());
 	}
 

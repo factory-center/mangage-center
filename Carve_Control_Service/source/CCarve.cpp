@@ -17,7 +17,7 @@
 *****************************************************************/
 #include "CCarve.h"
 #include "CBaoyuan_Lib_Tool.h"
-#include "busin_log.h"
+#include "../source/CSpdLog.h"
 #include "utils/msp_errors.h"
 #include <json/json.h>
 #ifdef _WINDOWS
@@ -32,12 +32,18 @@ int CCarve::connect(string& str_err_reason_for_debug, string& str_err_reason_for
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
 	if (m_bConnected)
 	{
-		businlog_warn("%s | carve ip:%s is connected.", __CLASS_FUNCTION__, m_str_ip.c_str());
+		LWarn("carve ip:{} is connected.", m_str_ip.c_str());
 		return MSP_SUCCESS;
 	}
 	//判定资源是否申请成功
-	businlog_error_return_debug_and_user_reason(true == m_bAcq_Res_Success, __CLASS_FUNCTION__ << " | resources is not OK, ip:"
-		<< m_str_ip, str_err_reason_for_debug, "没有成功申请资源", str_err_reason_for_user, MSP_ERROR_RES_LOAD);
+	if (!(true == m_bAcq_Res_Success))
+	{
+		LError("resources is not OK, ip:{}", m_str_ip);
+		str_err_reason_for_debug = "resources is not OK, ip:" + m_str_ip;
+		str_err_reason_for_user = "没有成功申请资源:";
+		return MSP_ERROR_RES_LOAD;
+	}
+
 	//构造连接参数
 	Json::Value json_conn_value;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
@@ -54,13 +60,19 @@ int CCarve::connect(string& str_err_reason_for_debug, string& str_err_reason_for
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "厂商类型错误", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("actory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "厂商类型错误";
+		return MSP_ERROR_NOT_SUPPORT;
 	}
 
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->connect(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to connect carve, param in json:%s, reason:%s"
-		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	if (!bSuccess)
+	{
+		LError("fail to connect carve, param in json:{}, reason:{}", json_conn_value.toStyledString(), str_err_reason_for_debug);
+		return MSP_ERROR_FAIL;
+	}
+
 	m_bConnected = true;
 	return MSP_SUCCESS;
 }
@@ -69,8 +81,13 @@ int CCarve::disconnect(string& str_err_reason_for_debug, string& str_err_reason_
 {
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
 	//判定当前状态
-	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
-		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_FAIL);
+	if (!(true == m_bAcq_Res_Success))
+	{
+		LError("carve ip:{} is not connected", m_str_ip);
+		str_err_reason_for_debug = "carve ip:"+ m_str_ip +" is not connected";
+		str_err_reason_for_user = "设备未连接:";
+		return MSP_ERROR_RES_LOAD;
+	}
 	//构造参数
 	Json::Value json_conn_value;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
@@ -86,13 +103,19 @@ int CCarve::disconnect(string& str_err_reason_for_debug, string& str_err_reason_
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "不支持的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("factory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "不支持的设备厂商类型";
+		return MSP_ERROR_NOT_SUPPORT;
 	}
 
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->disconnect(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to disconnect carve, params in json:%s, reason:%s"
-		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	if (!bSuccess)
+	{
+		LError("fail to disconnect carve, params in json:{}, reason:{}", json_conn_value.toStyledString(), str_err_reason_for_debug);
+		return MSP_ERROR_FAIL;
+	}
+
 	//成功断开，则更新状态
 	m_bConnected = false;
 	return MSP_SUCCESS;
@@ -101,9 +124,14 @@ int CCarve::disconnect(string& str_err_reason_for_debug, string& str_err_reason_
 int CCarve::set_continue_status(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
-	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
-		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
-	
+	if (!(true == m_bConnected))
+	{
+		LError("carve ip:{} is not connected", m_str_ip);
+		str_err_reason_for_debug = "carve ip:" + m_str_ip + " is not connected";
+		str_err_reason_for_user = "设备未连接:";
+		return MSP_ERROR_INVALID_OPERATION;
+	}
+
 	//构造参数
 	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
@@ -119,23 +147,33 @@ int CCarve::set_continue_status(const Json::Value& json_params, string& str_err_
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "不支持的厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("factory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "不支持的设备厂商类型";
+		return MSP_ERROR_NOT_SUPPORT;
+
 	}
 
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->set_continue_status(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
 //	bool bSuccess = CBaoyuan_Lib::instance()->set_continue_status(m_nConn_idx, nStatus, nMax_wait_time, str_kernel_err_reason);
-	businlog_error_return(bSuccess, ("%s | fail to set continue status, ip:%s, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str(), str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	if (!bSuccess)
+	{
+		LError("fail to set continue status,ip{}, json info:{}, reason:{}", m_str_ip, json_conn_value.toStyledString(), str_err_reason_for_debug);
+		return MSP_ERROR_FAIL;
+	}
 	return MSP_SUCCESS;
 }
 
 int CCarve::reset(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
-	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
-		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
-
+	if (!(true == m_bConnected))
+	{
+		LError("carve ip:{} is not connected", m_str_ip);
+		str_err_reason_for_debug = "carve ip:" + m_str_ip + " is not connected";
+		str_err_reason_for_user = "设备未连接:";
+		return MSP_ERROR_INVALID_OPERATION;
+	}
 	//构造参数
 	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
@@ -151,14 +189,19 @@ int CCarve::reset(const Json::Value& json_params, string& str_err_reason_for_deb
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "错误的厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("factory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "错误的厂商类型";
+		return MSP_ERROR_NOT_SUPPORT;
 	}
 
 
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->reset_carve(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to reset carve, ip:%s, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str(), str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	if (!bSuccess)
+	{
+		LError("fail to reset carve,ip{}, json info:{}, reason:{}", m_str_ip, json_conn_value.toStyledString(), str_err_reason_for_debug);
+		return MSP_ERROR_FAIL;
+	}
 	return MSP_SUCCESS;
 }
 
@@ -168,9 +211,13 @@ int CCarve::start(const Json::Value& json_params, string& str_err_reason_for_deb
 	//TODO::额外操作
 	//使雕刻机开始雕刻
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
-	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
-		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
-
+	if (!(true == m_bConnected))
+	{
+		LError("carve ip:{} is not connected", m_str_ip);
+		str_err_reason_for_debug = "carve ip:" + m_str_ip + " is not connected";
+		str_err_reason_for_user = "设备未连接:";
+		return MSP_ERROR_INVALID_OPERATION;
+	}
 	//构造参数
 	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
@@ -187,22 +234,31 @@ int CCarve::start(const Json::Value& json_params, string& str_err_reason_for_deb
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("factory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "错误的设备厂商类型";
+		return MSP_ERROR_NOT_SUPPORT;
 	}
 
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->start(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to start carve to engrave, ip:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	if (!bSuccess)
+	{
+		LError("fail to start carve to engrave,ip{}, reason:{}", m_str_ip, str_err_reason_for_debug);
+		return MSP_ERROR_FAIL;
+	}
 	return MSP_SUCCESS;
 }
 
 int CCarve::pause(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
-	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
-		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
-
+	if (!(true == m_bConnected))
+	{
+		LError("carve ip:{} is not connected", m_str_ip);
+		str_err_reason_for_debug = "carve ip:" + m_str_ip + " is not connected";
+		str_err_reason_for_user = "设备未连接:";
+		return MSP_ERROR_INVALID_OPERATION;
+	}
 	//构造参数
 	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
@@ -218,13 +274,18 @@ int CCarve::pause(const Json::Value& json_params, string& str_err_reason_for_deb
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("factory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "错误的设备厂商类型";
+		return MSP_ERROR_NOT_SUPPORT;
 	}
 
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->pause(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to pause carve, ip:%s, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str(), str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	if (!bSuccess)
+	{
+		LError("fail to pause carve,ip{}, json info:{}, reason:{}", m_str_ip, json_conn_value.toStyledString(), str_err_reason_for_debug);
+		return MSP_ERROR_FAIL;
+	}
 #ifdef SERVER_WITH_CONTROL_LOGIC
 	//累加时间，停止计时，从下次“开始雕刻”再重新计时 (必须配合控制逻辑，结果才正确，否则结果可能错误)
 	boost::posix_time::millisec_posix_time_system_config::time_duration_type time_elapse = boost::posix_time::second_clock::universal_time() - m_time_last_start;
@@ -235,26 +296,44 @@ int CCarve::pause(const Json::Value& json_params, string& str_err_reason_for_deb
 
 int CCarve::upload_1_file(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
-	businlog_tracer_perf(CCarve::upload_1_file);
+	LTrace("CCarve::upload_1_file");
 	string str_key = CCarve::ms_str_file_path_key;
 	//判定参数合法性
-	businlog_error_return_debug_and_user_reason(json_params.isMember(str_key), __CLASS_FUNCTION__ << " | json:" 
-		<< json_params.toStyledString() << " without key:" <<  str_key, str_err_reason_for_debug
-		, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+	if (!json_params.isMember(str_key))
+	{
+		LError("json:{}, without key:{}", json_params.toStyledString(), str_key);
+		str_err_reason_for_debug = "json:" + json_params.toStyledString() + ",without key:" + str_key;
+		str_err_reason_for_user = "参数错误";
+		return MSP_ERROR_INVALID_PARA;
+	}
 
 	str_key = ms_str_task_no_key;
-	businlog_error_return_debug_and_user_reason(json_params.isMember(str_key), __CLASS_FUNCTION__ << " | json:" 
-		<< json_params.toStyledString() << " without key:" <<  str_key, str_err_reason_for_debug
-		, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+	if (!json_params.isMember(str_key))
+	{
+		LError("json:{}, without key:{}", json_params.toStyledString(), str_key);
+		str_err_reason_for_debug = "json:" + json_params.toStyledString() + ",without key:" + str_key;
+		str_err_reason_for_user = "参数错误";
+		return MSP_ERROR_INVALID_PARA;
+	}
+
 
 	str_key = ms_str_gCode_no_key;
-	businlog_error_return_debug_and_user_reason(json_params.isMember(str_key), __CLASS_FUNCTION__ << " | json:" 
-		<< json_params.toStyledString() << " without key:" <<  str_key, str_err_reason_for_debug
-		, "参数错误", str_err_reason_for_user, MSP_ERROR_INVALID_PARA);
+	if (!json_params.isMember(str_key))
+	{
+		LError("json:{}, without key:{}", json_params.toStyledString(), str_key);
+		str_err_reason_for_debug = "json:" + json_params.toStyledString() + ",without key:" + str_key;
+		str_err_reason_for_user = "参数错误";
+		return MSP_ERROR_INVALID_PARA;
+	}
 
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
-	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
-		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
+	if (!(true == m_bConnected))
+	{
+		LError("carve ip:{} is not connected", m_str_ip);
+		str_err_reason_for_debug = "carve ip:" + m_str_ip + " is not connected";
+		str_err_reason_for_user = "设备未连接:";
+		return MSP_ERROR_INVALID_OPERATION;
+	}
 	//获取参数
 	m_str_file_path = json_params[ms_str_file_path_key].asString();
 	m_str_task_no = json_params[ms_str_task_no_key].asString();
@@ -275,15 +354,19 @@ int CCarve::upload_1_file(const Json::Value& json_params, string& str_err_reason
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("factory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "错误的设备厂商类型";
+		return MSP_ERROR_NOT_SUPPORT;
 	}
 
 	//上传文件
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->upload_1file(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to upload file, carve ip:%s, file path:%s, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), m_str_file_path.c_str(), json_conn_value.toStyledString().c_str()
-		, str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	if (!bSuccess)
+	{
+		LError("fail to upload file,ip{},file path:{}, json info:{}, reason:{}", m_str_ip, m_str_file_path, json_conn_value.toStyledString(), str_err_reason_for_debug);
+		return MSP_ERROR_FAIL;
+	}
 	return MSP_SUCCESS;
 }
 
@@ -311,12 +394,17 @@ int CCarve::get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& s
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("factory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "错误的设备厂商类型";
+		return MSP_ERROR_NOT_SUPPORT;
 	}
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->get_carve_status(json_conn_value, eCarve_common_status, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to get baoyuan carve status, json:%s, reason:%s"
-		, __CLASS_FUNCTION__, json_conn_value.toStyledString().c_str(), str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	if (!bSuccess)
+	{
+		LError("fail to get baoyuan carve status,json info:{}, reason:{}", json_conn_value.toStyledString(), str_err_reason_for_debug);
+		return MSP_ERROR_FAIL;
+	}
 	//此时成功获取雕刻机状态
 #ifdef SERVER_WITH_CONTROL_LOGIC
 	m_eCarve_status = eCarve_common_status;
@@ -328,9 +416,13 @@ int CCarve::get_carve_status(ECARVE_STATUS_TYPE& eCarve_common_status, string& s
 int CCarve::stop_fast(const Json::Value& json_params,string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
-	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
-		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
-
+	if (!(true == m_bConnected))
+	{
+		LError("carve ip:{} is not connected", m_str_ip);
+		str_err_reason_for_debug = "carve ip:" + m_str_ip + " is not connected";
+		str_err_reason_for_user = "设备未连接:";
+		return MSP_ERROR_INVALID_OPERATION;
+	}
 	//构造参数
 	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
@@ -346,13 +438,18 @@ int CCarve::stop_fast(const Json::Value& json_params,string& str_err_reason_for_
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("factory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "错误的设备厂商类型";
+		return MSP_ERROR_NOT_SUPPORT;
 	}
 
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->stop_fast(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to fast stop carve, ip:%s, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str(), str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	if (!bSuccess)
+	{
+		LError("fail to fast stop carve,ip{},json info:{}, reason:{}", m_str_ip, json_conn_value.toStyledString(), str_err_reason_for_debug);
+		return MSP_ERROR_FAIL;
+	}
 #ifdef SERVER_WITH_CONTROL_LOGIC
 	//累加时间，停止计时，从下次“开始雕刻”再重新计时(必须配合控制逻辑，结果才正确，否则结果可能错误)
 	boost::posix_time::millisec_posix_time_system_config::time_duration_type time_elapse = boost::posix_time::second_clock::universal_time() - m_time_last_start;
@@ -363,11 +460,15 @@ int CCarve::stop_fast(const Json::Value& json_params,string& str_err_reason_for_
 
 int CCarve::cancel_fast_stop(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
-	businlog_tracer_perf(CCarve::cancel_fast_stop);
+	LTrace("CCarve::cancel_fast_stop");
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
-	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
-		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
-	
+	if (!(true == m_bConnected))
+	{
+		LError("carve ip:{} is not connected", m_str_ip);
+		str_err_reason_for_debug = "carve ip:" + m_str_ip + " is not connected";
+		str_err_reason_for_user = "设备未连接:";
+		return MSP_ERROR_INVALID_OPERATION;
+	}
 	//构造参数
 	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
@@ -383,23 +484,32 @@ int CCarve::cancel_fast_stop(const Json::Value& json_params, string& str_err_rea
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("factory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "错误的设备厂商类型";
+		return MSP_ERROR_NOT_SUPPORT;
 	}
 
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->cancel_fast_stop(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to cancel fast stop carve, ip:%s, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str(), str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	if (!bSuccess)
+	{
+		LError("fail to cancel fast stop carve,ip{},json info:{}, reason:{}", m_str_ip, json_conn_value.toStyledString(), str_err_reason_for_debug);
+		return MSP_ERROR_FAIL;
+	}
 	return MSP_SUCCESS;
 }
 
 int CCarve::delete_1_file(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
-	businlog_tracer_perf(CCarve::delete_1_file);
+	LTrace("CCarve::delete_1_file");
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
-	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
-		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
-
+	if (!(true == m_bConnected))
+	{
+		LError("carve ip:{} is not connected", m_str_ip);
+		str_err_reason_for_debug = "carve ip:" + m_str_ip + " is not connected";
+		str_err_reason_for_user = "设备未连接:";
+		return MSP_ERROR_INVALID_OPERATION;
+	}
 	//构造参数
 	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
@@ -415,15 +525,19 @@ int CCarve::delete_1_file(const Json::Value& json_params, string& str_err_reason
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("factory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "错误的设备厂商类型";
+		return MSP_ERROR_NOT_SUPPORT;
 	}
 
 	//删除文件
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->delete_1file(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to delete file, carve ip:%s, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str()
-		, str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	if (!bSuccess)
+	{
+		LError("fail to delete file,ip{},json info:{}, reason:{}", m_str_ip, json_conn_value.toStyledString(), str_err_reason_for_debug);
+		return MSP_ERROR_FAIL;
+	}
 
 	//文件删除成功
 	//TODO: ----------------待确认
@@ -437,10 +551,15 @@ int CCarve::delete_1_file(const Json::Value& json_params, string& str_err_reason
 
 int CCarve::get_current_line_num(int& nCurrent_line_num, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
-	businlog_tracer_perf(CCarve::get_current_line_num);
+	LTrace("CCarve::get_current_line_num");
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
-	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
-		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
+	if (!(true == m_bConnected))
+	{
+		LError("carve ip:{} is not connected", m_str_ip);
+		str_err_reason_for_debug = "carve ip:" + m_str_ip + " is not connected";
+		str_err_reason_for_user = "设备未连接:";
+		return MSP_ERROR_INVALID_OPERATION;
+	}
 
 	//构造参数
 	Json::Value json_conn_value;
@@ -457,21 +576,26 @@ int CCarve::get_current_line_num(int& nCurrent_line_num, string& str_err_reason_
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("factory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "错误的设备厂商类型";
+		return MSP_ERROR_NOT_SUPPORT;
 	}
 
 	//获取雕刻机中当前文件行号
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->get_current_line_num(json_conn_value, nCurrent_line_num, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to get line num, carve ip:%s, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str()
-		, str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	if (!bSuccess)
+	{
+		LError("fail to get line num,ip{},json info:{}, reason:{}", m_str_ip, json_conn_value.toStyledString(), str_err_reason_for_debug);
+		return MSP_ERROR_FAIL;
+	}
+
 	return MSP_SUCCESS;
 }
 
 int CCarve::acquire_resource(string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
-	businlog_tracer_perf(CCarve::acquire_resource);
+	LTrace("CCarve::acquire_resource");
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
 
 	//构造参数
@@ -488,15 +612,19 @@ int CCarve::acquire_resource(string& str_err_reason_for_debug, string& str_err_r
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("factory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "错误的设备厂商类型";
+		return MSP_ERROR_NOT_SUPPORT;
 	}
 
 	//申请资源
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->acquire_resource(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to acquire resource, carve ip:%s, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str()
-		, str_err_reason_for_debug.c_str()), MSP_ERROR_RES_LOAD);
+	if (!bSuccess)
+	{
+		LError("fail to acquire resource,ip{},json info:{}, reason:{}", m_str_ip, json_conn_value.toStyledString(), str_err_reason_for_debug);
+		return MSP_ERROR_RES_LOAD;
+	}
 	if (CCarve_Common_Lib_Tool::instance()->is_baoyuan(m_eFactory_type, m_str_carve_type))
 	{
 		m_nConn_idx = json_conn_value[ms_str_conn_idx_key].asInt();
@@ -507,7 +635,7 @@ int CCarve::acquire_resource(string& str_err_reason_for_debug, string& str_err_r
 
 int CCarve::release_resource(string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
-	businlog_tracer_perf(CCarve::release_resource);
+	LTrace("CCarve::release_resource");
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
 
 	//构造参数
@@ -525,15 +653,19 @@ int CCarve::release_resource(string& str_err_reason_for_debug, string& str_err_r
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("factory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "错误的设备厂商类型";
+		return MSP_ERROR_NOT_SUPPORT;
 	}
 
 	//释放资源
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->release_resource(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to release resource, carve ip:%s, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str()
-		, str_err_reason_for_debug.c_str()), MSP_ERROR_RES_FREE);
+	if (!bSuccess)
+	{
+		LError("fail to release resource,ip{},json info:{}, reason:{}", m_str_ip, json_conn_value.toStyledString(), str_err_reason_for_debug);
+		return MSP_ERROR_RES_FREE;
+	}
 	m_bAcq_Res_Success = false;
 	return MSP_SUCCESS;
 }
@@ -570,7 +702,7 @@ int CCarve::get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, 
 	ret = get_carve_status(carve_info.eCarve_status, str_single_err_for_debug, str_single_err_for_user);
 	if (ret)
 	{
-		businlog_error("%s | fail to get carve status, reason:%s", __CLASS_FUNCTION__, str_single_err_for_debug.c_str());
+		LError("fail to get carve status, reason:{}", str_single_err_for_debug.c_str());
 		str_err_reason_for_debug += "." + str_single_err_for_debug;
 		str_err_reason_for_user += "。" + str_single_err_for_user;
 		bHas_error = true;
@@ -580,7 +712,7 @@ int CCarve::get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, 
 		, str_single_err_for_debug, str_single_err_for_user);
 	if (ret)
 	{
-		businlog_error("%s | fail to get engraving time, reason:%s", __CLASS_FUNCTION__, str_single_err_for_debug.c_str());
+		LError("fail to get engraving time, reason:{}", str_single_err_for_debug.c_str());
 		str_err_reason_for_debug += "." + str_single_err_for_debug;
 		str_err_reason_for_user += "。" + str_single_err_for_user;
 		bHas_error = true;
@@ -591,7 +723,7 @@ int CCarve::get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, 
 	ret = get_current_line_num(carve_info.nCurrent_line_num, str_single_err_for_debug, str_single_err_for_user);
 	if (ret)
 	{
-		businlog_error("%s | fail to get current line num, reason:%s", __CLASS_FUNCTION__, str_single_err_for_debug.c_str());
+		LError("fail to get current line num, reason:{}", str_single_err_for_debug.c_str());
 		str_err_reason_for_debug += "." + str_single_err_for_debug;
 		str_err_reason_for_user += "。" + str_single_err_for_user;
 		bHas_error = true;
@@ -616,9 +748,13 @@ int CCarve::get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, 
 int CCarve::adjust_speed(const Json::Value& json_params,string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
-	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
-		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
-	
+	if (!(true == m_bConnected))
+	{
+		LError("carve ip:{} is not connected", m_str_ip);
+		str_err_reason_for_debug = "carve ip:" + m_str_ip + " is not connected";
+		str_err_reason_for_user = "设备未连接:";
+		return MSP_ERROR_INVALID_OPERATION;
+	}
 	//获取参数--速度
 	//unsigned int n_speed_percent = json_params["speed_percent"].asInt();
 
@@ -638,26 +774,34 @@ int CCarve::adjust_speed(const Json::Value& json_params,string& str_err_reason_f
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("factory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "错误的设备厂商类型";
+		return MSP_ERROR_NOT_SUPPORT;
 	}
 
 	//调整速度
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->adjust_speed(json_conn_value, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to adjust_speed, carve ip:%s, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str()
-		, str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	if (!bSuccess)
+	{
+		LError("fail to adjust_speed,ip{},json info:{}, reason:{}", m_str_ip, json_conn_value.toStyledString(), str_err_reason_for_debug);
+		return MSP_ERROR_FAIL;
+	}
 	return MSP_SUCCESS;
 }
 
 
 int CCarve::get_engraving_time(const Json::Value& json_params, size_t& nTotal_engraving_time_minute, size_t& nSingle_engraving_time_minute, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
-	businlog_tracer_perf(CCarve::get_engraving_time);
+	LTrace("CCarve::get_engraving_time");
 	boost::mutex::scoped_lock guard(m_mutex_for_cmd);
-	businlog_error_return_debug_and_user_reason(true == m_bConnected, __CLASS_FUNCTION__ << " | carve ip:" << m_str_ip 
-		<<" is not connected", str_err_reason_for_debug, "设备未连接", str_err_reason_for_user, MSP_ERROR_INVALID_OPERATION);
-
+	if (!(true == m_bConnected))
+	{
+		LError("carve ip:{} is not connected", m_str_ip);
+		str_err_reason_for_debug = "carve ip:" + m_str_ip + " is not connected";
+		str_err_reason_for_user = "设备未连接:";
+		return MSP_ERROR_INVALID_OPERATION;
+	}
 	//构造参数
 	Json::Value json_conn_value = json_params;
 	json_conn_value[ms_str_factory_type_key] = m_eFactory_type;
@@ -673,17 +817,21 @@ int CCarve::get_engraving_time(const Json::Value& json_params, size_t& nTotal_en
 	}
 	else
 	{
-		businlog_error_return_debug_and_user_reason(false, __CLASS_FUNCTION__ << " | factory_type is invalid:"
-			<< m_eFactory_type, str_err_reason_for_debug, "错误的设备厂商类型", str_err_reason_for_user, MSP_ERROR_NOT_SUPPORT);
+		LError("factory_type is invalid:{}", m_eFactory_type);
+		str_err_reason_for_debug = "actory_type is invalid:" + std::to_string(m_eFactory_type);
+		str_err_reason_for_user = "错误的设备厂商类型";
+		return MSP_ERROR_NOT_SUPPORT;
 	}
 
 	//获取雕刻时间
 	bool bSuccess = CCarve_Common_Lib_Tool::instance()->get_engraving_time(json_conn_value
 		, nTotal_engraving_time_minute
 		, nSingle_engraving_time_minute, str_err_reason_for_debug, str_err_reason_for_user);
-	businlog_error_return(bSuccess, ("%s | fail to get engraving time, carve ip:%s, json info:%s, reason:%s"
-		, __CLASS_FUNCTION__, m_str_ip.c_str(), json_conn_value.toStyledString().c_str()
-		, str_err_reason_for_debug.c_str()), MSP_ERROR_FAIL);
+	if (!bSuccess)
+	{
+		LError("fail to get engraving time,ip{},json info:{}, reason:{}", m_str_ip, json_conn_value.toStyledString(), str_err_reason_for_debug);
+		return MSP_ERROR_FAIL;
+	}
 	return MSP_SUCCESS;
 }
 
@@ -732,8 +880,8 @@ const string CCarve::ms_str_worktime_key = "worktime";
 
 CCarve::~CCarve()
 {
-	businlog_tracer_perf(CCarve::~CCarve);
-	__ph__.log("%s | ip:%s.", __CLASS_FUNCTION__, m_str_ip.c_str());
+	LTrace("CCarve::~CCarve");
+	LInfo("ip:%{}", m_str_ip.c_str());
 	//由于涉及自己调用自己，故这里m_mutex_for_cmd无需上锁
 	//如果处于链接状态，则将其断开
 	int ret = 0;
@@ -743,7 +891,7 @@ CCarve::~CCarve()
 		ret = disconnect(str_err_reason_for_debug, str_err_reason_for_user);
 		if (ret)
 		{//断开连接失败
-			businlog_error("%s | fail to disconnect, ip:%s, reason:%s", __CLASS_FUNCTION__, m_str_ip.c_str(), str_err_reason_for_debug.c_str());
+			LError("fail to disconnect, ip:%s, reason:%s", m_str_ip.c_str(), str_err_reason_for_debug.c_str());
 		}
 		else
 		{
@@ -756,7 +904,7 @@ CCarve::~CCarve()
 		ret = release_resource(str_err_reason_for_debug, str_err_reason_for_user);
 		if (ret)
 		{//释放资源失败
-			businlog_error("%s | fail to release resource, ip:%s, reason:%s", __CLASS_FUNCTION__, m_str_ip.c_str(), str_err_reason_for_debug.c_str());
+			LError("fail to release resource, ip:%s, reason:%s", m_str_ip.c_str(), str_err_reason_for_debug.c_str());
 		}
 		else
 		{
@@ -778,14 +926,14 @@ CCarve::CCarve(const Json::Value& json_params)
 	if (!json_params.isMember(CCarve::ms_str_factory_type_key))
 	{
 		str_err_reason = string("json:") + json_params.toStyledString() + string(" without key:") + CCarve::ms_str_factory_type_key;
-		businlog_error("%s | err reason:%s", __FUNCTION__, str_err_reason.c_str());
+		LError("err reason:{}", str_err_reason.c_str());
 		throw std::exception(str_err_reason.c_str());
 	}
 
 	if (!json_params.isMember(CCarve::ms_str_carve_type_key))
 	{
 		str_err_reason = string("json:") + json_params.toStyledString() + string(" without key:") + CCarve::ms_str_carve_type_key;
-		businlog_error("%s | err reason:%s", __FUNCTION__, str_err_reason.c_str());
+		LError("err reason:{}", str_err_reason.c_str());
 		throw std::exception(str_err_reason.c_str());
 	}
 
@@ -798,7 +946,7 @@ CCarve::CCarve(const Json::Value& json_params)
 	if (!json_params.isMember(ms_str_worktime_key))
 	{
 		str_err_reason = string("json:") + json_params.toStyledString() + string(" without key:") + CCarve::ms_str_worktime_key;
-		businlog_error("%s | err reason:%s", __FUNCTION__, str_err_reason.c_str());
+		LError("err reason:{}", str_err_reason.c_str());
 		throw std::exception(str_err_reason.c_str());
 	}
 	m_nTotal_engraving_time = json_params[ms_str_worktime_key].asInt();
