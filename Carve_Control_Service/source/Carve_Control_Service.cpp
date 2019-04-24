@@ -32,15 +32,6 @@ int main()
 		return false;
 	}
 	string str_err_reason_for_debug, str_err_reason_for_user;
-#ifdef SERVER_WITH_CONTROL_LOGIC
-	ret = CCarve_Manager::instance()->start_poll_carve_status(str_err_reason_for_debug, str_err_reason_for_user);
-	if (0!=ret)
-	{
-		LError("start_poll_carve_status failed, reason:{}", str_err_reason_for_debug);
-		return false;
-	}
-
-#endif
 	//启动网络模块：创建线程以监听端口
 	//从配置文件中读取本地ip和port
 	string str_local_ip;	//本机ip

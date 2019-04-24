@@ -28,8 +28,6 @@ extern "C" {
 #include "CDevice.h"
 #include "boost_common.h"
 #include "carve_common_lib.h"
-//宏定义
-//#define  SERVER_WITH_CONTROL_LOGIC //此服务具备控制逻辑
 //雕刻机信息
 struct SCarve_Info
 {
@@ -65,10 +63,7 @@ public:
 	int get_info(SCarve_Info& carve_info, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int adjust_speed(const Json::Value& json_params,string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int  get_engraving_time(const Json::Value& json_params, size_t& nTotal_engraving_time_minute, size_t& nSingle_engraving_time_minute, string& str_err_reason_for_debug, string& str_err_reason_for_user);
-	//雕刻成功后调用
-	void start_count_engraving_time();
-	//雕刻完成后调用
-	int pause_count_engraving_time(string& str_err_reason_for_debug, string& str_err_reason_for_user);
+
 	unsigned short Conn_idx() const { return m_nConn_idx; }
 	void Conn_idx(unsigned short val) { m_nConn_idx = val; }
 	static const string ms_str_factory_type_key; 
@@ -97,13 +92,6 @@ private:
 	string m_str_task_no; //任务编号
 	string m_str_gCode_no; //G代码编号
 	string m_str_file_path; //G代码路径
-#ifdef SERVER_WITH_CONTROL_LOGIC
-	boost::posix_time::ptime m_time_last_start; //上次开始雕刻时间
-	size_t m_nTotal_engraving_time; //总的雕刻时间，单位分钟 （一定要结合控制逻辑，其结果才正确，
-	                                //比如连续两次暂停，则会导致时间错误。但是由于轮询时间间隔的存在
-                                    //	， 导致信息有个延迟）
-	ECARVE_STATUS_TYPE m_eCarve_status; //雕刻机状态
-#endif
 	
 };
 //函数原型定义

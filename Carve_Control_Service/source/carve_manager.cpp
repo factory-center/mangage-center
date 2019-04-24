@@ -367,59 +367,6 @@ int CCarve_Manager::get_all_carves_info(const Json::Value& json_params, Json::Va
 	}
 }
 
-/************************************
-* Method:    start_poll_carve_status
-* Brief:  开启线程以轮询雕刻机状态
-* Access:    public 
-* Returns:   int
-* Qualifier:
-*Parameter: string & str_err_reason_for_debug -[in/out]  
-*Parameter: string & str_err_reason_for_user -[in/out]  
-************************************/
-int CCarve_Manager::start_poll_carve_status(string& str_err_reason_for_debug, string& str_err_reason_for_user)
-{
-	try
-	{
-		//创建线程：轮询雕刻机状态
-		m_bStop_poll_status = false;
-		m_thread_poll_status = boost::thread(boost::bind(&CCarve_Manager::svc, this));
-		return MSP_SUCCESS;
-	}
-	catch (std::exception& e)
-	{
-		str_err_reason_for_debug = string("Starting poll carve status has exception, reason:") + string(e.what());
-		str_err_reason_for_user = "服务发生异常";
-		LError("err reason:{}", str_err_reason_for_debug);
-		return MSP_ERROR_EXCEPTION;
-	}
-}
-
-/************************************
-* Method:    stop_poll_carve_status
-* Brief:  停止轮询雕刻机状态的线程，并等待轮询线程退出
-* Access:    public 
-* Returns:   int
-* Qualifier:
-*Parameter: string & str_err_reason_for_debug -[in/out]  
-*Parameter: string & str_err_reason_for_user -[in/out]  
-************************************/
-int CCarve_Manager::stop_poll_carve_status(string& str_err_reason_for_debug, string& str_err_reason_for_user)
-{
-	m_bStop_poll_status = true;
-	if (m_thread_poll_status.joinable())
-	{
-		m_thread_poll_status.interrupt();
-		m_thread_poll_status.join();
-		return MSP_SUCCESS;
-	}
-	else
-	{
-		str_err_reason_for_debug =  "the thread of poll carve status  is not joinable";
-		str_err_reason_for_user = "服务异常";
-		LError("err reason:{}", str_err_reason_for_debug);
-		return MSP_ERROR_INVALID_OPERATION;
-	}
-}
 
 int CCarve_Manager::start_engraving(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user)
 {
@@ -459,10 +406,6 @@ int CCarve_Manager::start_engraving(const Json::Value& json_params, string& str_
 			return ret;
 		}
 
-#ifdef SERVER_WITH_CONTROL_LOGIC
-		//开始雕刻成功后则设置开始雕刻时的时间
-		ptr_carve->start_count_engraving_time();
-#endif
 		return MSP_SUCCESS;
 	}
 	catch (std::exception& e)
@@ -1008,78 +951,13 @@ int CCarve_Manager::adjust_speed(const Json::Value& json_params, string& str_err
 
 
 CCarve_Manager::CCarve_Manager()
-	: m_bStop_poll_status(true)
 {
 
 }
 
 CCarve_Manager::~CCarve_Manager()
 {
-	LTrace("CCarve_Manager");
-	LWarn("Notice");
-	string str_err_for_debug, str_err_for_user;
-	//先停止线程后释放函数库
-	if (false == m_bStop_poll_status)
-	{//线程仍然开始着
-		int ret = stop_poll_carve_status(str_err_for_debug, str_err_for_user);
-		if (ret)
-		{
-			LError("fail to stop polling carve status, reason:{}", str_err_for_debug.c_str());
-		}
-	}
-}
-
-void CCarve_Manager::svc()
-{
-	LCritical("start thread to poll status of all carves successfully");
-	size_t nWait_time_minute = 1; //每次休眠时间,TODO::目前设置小点，实际中设置大点
-	LWarn("please read the param from configure file");
-	try
-	{
-		while (false == m_bStop_poll_status)
-		{
-			boost::this_thread::sleep(boost::posix_time::minutes(nWait_time_minute));
-			int ret = 0;
-			//遍历雕刻机列表
-			{ 
-				Thread_Read_Lock guard(m_rw_carveId_carvePtr);
-				for (TYPE_MAP_ITER iter = m_map_carveId_carvePtr.begin()
-					; iter != m_map_carveId_carvePtr.end(); ++ iter)
-				{
-					//判定对象是否合法
-					if (!iter->second)
-					{
-						LError("ptr carve is NULL, carve id:%s" , iter->first.c_str());
-						continue;
-					}
-					//获取设备状态
-					ECARVE_STATUS_TYPE eCarve_common_status = CARVE_STATUS_MIN;
-					string str_err_reason_for_debug, str_err_reason_for_user;
-					ret = iter->second->get_carve_status(eCarve_common_status, str_err_reason_for_debug
-						, str_err_reason_for_user);
-					if (ret)
-					{//获取状态出错
-						LError("fail to get carve status, carve id:{}, reason:{}",iter->first.c_str(), str_err_reason_for_debug.c_str());
-						continue;
-					}
-					//此时成功获取设备状态
-					if (CARVE_STATUS_COMPLETED == eCarve_common_status)
-					{
-						//如果为雕刻完成，则暂停累加雕刻时间
-						ret = iter->second->pause_count_engraving_time(str_err_reason_for_debug, str_err_reason_for_user);
-						if (ret)
-						{
-							LError("fail to pause count engraving time, carve id:{}, reason:{}",iter->first, str_err_reason_for_debug);
-						}
-					}
-				}//end for 遍历map
-			}
-		}//end whiel 线程
-	}
-	catch (boost::thread_interrupted& ) //被中断时，会抛出此异常
-	{
-	}
-	LWarn("++++++++++++++++ finish to poll status of all carves+++++++++++++");
+	
 }
 
 CCarve_Manager::CGarbo CCarve_Manager::Garbo;

@@ -621,12 +621,24 @@ bool CBaoyuan_Lib::start(const Json::Value& json_conn_value, string& str_err_rea
 	}
 
 	//设置模式：0为手动模式；1为自动模式
-	bSuccess = set_RValue(nConn_idx,17002, 1, nMax_wait_time * 3, str_err_reason_for_debug, str_err_reason_for_user);
+	int nCarve_status = 0;
+	bSuccess = get_RValue(nConn_idx, 17034, nCarve_status, str_err_reason_for_debug, str_err_reason_for_user);
 	if (bSuccess == false)
 	{
 		LError("fail to set RValue, reason:{}", str_err_reason_for_debug);
 		return false;
 	}
+
+	if (nCarve_status == 0)
+	{
+		bSuccess = set_RValue(nConn_idx, 17002, 1, nMax_wait_time * 3, str_err_reason_for_debug, str_err_reason_for_user);
+		if (bSuccess == false)
+		{
+			LError("fail to set RValue, reason:{}", str_err_reason_for_debug);
+			return false;
+		}
+	}
+
 	//启动加工
 	bSuccess = set_RBit(nConn_idx, 20000, 10, 1, nMax_wait_time, str_err_reason_for_debug, str_err_reason_for_user);
 	if (bSuccess == false)

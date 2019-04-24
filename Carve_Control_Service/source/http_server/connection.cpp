@@ -144,7 +144,7 @@ namespace http {
 				}
 				else
 				{//未出错反而是不正确的。可能为客户端未主动关闭链接
-					LError("SThe client did not actively close the link. This may make the Server have an new TIME_WAIT.");
+					//LError("SThe client did not actively close the link. This may make the Server have an new TIME_WAIT.");
 				}
 			}
 			else

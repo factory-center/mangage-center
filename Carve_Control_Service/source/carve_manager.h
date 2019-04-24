@@ -43,8 +43,6 @@ public:
     int get_carve_info(const Json::Value& json_params, SCarve_Info& carve_info, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int get_all_carves_info(const Json::Value& json_params, Json::Value& json_result
 		, string& str_err_reason_for_debug, string& str_err_reason_for_user);
-	int start_poll_carve_status(string& str_err_reason_for_debug, string& str_err_reason_for_user);
-	int stop_poll_carve_status(string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int start_engraving(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
 	int start_all_engraving(const Json::Value& json_params, Json::Value& json_result,string& str_err_reason_for_debug, string& str_err_reason_for_user);
     int upload_1_file(const Json::Value& json_params, string& str_err_reason_for_debug, string& str_err_reason_for_user);
@@ -60,7 +58,6 @@ public:
 protected:
 	CCarve_Manager();
 	~CCarve_Manager();
-	void svc();
 private:
 	CCarve_Manager& operator=(const CCarve_Manager&);
 	CCarve_Manager(const CCarve_Manager&);
@@ -75,7 +72,5 @@ private:
 	static CCarve_Manager* ms_pInstance;
 	std::map<string, boost::shared_ptr<CCarve>> m_map_carveId_carvePtr; //键为设备编号，值为CCarve的智能指针
 	Thread_WR_Mutex m_rw_carveId_carvePtr;
-	boost::thread m_thread_poll_status;
-	bool m_bStop_poll_status; //状态轮询开关
 };
 //函数原型定义
