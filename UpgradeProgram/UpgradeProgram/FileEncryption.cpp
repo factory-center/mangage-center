@@ -1,173 +1,77 @@
+ï»¿#include"FileEncryption.h"
+#include <stdio.h>
+#include <string.h>
+#include <windows.h>
+#include <stdlib.h>
 #include <iostream>
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-
-
-void VOS_FREE(void *pData)
+using namespace std;
+// å˜æ¢æ³•åˆ™
+int genFun(int size, int key, int i)
 {
-	if (NULL != pData)
-	{
-		free(pData);
-		pData = NULL;
-	}
-	return;
+	return size + key + i - size / key;
 }
-int getFileSize(char *path)
+// è·å¾—æ–‡ä»¶å¤§å°
+int getFileSize(char str[])
 {
-	FILE *pf = fopen(path, "r");
-	if (pf == NULL)
-	{
-		return-1;
-	}
-	else
-	{
-		fseek(pf, 0, SEEK_END); //ÎÄ¼şÖ¸ÕëÒÆ¶¯µ½ÎÄ¼şÄ©Î²
-		int length = ftell(pf);
-		fclose(pf);
-		pf = NULL;
-		return length;
-	}
+	FILE *fp = fopen(str, "rb");
+	fseek(fp, 0, SEEK_END);
+	int size = ftell(fp);
+	fclose(fp);
+	return size;
 }
-
-//×Ö·û´®¼ÓÃÜ  
-char *stringEncrypt(char *password, char *string)
+// æ–‡ä»¶åŠ å¯†
+bool encrypt(char toBeEncFileName[], int key)
 {
-	int passLength = strlen(password); //»ñÈ¡¼ÓÃÜ³¤¶È  
-	int stringLength = strlen(string); //»ñÈ¡×Ö·û´®³¤¶È  
+	string outFileBuf = toBeEncFileName;
+	outFileBuf = outFileBuf + "E";
 
-	if (stringLength%passLength == 0)//×Ö·û´®³¤¶ÈÊÇÃÜÂë³¤¶ÈµÄÕûÊı±¶  
+	FILE *fp1 = fopen(toBeEncFileName, "rb");
+	FILE *fp2 = fopen(outFileBuf.c_str(), "wb");
+	if (fp1 == NULL || fp2 == NULL)
 	{
-		int times = stringLength / passLength;
-		for (int i = 0; i < times; i++)
-		{
-			for (int j = 0; j < passLength; j++)
-			{
-				string[i*passLength + j] ^= password[j];
-				//ÕâÀïµÄÏÂ±ê¼ÆËã»­Í¼ºÜÈİÒ×Àí½â  
-			}
-		}
+		return false;
 	}
-	else
+	int i = 0;
+	int s = 0;
+	int t = 0;
+	int size = getFileSize(toBeEncFileName);
+	for (i = 0; i < size; i++)
 	{
-		int times = stringLength / passLength;
-		for (int i = 0; i < times; i++)
-		{
-			for (int j = 0; j < passLength; j++)
-			{
-				string[i*passLength + j] ^= password[j];
-			}
-		}
-		int lastLength = stringLength % passLength;
-		//²»ÄÜÕû³ıµÄ£¬Ò²¾ÍÊÇÓàÊı³¤¶È  
-		for (int i = 0; i < lastLength; i++)
-		{
-			string[passLength*(stringLength / passLength) + i] ^= password[i];
-			//ÕâÀïµÄ½âÃÜÒª´ÓÇ°±ßÒÑ¾­Õû³ıÍê³ÉµÄºóÒ»¸öÎ»ÖÃ¿ªÊ¼£¬  
-			//¼ÙÈçËµstringLength = 10,passLength = 4;ÄÇÃ´³ı²»¾¡µÄ¼ÓÃÜ¾Í´ÓÏÂ±ê8¿ªÊ¼£¬  
-			//(10 / 4)*4 = 8.  
-		}
+		s = getc(fp1);
+
+		t = genFun(size, key, i) ^ s;
+		// åŠ å¯†Â Â 
+		putc(t, fp2);
 	}
-	return string;
+	fclose(fp1);
+	fclose(fp2);
+	return true;
 }
-//×Ö·û´®½âÃÜËã·¨  
-char *stringDecode(char *password, char *string)
+// æ–‡ä»¶è§£å¯†
+bool decrypt(char toBeDecFileName[], int key)
 {
-	int passLength = strlen(password); //»ñÈ¡¼ÓÃÜ³¤¶È  
-	int stringLength = strlen(string); //»ñÈ¡×Ö·û´®³¤¶È  
+	string OutFileBuf;
+	OutFileBuf = toBeDecFileName;
+	OutFileBuf = OutFileBuf.substr(0, OutFileBuf.length() - 1);
 
-	if (stringLength % passLength == 0)//×Ö·û´®³¤¶ÈÊÇÃÜÂë³¤¶ÈµÄÕûÊı±¶  
+	FILE *fp1 = fopen(toBeDecFileName, "rb");
+	FILE *fp2 = fopen(OutFileBuf.c_str(), "wb");
+	if (fp1 == NULL || fp2 == NULL)
 	{
-		int times = stringLength / passLength;
-		for (int i = 0; i < times; i++)
-		{
-			for (int j = 0; j < passLength; j++)
-			{
-				string[i*passLength + j] ^= password[j];
-			}
-		}
+		return false;
 	}
-	else
+	int i = 0;
+	int	s = 0;
+	int	t = 0;
+	int	size = getFileSize(toBeDecFileName);
+	for (i = 0; i < size; i++)
 	{
-		int times = stringLength / passLength;
-		for (int i = 0; i < times; i++)
-		{
-			for (int j = 0; j < passLength; j++)
-			{
-				string[i*passLength + j] ^= password[j];
-			}
-		}
-		int lastLength = stringLength % passLength;
-		//²»ÄÜÕû³ıµÄ£¬Ò²¾ÍÊÇÓàÊı³¤¶È  
-		for (int i = 0; i < lastLength; i++)
-		{
-			string[passLength*(stringLength / passLength) + i] ^= password[i];
-			//ÕâÀïµÄ½âÃÜÒª´ÓÇ°±ßÒÑ¾­Õû³ıÍê³ÉµÄºóÒ»¸öÎ»ÖÃ¿ªÊ¼£¬  
-			//¼ÙÈçËµstringLength = 10,passLength = 4;ÄÇÃ´³ı²»¾¡µÄ¼ÓÃÜ¾Í´ÓÏÂ±ê8¿ªÊ¼£¬  
-			//(10 / 4)*4 = 8.  
-		}
+		s = getc(fp1);
+		t = genFun(size, key, i) ^ s;
+		// è§£å¯†Â Â 
+		putc(t, fp2);
 	}
-	return string;
-}
-
-//¼ÓÃÜ
-void Encrypt(char *oldPath, char *newPath, char *password)
-{
-	FILE *pfr, *pfw;
-
-	pfr = fopen(oldPath, "rb");//ÒÔ¶ş½øÖÆ¶ÁÈ¡
-	pfw = fopen(newPath, "wb");
-	if (pfr == NULL || pfw == NULL)
-	{
-		fclose(pfr);
-		fclose(pfw);
-		return;
-	}
-	else
-	{
-		int length = getFileSize(oldPath);//»ñÈ¡Ô­ÎÄ¼ş´óĞ¡
-		char *p = (char*)malloc(length * sizeof(char));//ÎªĞÂÎÄ¼şÉêÇë¿Õ¼ä
-
-		fread(p, sizeof(char), length, pfr);//¶ÁÈ¡¶ş½øÖÆµ½ÎÄ¼ş
-		stringEncrypt(password, p);
-		fwrite(p, sizeof(char), length, pfw);//Ğ´Èë¶ş½øÖÆµ½ÎÄ¼ş
-
-		//ÎÄ¼ş²Ù×÷Íê³ÉÖ®ºó¹Ø±ÕÎÄ¼ş
-		fclose(pfr);
-		fclose(pfw);
-		pfr = NULL;
-		pfw = NULL;
-		VOS_FREE(p);
-	}
-}
-//½âÃÜ
-void decode(char *oldPath, char *newPath, char *password)
-{
-	//! ½âÃÜºóÉ¾³ıÔ­ÎÄ¼ş
-	FILE *pfr, *pfw;
-
-	pfr = fopen(oldPath, "rb");//ÒÔ¶ş½øÖÆ¶ÁÈ¡
-	pfw = fopen(newPath, "wb");
-	if (pfr == NULL || pfw == NULL)
-	{
-		fclose(pfr);
-		fclose(pfw);
-		return;
-	}
-	else
-	{
-		int length = getFileSize(oldPath);//»ñÈ¡Ô­ÎÄ¼ş´óĞ¡
-		char *p = (char*)malloc(length * sizeof(char));//ÎªĞÂÎÄ¼şÉêÇë¿Õ¼ä
-		fread(p, sizeof(char), length, pfr);//¶ÁÈ¡¶ş½øÖÆµ½ÎÄ¼ş
-		stringDecode(password, p);
-		fwrite(p, sizeof(char), length, pfw);//Ğ´Èë¶ş½øÖÆµ½ÎÄ¼ş
-
-		//ÎÄ¼ş²Ù×÷Íê³ÉÖ®ºó¹Ø±ÕÎÄ¼ş
-		int aaa = fclose(pfr);
-		aaa = fclose(pfw);
-		pfr = NULL;
-		pfw = NULL;
-		VOS_FREE(p);
-		remove(oldPath);
-	}
+	fclose(fp1);
+	fclose(fp2);
+	return true;
 }

@@ -38,9 +38,6 @@
     <ClCompile Include="Downloader.cpp">
       <Filter>Curl</Filter>
     </ClCompile>
-    <ClCompile Include="VersionCheck.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="jsoncpp\json_reader.cpp">
       <Filter>Json</Filter>
     </ClCompile>
@@ -54,6 +51,9 @@
       <Filter>FileEncryption</Filter>
     </ClCompile>
     <ClCompile Include="PublicFunc.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="FileLoad.cpp">
       <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -102,9 +102,6 @@
     </ClInclude>
     <ClInclude Include="jsoncpp\writer.h">
       <Filter>Json</Filter>
-    </ClInclude>
-    <ClInclude Include="VersionCheck.h">
-      <Filter>Header</Filter>
     </ClInclude>
     <ClInclude Include="FileEncryption.h">
       <Filter>FileEncryption</Filter>

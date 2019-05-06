@@ -1,8 +1,8 @@
 #include "Downloader.h"
 #include "FileLoad.h"
+#include "PublicDefine.h"
 #include "PublicFunc.h"
 #include "UpgradeProgram.h"
-#include "VersionCheck.h"
 #include "FileEncryption.h"
 #include <windows.h>
 #include <QString>
@@ -43,8 +43,8 @@ void UpgradeProgram::startProgress()
 
 	ui.label->setText(QString::fromLocal8Bit("正在升级......"));
 	//关闭主程序
-	KillExe("Carve_Control_Service.exe");
-	KillExe("ruanserver.exe");
+	KillExe(LOCAL_C_EXE_NAME);
+	KillExe(LOCAL_P_EXE_NAME);
 
 	//! 考虑到每次都做备份多次更新后会导致本地文件过大，改为删除需要替换的文件
 	//文件备份
@@ -120,10 +120,8 @@ void UpgradeProgram::startProgress()
 				
 				strPath = ".\\" + *iter;
 				strPathTemp = strPath;
-
-				strPath = strPath.substr(0, strPath.length() - 1);
 				
-				decode((char*)strPathTemp.c_str(), (char*)strPath.c_str(), "ABCDE");
+				decrypt((char*)strPathTemp.c_str(), 123321);
 				remove(strPathTemp.c_str());
 			}
 
@@ -141,23 +139,23 @@ void UpgradeProgram::startProgress()
 
 void UpgradeProgram::startExe()
 {
-	ShellExecuteA(NULL, NULL, ".\\Carve_Control_Service\\Carve_Control_Service.exe", "", "", SW_SHOWNORMAL);
+	ShellExecuteA(NULL, NULL, LOCAL_C_EXE_PATH, "", "", SW_SHOWNORMAL);
 	while (true)
 	{
-		if (GetPID("Carve_Control_Service.exe") != -1)
+		if (GetPID(LOCAL_C_EXE_NAME) != -1)
 		{
 			break;
 		}
 	}
 
-	ShellExecuteA(NULL, NULL, ".\\ManagementControlUnit\\runserver.exe", "", "", SW_SHOWNORMAL);
-	while (true)
-	{
-		if (GetPID("runserver.exe") != -1)
-		{
-			break;
-		}
-	}
+	//ShellExecuteA(NULL, NULL, LOCAL_P_EXE_PATH, "", "", SW_SHOWNORMAL);
+	//while (true)
+	//{
+	//	if (GetPID(LOCAL_P_EXE_NAME) != -1)
+	//	{
+	//		break;
+	//	}
+	//}
 	
 	close();
 }

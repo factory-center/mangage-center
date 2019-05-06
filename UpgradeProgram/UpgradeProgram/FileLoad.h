@@ -14,15 +14,10 @@ public:
 		return pFileUpdateInfo;
 	}
 
-	CLocalFileUpdateInfo()
-	{
-		strCFileLocalPath.clear();
-		strCFileRemotePath.clear();
-		strPFileLocalPath.clear();
-		strPFileRemotePath.clear();
-		strRemoteConfigPath.clear();
-		strRemoteConfigPathNoDirectory.clear();
-	}
+	CLocalFileUpdateInfo();
+
+	bool GetLocalConfigInfo();
+
 
 	string strCFileLocalPath;
 	string strCFileRemotePath;
@@ -42,15 +37,14 @@ public:
 		return pFileUpdateInfo;
 	}
 
-	CRemoteConfigFileInfo()
-	{
-		vecUpdateFiles.clear();
-		mapVersionFiles.clear();
-	}
+	CRemoteConfigFileInfo();
+
+
+
+	bool GetRemoteConfigVersionInfo();
 
 	//文件列表
 	vector<string> vecUpdateFiles;
-	
 	//文件版本列表
 	map<string, string> mapVersionFiles;
 };

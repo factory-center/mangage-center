@@ -7,7 +7,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <QTDIR>D:\Qt5.12.3\5.12.3\msvc2017</QTDIR>
-    <LocalDebuggerWorkingDirectory>C:\Users\gqx\Desktop\UpgradeProgram\Win32\Debug</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>D:\MyGitCode\factory-center\trunk\UpgradeProgram\Win32\Debug</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerEnvironment>PATH=$(QTDIR)\bin%3b$(PATH)</LocalDebuggerEnvironment>
   </PropertyGroup>
@@ -17,7 +17,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <QTDIR>D:\Qt5.12.3\5.12.3\msvc2017</QTDIR>
-    <LocalDebuggerWorkingDirectory>C:\Users\gqx\Desktop\UpgradeProgram\Win32\Release</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>D:\MyGitCode\factory-center\trunk\UpgradeProgram\Win32\Debug</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerEnvironment>PATH=$(QTDIR)\bin%3b$(PATH)</LocalDebuggerEnvironment>
   </PropertyGroup>
