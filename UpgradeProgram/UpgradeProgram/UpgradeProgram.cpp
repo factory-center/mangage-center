@@ -139,24 +139,7 @@ void UpgradeProgram::startProgress()
 
 void UpgradeProgram::startExe()
 {
-	ShellExecuteA(NULL, NULL, LOCAL_C_EXE_PATH, "", "", SW_SHOWNORMAL);
-	while (true)
-	{
-		if (GetPID(LOCAL_C_EXE_NAME) != -1)
-		{
-			break;
-		}
-	}
-
-	//ShellExecuteA(NULL, NULL, LOCAL_P_EXE_PATH, "", "", SW_SHOWNORMAL);
-	//while (true)
-	//{
-	//	if (GetPID(LOCAL_P_EXE_NAME) != -1)
-	//	{
-	//		break;
-	//	}
-	//}
-	
+	StartMainProgram();
 	close();
 }
 

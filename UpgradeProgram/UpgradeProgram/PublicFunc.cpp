@@ -239,7 +239,7 @@ bool VersionValidation(bool &versionIsEqual)
 	//下载远程配置文件
 	GetRemoteConfig();
 	//解密文件
-	//decode(REMOTE_CONFIG_PATH, LOCAL_CONFIG_PATH,"ABCDE");
+	decrypt(REMOTE_CONFIG_PATH,123321);
 	//获取远程配置文件版本信息
 	CRemoteConfigFileInfo::GetInstance()->GetRemoteConfigVersionInfo();
 
@@ -276,8 +276,7 @@ bool VersionValidation(bool &versionIsEqual)
 
 void StartMainProgram()
 {
-	//版本相同，不需要更新
-		//检查程序是否已经启动--如果已启动，直接退出
+	//检查程序是否已经启动--如果已启动，直接退出
 	if (GetPID(LOCAL_C_EXE_NAME) == -1)
 	{
 		//未启动->启动

@@ -9,12 +9,14 @@ using namespace std;
 int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
-	//HINSTANCE mmm = ShellExecuteA(NULL, NULL, LOCAL_C_EXE_PATH, "", "", SW_SHOWNORMAL);
-	ShellExecuteA(NULL, NULL, "D:\\MyGitCode\\factory-center\\trunk\\UpgradeProgram\\Win32\\Debug\\Carve_Control_Service\\Carve_Control_Service.exe", "", "", SW_SHOWNORMAL);
-	//system("D:\\MyGitCode\\factory-center\\trunk\\UpgradeProgram\\Win32\\Debug\\Carve_Control_Service\\Carve_Control_Service.exe");
-	int mmm = GetLastError();
-	system("pause");
-	return 0;
+
+	//只启动一个进程
+	HANDLE  hHandle = CreateMutexA(NULL, FALSE, "UpgradeProgramMuter");
+	if (ERROR_ALREADY_EXISTS == GetLastError())
+	{
+		return 0;
+	}
+
 	//读取升级程序本地配置文件
 	if (CLocalFileUpdateInfo::GetInstance()->GetLocalConfigInfo() == false)
 	{
