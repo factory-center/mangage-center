@@ -4,6 +4,8 @@
 #include <QMimeData>
 #include <QMessageBox>
 #include <QDateTime>
+#include <QTextCursor>
+
 
 FileEncrypt::FileEncrypt(QWidget *parent)
 	: QDialog(parent)
